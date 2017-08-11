@@ -1,0 +1,6 @@
+[submodule "osimpipeline"]
+	path = osimpipeline
+	url = https://github.com/stanfordnmbl/osimpipeline.git
+[submodule "perimysium"]
+	path = perimysium
+	url = https://github.com/chrisdembia/perimysium.git
