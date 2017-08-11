@@ -1,0 +1,16 @@
+# osimpipeline
+config.yaml
+
+# python-doit.
+.doit.db
+
+# Python
+*.pyc
+
+# Vim
+.*.swo
+.*.swp
+
+# OpenSim
+err.log
+out.log
