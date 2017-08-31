@@ -4,3 +4,6 @@
 [submodule "perimysium"]
 	path = perimysium
 	url = https://github.com/chrisdembia/perimysium.git
+[submodule "optctrlmuscle"]
+	path = optctrlmuscle
+	url = https://github.com/stanfordnmbl/optctrlmuscle.git

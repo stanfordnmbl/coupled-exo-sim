@@ -20,6 +20,7 @@ DOIT_CONFIG = {
 
 # Settings for plots.
 import matplotlib
+matplotlib.use('TkAgg')
 if matplotlib.__version__[0] == '1':
     raise Exception("Must have matplotlib version 2 to avoid "
             "incorrect bar plots.")
@@ -37,14 +38,30 @@ from osimpipeline.vital_tasks import *
 # Custom tasks for this project.
 from tasks import *
 
-study = osp.Study('exotoplogy',
+study = osp.Study('exotopology',
         'Rajagopal2015_18musc_muscle_names_probed.osim',
         'Rajagopal2015_reserve_actuators.xml')
 
-# Add tasks for each subject. To prevent this file from being HUGE, we split
-# each subject out into its own file.
-import subject01
-subject01.add_to_study(study)
+# Add tasks for each subject
+subjects = config['subjects']
+for subj in subjects:
+    if subj == 01:
+        import subject01
+        subject01.add_to_study(study)
+
+# Copy data files for all study subjects
+study.add_task(TaskCopyMotionCaptureData, 
+    walk100=(2, '_newCOP3'),
+    walk125=(2, '_newCOP3'),
+    walk150=(2, '_newCOP3'),
+    walk175=(2, '_newCOP3'),
+    run200=(2, '_newCOP3'),
+    run300=(2, '_newCOP3'),
+    run400=(2, '_newCOP3'),
+    run500=(2, '_newCOP3'),
+    )
+ 
+study.add_task(TaskCopyGenericModelFilesToResults)
 
 # Analysis
 # --------

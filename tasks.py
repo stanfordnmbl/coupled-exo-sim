@@ -23,46 +23,67 @@ class working_directory():
 
 class TaskCopyMotionCaptureData(osp.TaskCopyMotionCaptureData):
     REGISTRY = []
-    def __init__(self, subject, 
-            walk100=None, walk125=None, walk150=None, walk175=None,
-            run200=None, run300=None, run400=None, run500=None):
+    def __init__(self, study, walk100=None, walk125=None, walk150=None,
+        walk175=None, run200=None, run300=None, run400=None, run500=None):
         regex_replacements = list()
-        for datastr, condname, arg in [
-                ('Walk_100', 'walk1', walk100),
-                ('Walk_125', 'walk2', walk125),
-                ('Walk_150', 'walk3', walk150),
-                ('Walk_175', 'walk4', walk175),
-                ('Run_200', 'run1', run200),
-                ('Run_300', 'run2', run300),
-                ('Run_400', 'run3', run400),
-                ('Run_500', 'run4', run500)]:
-            # Marker trajectories.
-            regex_replacements.append(
-                (
-                    os.path.join(subject.name, 'Data',
-                        '%s %02i.trc' % (datastr, arg[0])).replace('\\','\\\\'),
-                    os.path.join('experiments',
-                        subject.name, condname, 'expdata', 
-                        'marker_trajectories.trc').replace('\\','\\\\')
-                    ))
-            # Ground reaction.
-            regex_replacements.append(
-                (
-                    os.path.join(subject.name, 'Data',
-                        '%s %02i%s.mot' % (datastr, arg[0],arg[1])).replace(
-                            '\\','\\\\'),
-                    os.path.join('experiments', subject.name, condname,
-                        'expdata','ground_reaction_orig.mot').replace(
-                            '\\','\\\\') 
-                    )) 
-        regex_replacements.append((
-                    os.path.join(subject.name, 'Data',
-                        'Static_FJC.trc').replace('\\','\\\\'),
-                    os.path.join('experiments', subject.name, 'static',
-                        'trial01', 'expdata',
-                        'marker_trajectories.trc').replace('\\','\\\\') 
-                    ))
-        super(TaskCopyMotionCaptureData, self).__init__(subject,
+
+        for subject in study.subjects:
+
+            cond_args = subject.cond_args
+            if 'walk100' in cond_args:
+                walk100 = cond_args['walk100']
+            if 'walk125' in cond_args:
+                walk125 = cond_args['walk125']
+            if 'walk150' in cond_args:
+                walk150 = cond_args['walk150']
+            if 'walk175' in cond_args:
+                walk175 = cond_args['walk175']
+            if 'run200' in cond_args:
+                run200 = cond_args['run200']
+            if 'run300' in cond_args:
+                run300 = cond_args['run300']
+            if 'run400' in cond_args:
+                run400 = cond_args['run400']
+            if 'run500' in cond_args:
+                run500 = cond_args['run500']
+
+            for datastr, condname, arg in [
+                    ('Walk_100', 'walk1', walk100),
+                    ('Walk_125', 'walk2', walk125),
+                    ('Walk_150', 'walk3', walk150),
+                    ('Walk_175', 'walk4', walk175),
+                    ('Run_200', 'run1', run200),
+                    ('Run_300', 'run2', run300),
+                    ('Run_400', 'run3', run400),
+                    ('Run_500', 'run4', run500)]:
+                # Marker trajectories.
+                regex_replacements.append(
+                    (
+                        os.path.join(subject.name, 'Data',
+                            '%s %02i.trc' % (datastr, arg[0])).replace('\\','\\\\'),
+                        os.path.join('experiments',
+                            subject.name, condname, 'expdata', 
+                            'marker_trajectories.trc').replace('\\','\\\\')
+                        ))
+                # Ground reaction.
+                regex_replacements.append(
+                    (
+                        os.path.join(subject.name, 'Data',
+                            '%s %02i%s.mot' % (datastr, arg[0],arg[1])).replace(
+                                '\\','\\\\'),
+                        os.path.join('experiments', subject.name, condname,
+                            'expdata','ground_reaction_orig.mot').replace(
+                                '\\','\\\\') 
+                        )) 
+            regex_replacements.append((
+                        os.path.join(subject.name, 'Data',
+                            'Static_FJC.trc').replace('\\','\\\\'),
+                        os.path.join('experiments', subject.name, 'static',
+                            'expdata',
+                            'marker_trajectories.trc').replace('\\','\\\\') 
+                        ))
+
+        super(TaskCopyMotionCaptureData, self).__init__(study,
                 regex_replacements)
 
 class TaskUpdateGroundReactionColumnLabels(osp.TrialTask):
