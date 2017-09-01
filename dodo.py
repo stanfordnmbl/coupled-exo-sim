@@ -21,9 +21,9 @@ DOIT_CONFIG = {
 # Settings for plots.
 import matplotlib
 matplotlib.use('TkAgg')
-if matplotlib.__version__[0] == '1':
-    raise Exception("Must have matplotlib version 2 to avoid "
-            "incorrect bar plots.")
+# if matplotlib.__version__[0] == '1':
+#     raise Exception("Must have matplotlib version 2 to avoid "
+#             "incorrect bar plots.")
 import matplotlib.pyplot as plt
 plt.rc('font', family='Helvetica, Arial, sans-serif', size=8)
 plt.rc('errorbar', capsize=1.5)

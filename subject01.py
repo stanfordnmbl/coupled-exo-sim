@@ -3,8 +3,8 @@ import os
 import osimpipeline as osp
 import tasks
 
-def scale_setup_fcn(pmm, mset, sset, ikts):
-    m = pmm.Measurement('torso', mset)
+def scale_setup_fcn(util, mset, sset, ikts):
+    m = util.Measurement('torso', mset)
     m.add_markerpair('RASI', 'CLAV')
     m.add_markerpair('LASI', 'CLAV')
     m.add_markerpair('LPSI', 'C7')
@@ -13,26 +13,26 @@ def scale_setup_fcn(pmm, mset, sset, ikts):
     m.add_markerpair('LASI', 'LACR')
     m.add_bodyscale('torso')
 
-    m = pmm.Measurement('pelvis_z', mset)
+    m = util.Measurement('pelvis_z', mset)
     m.add_markerpair('RPSI', 'LPSI')
     m.add_markerpair('RASI', 'LASI')
     m.add_bodyscale('pelvis', 'Z')
 
-    m = pmm.Measurement('thigh', mset)
+    m = util.Measurement('thigh', mset)
     m.add_markerpair('LHJC', 'LLFC')
     m.add_markerpair('LHJC', 'LMFC')
     m.add_markerpair('RHJC', 'RMFC')
     m.add_markerpair('RHJC', 'RLFC')
     m.add_bodyscale_bilateral('femur')
 
-    m = pmm.Measurement('shank', mset)
+    m = util.Measurement('shank', mset)
     m.add_markerpair('LLFC', 'LLMAL')
     m.add_markerpair('LMFC', 'LMMAL')
     m.add_markerpair('RLFC', 'RLMAL')
     m.add_markerpair('RMFC', 'RMMAL')
     m.add_bodyscale_bilateral('tibia')
 
-    m = pmm.Measurement('foot', mset)
+    m = util.Measurement('foot', mset)
     m.add_markerpair('LCAL', 'LMT5')
     m.add_markerpair('LCAL', 'LTOE')
     m.add_markerpair('RCAL', 'RTOE')
@@ -41,14 +41,14 @@ def scale_setup_fcn(pmm, mset, sset, ikts):
     m.add_bodyscale_bilateral('calcn')
     m.add_bodyscale_bilateral('toes')
 
-    m = pmm.Measurement('humerus', mset)
+    m = util.Measurement('humerus', mset)
     m.add_markerpair('LSJC', 'LMEL')
     m.add_markerpair('LSJC', 'LLEL')
     m.add_markerpair('RSJC', 'RLEL')
     m.add_markerpair('RSJC', 'RMEL')
     m.add_bodyscale_bilateral('humerus')
 
-    m = pmm.Measurement('radius_ulna', mset)
+    m = util.Measurement('radius_ulna', mset)
     m.add_markerpair('LLEL', 'LFAradius')
     m.add_markerpair('LMEL', 'LFAulna')
     m.add_markerpair('RMEL', 'RFAulna')
@@ -57,14 +57,14 @@ def scale_setup_fcn(pmm, mset, sset, ikts):
     m.add_bodyscale_bilateral('radius')
     m.add_bodyscale_bilateral('hand')
 
-    m = pmm.Measurement('pelvis_Y', mset)
+    m = util.Measurement('pelvis_Y', mset)
     m.add_markerpair('LPSI', 'LHJC')
     m.add_markerpair('RPSI', 'RHJC')
     m.add_markerpair('RASI', 'RHJC')
     m.add_markerpair('LASI', 'LHJC')
     m.add_bodyscale('pelvis', 'Y')
 
-    m = pmm.Measurement('pelvis_X', mset)
+    m = util.Measurement('pelvis_X', mset)
     m.add_markerpair('RASI', 'RPSI')
     m.add_markerpair('LASI', 'LPSI')
     m.add_bodyscale('pelvis', 'X')
@@ -132,14 +132,15 @@ def add_to_study(study):
     ## walk2 condition
     walk2 = subject.add_condition('walk2', metadata={'walking_speed': 1.25})
     gait_events = dict()
-    gait_events['right_strikes'] = [1.179, 2.282, 3.361, 4.488, 5.572]
-    gait_events['right_toeoffs'] = [1.934, 3.033, 4.137, 5.252]
-    gait_events['left_strikes'] = [1.728, 2.836, 3.943, 5.051]
-    gait_events['left_toeooffs'] = [1.368, 2.471, 3.578, 4.680]
+    gait_events['right_strikes'] = [1.179, 2.282, 3.361, 4.488]
+    gait_events['right_toeoffs'] = [1.934, 3.033, 4.137]
+    gait_events['left_strikes'] = [1.728, 2.836, 3.943]
+    gait_events['left_toeooffs'] = [1.368, 2.471, 3.578]
     walk2_trial = walk2.add_trial(1,
             gait_events=gait_events,
             omit_trial_dir=True,
             )
+    walk2_trial.add_task(tasks.TaskUpdateGroundReactionColumnLabels)
 
     # walk2: inverse kinematics
     ik_setup_task = walk2_trial.add_task(osp.TaskIKSetup)
@@ -150,6 +151,7 @@ def add_to_study(study):
     # walk2: inverse dynamics
     id_setup_task = walk2_trial.add_task(osp.TaskIDSetup, ik_setup_task)
     walk2_trial.add_task(osp.TaskID, id_setup_task)
+    walk2_trial.add_task(osp.TaskIDPost, id_setup_task)
 
     # walk2: muscle redundnacy solver
     mrs_setup_tasks = walk2_trial.add_task_cycles(osp.TaskMRSDeGrooteSetup)
