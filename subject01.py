@@ -153,7 +153,7 @@ def add_to_study(study):
     walk2_trial.add_task(osp.TaskID, id_setup_task)
     walk2_trial.add_task(osp.TaskIDPost, id_setup_task)
 
-    # walk2: muscle redundnacy solver
+    # walk2: muscle redundancy solver
     mrs_setup_tasks = walk2_trial.add_task_cycles(osp.TaskMRSDeGrooteSetup)
     walk2_trial.add_task_cycles(osp.TaskMRSDeGroote, 
         setup_tasks=mrs_setup_tasks)
