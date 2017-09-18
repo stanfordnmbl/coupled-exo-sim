@@ -27,11 +27,11 @@ Misc.MuscleNames_Input = {};
 %    'tib_ant_r' ...
 %    };
 % Misc.Mesh_Frequency = 20;
-Misc.costfun = 'Exc_Act';
+Misc.costfun = 'Default';
 Misc.tendonStiffnessCoeff = 17.5;
 tic;
 [Time,MExcitation,MActivation,RActivation,TForcetilde,TForce,lMtilde,lM,MuscleNames,OptInfo,DatStore] = ...
-SolveMuscleRedundancy_lMtildeState(...
+SolveMuscleRedundancy_FtildeState_actdyn(...
     '@MODEL@', ... % model_path
     '@IK_SOLUTION@', ... % IK_path
     '@ID_SOLUTION@', ... % ID_path
@@ -40,5 +40,5 @@ SolveMuscleRedundancy_lMtildeState(...
     Misc);
     % TODO '', ... % ID_path
 toc
-save @STUDYNAME@_@NAME@_mrs.mat
+save @STUDYNAME@_@NAME@_mrs.mat -v7.3
 
