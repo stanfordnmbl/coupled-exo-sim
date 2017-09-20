@@ -153,6 +153,11 @@ def add_to_study(study):
     walk2_trial.add_task(osp.TaskID, id_setup_task)
     walk2_trial.add_task(osp.TaskIDPost, id_setup_task)
 
+    # walk2: static optimization
+    so_setup_tasks = walk2_trial.add_task_cycles(osp.TaskSOSetup, ik_setup_task)
+    walk2_trial.add_task_cycles(osp.TaskSO, setup_tasks=so_setup_tasks)
+    walk2_trial.add_task_cycles(osp.TaskSOPost, setup_tasks=so_setup_tasks)
+
     # walk2: muscle redundancy solver
     mrs_setup_tasks = walk2_trial.add_task_cycles(osp.TaskMRSDeGrooteSetup)
     walk2_trial.add_task_cycles(osp.TaskMRSDeGroote, 
@@ -160,6 +165,19 @@ def add_to_study(study):
     walk2_trial.add_task_cycles(osp.TaskMRSDeGrootePost,
         setup_tasks=mrs_setup_tasks)
 
+    # walk2: muscle redundancy solver mod
+    mrsflags = [
+        "study='SoftExosuitDesign/Topology'",
+        "activeDOFs={'hip'}",
+        "passiveDOFs={'ankle'}"
+        ]
+    passA_actH_mrsmod_task = walk2_trial.add_task_cycles(
+        osp.TaskMRSDeGrooteMod,
+        'actH_passA',
+        'ExoTopology: passive ankle, active hip device',
+        mrsflags,
+        setup_tasks=mrs_setup_tasks
+        )
 
 
 

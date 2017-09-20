@@ -28,7 +28,8 @@ Misc.MuscleNames_Input = {};
 %    };
 % Misc.Mesh_Frequency = 20;
 Misc.costfun = 'Default';
-Misc.tendonStiffnessCoeff = 17.5;
+Misc.tendonStiffnessCoeff = 35;
+Misc.tendonStiffnessModifiers.bifemsh_r = 0.5;
 tic;
 [Time,MExcitation,MActivation,RActivation,TForcetilde,TForce,lMtilde,lM,MuscleNames,OptInfo,DatStore] = ...
 SolveMuscleRedundancy_FtildeState_actdyn(...
