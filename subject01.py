@@ -169,7 +169,8 @@ def add_to_study(study):
     mrsflags = [
         "study='SoftExosuitDesign/Topology'",
         "activeDOFs={'hip'}",
-        "passiveDOFs={'ankle'}"
+        "passiveDOFs={'ankle'}",
+        "subcase='ActPass'"
         ]
     passA_actH_mrsmod_task = walk2_trial.add_task_cycles(
         osp.TaskMRSDeGrooteMod,
