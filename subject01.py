@@ -2,6 +2,7 @@ import os
 
 import osimpipeline as osp
 import tasks
+import helpers
 
 def scale_setup_fcn(util, mset, sset, ikts):
     m = util.Measurement('torso', mset)
@@ -69,30 +70,30 @@ def scale_setup_fcn(util, mset, sset, ikts):
     m.add_markerpair('LASI', 'LPSI')
     m.add_bodyscale('pelvis', 'X')
 
-    ikts.add_ikmarkertask_bilateral('ASI', True, 5.0)
-    ikts.add_ikmarkertask_bilateral('PSI', True, 5.0)
-    ikts.add_ikmarkertask_bilateral('LFC', True, 5.0)
-    ikts.add_ikmarkertask_bilateral('MFC', True, 5.0)
+    ikts.add_ikmarkertask_bilateral('ASI', True, 15.0)
+    ikts.add_ikmarkertask_bilateral('PSI', True, 15.0)
+    ikts.add_ikmarkertask_bilateral('LFC', True, 10.0)
+    ikts.add_ikmarkertask_bilateral('MFC', True, 10.0)
     ikts.add_ikmarkertask_bilateral('LMAL', True, 5.0)
     ikts.add_ikmarkertask_bilateral('MMAL', True, 5.0)
     ikts.add_ikmarkertask_bilateral('CAL', True, 5.0)
     ikts.add_ikmarkertask_bilateral('TOE', True, 5.0)
     ikts.add_ikmarkertask_bilateral('MT5', True, 5.0)
-    ikts.add_ikmarkertask_bilateral('ACR', True, 5.0)
-    ikts.add_ikmarkertask_bilateral('ASH', True, 5.0)
-    ikts.add_ikmarkertask_bilateral('PSH', True, 5.0)
-    ikts.add_ikmarkertask_bilateral('LEL', True, 5.0)
-    ikts.add_ikmarkertask_bilateral('MEL', True, 5.0)
-    ikts.add_ikmarkertask_bilateral('HJC', True, 5.0)
-    ikts.add_ikmarkertask_bilateral('KJC', True, 5.0)
-    ikts.add_ikmarkertask_bilateral('AJC', True, 5.0)
-    ikts.add_ikmarkertask_bilateral('SJC', True, 5.0)
-    ikts.add_ikmarkertask_bilateral('EJC', True, 5.0)
+    ikts.add_ikmarkertask_bilateral('ACR', True, 2.0)
+    ikts.add_ikmarkertask_bilateral('ASH', True, 2.0)
+    ikts.add_ikmarkertask_bilateral('PSH', True, 2.0)
+    ikts.add_ikmarkertask_bilateral('LEL', True, 1.0)
+    ikts.add_ikmarkertask_bilateral('MEL', True, 1.0)
+    ikts.add_ikmarkertask_bilateral('HJC', True, 20.0)
+    ikts.add_ikmarkertask_bilateral('KJC', True, 10.0)
+    ikts.add_ikmarkertask_bilateral('AJC', True, 10.0)
+    ikts.add_ikmarkertask_bilateral('SJC', True, 1.0)
+    ikts.add_ikmarkertask_bilateral('EJC', True, 1.0)
     ikts.add_ikmarkertask_bilateral('FAsuperior', False, 0.0)
     ikts.add_ikmarkertask_bilateral('FAradius', False, 0.0)
     ikts.add_ikmarkertask_bilateral('FAulna', False, 0.0)
-    ikts.add_ikmarkertask('CLAV', True, 5.0)
-    ikts.add_ikmarkertask('C7', True, 5.0)
+    ikts.add_ikmarkertask('CLAV', True, 2.0)
+    ikts.add_ikmarkertask('C7', True, 2.0)
     ikts.add_ikmarkertask_bilateral('TH1', False, 0.0)
     ikts.add_ikmarkertask_bilateral('TH2', False, 0.0)
     ikts.add_ikmarkertask_bilateral('TH3', False, 0.0)
@@ -109,9 +110,12 @@ def add_to_study(study):
     cond_args = dict()
     subject.cond_args = cond_args
 
-    marker_suffix = ['ASI','PSI','TH1','TH2','TH3',
-                     'TB1','TB2','TB3','CAL','TOE','MT5']
+    marker_suffix = ['ASI','PSI','TH1','TH2','TH3','TB1','TB2','TB3',
+                     'CAL','TOE','MT5','ACR','LEL','MEL','UA1','UA2','UA3',
+                     'FAsuperior','FAradius','FAradius']
     error_markers = ['*' + marker for marker in marker_suffix] 
+    error_markers.append('CLAV')
+    error_markers.append('C7')
 
     static = subject.add_condition('static')
     static_trial = static.add_trial(1, omit_trial_dir=True)
@@ -131,6 +135,12 @@ def add_to_study(study):
 
     ## walk2 condition
     walk2 = subject.add_condition('walk2', metadata={'walking_speed': 1.25})
+    
+    # GRF gait landmarks
+    walk2_trial_temp = walk2.add_trial(99, omit_trial_dir=True)
+    walk2_trial_temp.add_task(osp.TaskGRFGaitLandmarks)
+
+    # Trial to use
     gait_events = dict()
     gait_events['right_strikes'] = [1.179, 2.282, 3.361, 4.488]
     gait_events['right_toeoffs'] = [1.934, 3.033, 4.137]
@@ -165,23 +175,5 @@ def add_to_study(study):
     walk2_trial.add_task_cycles(osp.TaskMRSDeGrootePost,
         setup_tasks=mrs_setup_tasks)
 
-    # walk2: muscle redundancy solver mod
-    mrsflags = [
-        "study='SoftExosuitDesign/Topology'",
-        "activeDOFs={'hip'}",
-        "passiveDOFs={'ankle'}",
-        "subcase='ActPass'"
-        ]
-    passA_actH_mrsmod_task = walk2_trial.add_task_cycles(
-        osp.TaskMRSDeGrooteMod,
-        'actH_passA',
-        'ExoTopology: passive ankle, active hip device',
-        mrsflags,
-        setup_tasks=mrs_setup_tasks
-        )
-
-
-
-
-
-
+    # walk2: muscle redundancy solver Exotopology mods
+    helpers.generate_exotopology_tasks(walk2_trial, mrs_setup_tasks)
