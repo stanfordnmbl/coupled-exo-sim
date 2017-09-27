@@ -148,8 +148,6 @@ class TaskMRSDeGrooteModPost(osp.TaskMRSDeGrooteModPost):
                             'muscle_activity_reductions.pdf')],
                          self.plot_muscle_activity_reductions)
 
-        
-
     def plot_joint_moment_breakdown(self, file_dep, target):
 
         # Load mat file fields
@@ -257,8 +255,8 @@ class TaskMRSDeGrooteModPost(osp.TaskMRSDeGrooteModPost):
 
         pass_force = util.hdf2pandas(file_dep[0],
             'DatStore/passiveForce')
-        slack_var = util.hdf2pandas(file_dep[0],
-            'DatStore/passiveSlackVar')
+        # slack_var = util.hdf2pandas(file_dep[0],
+        #     'DatStore/passiveSlackVar')
         path_length = util.hdf2pandas(file_dep[0],
             'DatStore/pathLength')
         joint_angles = util.hdf2numpy(file_dep[0],
@@ -291,16 +289,16 @@ class TaskMRSDeGrooteModPost(osp.TaskMRSDeGrooteModPost):
         ax.set_xlabel('time')
         ax.grid(which='both', axis='both', linestyle='--')
 
-        ax = fig.add_subplot(3, 2, 3)
-        ax.plot(time, slack_var, color='red')
-        ax.set_title('slack variable')
-        ax.set_yticks(np.arange(-0.1*max(pass_force[0]), 1.1*max(pass_force[0]), 
-            max(pass_force[0])/10.0))
-        ax.set_ylabel('force (N)')
-        ax.set_xlabel('time')
-        ax.grid(which='both', axis='both', linestyle='--')
+        # ax = fig.add_subplot(3, 2, 3)
+        # ax.plot(time, slack_var, color='red')
+        # ax.set_title('slack variable')
+        # ax.set_yticks(np.arange(-0.1*max(pass_force[0]), 1.1*max(pass_force[0]), 
+        #     max(pass_force[0])/10.0))
+        # ax.set_ylabel('force (N)')
+        # ax.set_xlabel('time')
+        # ax.grid(which='both', axis='both', linestyle='--')
 
-        ax = fig.add_subplot(3, 2, 5)
+        ax = fig.add_subplot(3, 2, 3)
         ax.plot(time, path_length)
         ax.set_title('path length')
         ax.set_ylabel('length (m)')
@@ -450,3 +448,144 @@ class TaskMRSDeGrooteModPost(osp.TaskMRSDeGrooteModPost):
         fig.tight_layout()
         fig.savefig(target[0])
         pl.close(fig)
+
+class TaskMetabolicRate(osp.StudyTask):
+    """Aggregate metabolic rate without and with mods across all subjects and
+    the provide contditions."""
+    REGISTRY = []
+    def __init__(self, study, mods=None, subjects=None, 
+            conditions=['walk2'],
+            suffix=''):
+        super(TaskMetabolicRate, self).__init__(study)
+        if suffix != '':
+            suffix = '_' + suffix
+        self.name = 'aggregate_metabolic_rate%s' % suffix
+        self.doc = 'Aggregate metabolic rate.'
+        self.study = study
+
+        if mods == None:
+            mods = study.mod_names
+
+        print mods
+
+        cycles = list()
+        self.multiindex_tuples = list()
+        self.multiindex_tuples2 = list()
+
+        if subjects == None:
+            subjects = [s.num for s in study.subjects]
+        for subject in study.subjects:
+            if not subject.num in subjects: continue
+            for cond_name in conditions:
+                cond = subject.get_condition(cond_name)
+                if not cond: continue
+                # We know there is only one overground trial, but perhaps it
+                # has not yet been added for this subject.
+                assert len(cond.trials) <= 1
+                if len(cond.trials) == 1:
+                    trial = cond.trials[0]
+                    for cycle in trial.cycles:
+                        cycles.append(cycle)
+                        self.multiindex_tuples.append((
+                            cycle.subject.name,
+                            cycle.condition.name,
+                            # This must be the full ID, not just the cycle
+                            # name, because 'cycle01' from subject 1 has
+                            # nothing to do with 'cycle01' from subject 2
+                            # (whereas the 'walk2' condition for subject 1 is
+                            # related to 'walk2' for subject 2).
+                            cycle.id))
+                        for mname in study.muscle_names:
+                            self.multiindex_tuples2.append((
+                                cycle.subject.name,
+                                cycle.condition.name,
+                                cycle.id,
+                                mname))
+
+        self.mod_for_file_dep = list()
+        deps = list()
+        deps2 = list()
+
+        # Prepare for processing simulations of experiments.
+        for cycle in cycles:
+            self.mod_for_file_dep.append('experiment')
+            deps.append(os.path.join(
+                    cycle.trial.results_exp_path, 'mrs', cycle.name,
+                    '%s_%s_mrs.mat' % (study.name, cycle.id))
+                    )
+
+        # Prepare for processing simulations of mods.
+        for mod in mods:
+            for cycle in cycles:
+                self.mod_for_file_dep.append(mod)
+                deps.append(os.path.join(
+                        self.study.config['results_path'],
+                        'mrsmod_%s' % mod, cycle.trial.rel_path, 'mrs', 
+                        cycle.name, '%s_%s_mrs.mat' % (study.name, cycle.id))
+                    )
+
+        self.add_action(deps,
+                [os.path.join(study.config['analysis_path'],
+                    'whole_body_metabolic_rates%s.csv' % suffix)],
+                self.aggregate_metabolic_rate)
+
+        self.add_action(deps,
+                [os.path.join(study.config['analysis_path'],
+                    'muscle_metabolic_rates%s.csv' % suffix)],
+                self.aggregate_metabolic_rate_muscles)
+
+    def aggregate_metabolic_rate(self, file_dep, target):
+        import numpy as np
+        from collections import OrderedDict
+        metabolic_rate = OrderedDict()
+        for ifile, fpath in enumerate(file_dep):
+            df = util.hdf2pandas(fpath, 'DatStore/MetabolicRate/whole_body')
+            this_mod = self.mod_for_file_dep[ifile]
+            if not this_mod in metabolic_rate:
+                metabolic_rate[this_mod] = list()
+            metabolic_rate[this_mod].append(df[0][0])
+       
+        # http://pandas.pydata.org/pandas-docs/stable/advanced.html#advanced-hierarchical
+        index = pd.MultiIndex.from_tuples(self.multiindex_tuples,
+                names=['subject', 'condition', 'cycle'])
+        df = pd.DataFrame(metabolic_rate, index=index)
+
+        target_dir = os.path.dirname(target[0])
+        if not os.path.exists(target_dir):
+            os.makedirs(target_dir)
+        with file(target[0], 'w') as f:
+            f.write('# columns contain whole body metabolic rate normalized by '
+                    'subject mass (W/kg)\n')
+            df.to_csv(f)
+
+    def aggregate_metabolic_rate_muscles(self, file_dep, target):
+        import numpy as np
+        from collections import OrderedDict
+        metabolic_rate = OrderedDict()
+        for ifile, fpath in enumerate(file_dep):
+            df = util.hdf2pandas(fpath, 
+                'DatStore/MetabolicRate/individual_muscles',
+                labels=self.study.muscle_names)
+            this_mod = self.mod_for_file_dep[ifile]
+            if not this_mod in metabolic_rate:
+                metabolic_rate[this_mod] = list()
+            for muscle in self.study.muscle_names:
+                metabolic_rate[this_mod].append(df[muscle][0])
+       
+        # http://pandas.pydata.org/pandas-docs/stable/advanced.html#advanced-hierarchical
+        index = pd.MultiIndex.from_tuples(self.multiindex_tuples2,
+                names=['subject', 'condition', 'cycle', 'muscle'])
+        df = pd.DataFrame(metabolic_rate, index=index)
+
+        target_dir = os.path.dirname(target[0])
+        if not os.path.exists(target_dir):
+            os.makedirs(target_dir)
+        with file(target[0], 'w') as f:
+            f.write('# columns contain muscle metabolic rates normalized by '
+                    'subject mass (W/kg)\n')
+            df.to_csv(f)
+
+class TaskPlotGlobalDeviceRankings(osp.StudyTask):
+    REGISTRY = []
+    def __init__(self, study):
+        super(TaskPlotGlobalDeviceRankings, self).__init__(study)

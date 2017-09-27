@@ -38,9 +38,27 @@ from osimpipeline.vital_tasks import *
 # Custom tasks for this project.
 from tasks import *
 
+# Custom helper functions for this project
+from helpers import *
+
 study = osp.Study('exotopology',
         'Rajagopal2015_18musc_muscle_names_probed.osim',
         'Rajagopal2015_reserve_actuators.xml')
+
+# Model markers to compute errors for
+marker_suffix = ['ASI','PSI','TH1','TH2','TH3','TB1','TB2','TB3',
+                 'CAL','TOE','MT5','ACR','LEL','MEL','UA1','UA2','UA3',
+                 'FAsuperior','FAradius','FAradius']
+error_markers = ['*' + marker for marker in marker_suffix] 
+error_markers.append('CLAV')
+error_markers.append('C7')
+study.error_markers = error_markers
+
+# List of modified muscle redundancy problems used in the study
+study.mod_names = get_mod_names()
+study.muscle_names = ['bifemsh_r', 'med_gas_r', 'glut_max2_r', 'psoas_r',
+                      'rect_fem_r','semimem_r','soleus_r','tib_ant_r',
+                      'vas_int_r']
 
 # Add tasks for each subject
 subjects = config['subjects']
@@ -65,3 +83,6 @@ study.add_task(TaskCopyGenericModelFilesToResults)
 
 # Analysis
 # --------
+actHA_passXXX = get_exotopology_flags(['passH','passK','passA'], 
+    act_combo='actHA')[0]
+study.add_task(TaskMetabolicRate, mods=actHA_passXXX, suffix='actHA_passXXX')

@@ -105,68 +105,70 @@ def scale_setup_fcn(util, mset, sset, ikts):
     ikts.add_ikmarkertask_bilateral('UA3', False, 0.0)
 
 def add_to_study(study):
-    subject = study.add_subject(1, 72.84)
+    subject = study.add_subject(2, 76.4757)
 
     cond_args = dict()
+    cond_args['walk100'] = (5, '_newCOP3'),
+    cond_args['walk125'] = (4, '_newCOP3')
     subject.cond_args = cond_args
 
-    static = subject.add_condition('static')
-    static_trial = static.add_trial(1, omit_trial_dir=True)
+    # static = subject.add_condition('static')
+    # static_trial = static.add_trial(1, omit_trial_dir=True)
 
-    # `os.path.basename(__file__)` should be `subject01.py`.
-    scale_setup_task = subject.add_task(osp.TaskScaleSetup,
-            init_time=0,
-            final_time=0.5, 
-            mocap_trial=static_trial,
-            edit_setup_function=scale_setup_fcn,
-            addtl_file_dep=['dodo.py', os.path.basename(__file__)])
+    # # `os.path.basename(__file__)` should be `subject01.py`.
+    # scale_setup_task = subject.add_task(osp.TaskScaleSetup,
+    #         init_time=0,
+    #         final_time=*CHECK_THIS*, 
+    #         mocap_trial=static_trial,
+    #         edit_setup_function=scale_setup_fcn,
+    #         addtl_file_dep=['dodo.py', os.path.basename(__file__)])
 
-    subject.add_task(osp.TaskScale,
-            scale_setup_task=scale_setup_task,
-            #scale_max_isometric_force=True,
-            )
+    # subject.add_task(osp.TaskScale,
+    #         scale_setup_task=scale_setup_task,
+    #         #scale_max_isometric_force=True,
+    #         )
 
-    ## walk2 condition
-    walk2 = subject.add_condition('walk2', metadata={'walking_speed': 1.25})
+    # ## walk2 condition
+    # walk2 = subject.add_condition('walk2', metadata={'walking_speed': 1.25})
     
-    # GRF gait landmarks
+    # # GRF gait landmarks
     # walk2_trial_temp = walk2.add_trial(99, omit_trial_dir=True)
     # walk2_trial_temp.add_task(osp.TaskGRFGaitLandmarks)
 
-    # Trial to use
-    gait_events = dict()
-    gait_events['right_strikes'] = [1.179, 2.282, 3.361, 4.488]
-    gait_events['right_toeoffs'] = [1.934, 3.033, 4.137]
-    gait_events['left_strikes'] = [1.728, 2.836, 3.943]
-    gait_events['left_toeooffs'] = [1.368, 2.471, 3.578]
-    walk2_trial = walk2.add_trial(1,
-            gait_events=gait_events,
-            omit_trial_dir=True,
-            )
-    walk2_trial.add_task(tasks.TaskUpdateGroundReactionColumnLabels)
+    # # Trial to use
+    # gait_events = dict()
+    # gait_events['right_strikes'] = []
+    # gait_events['right_toeoffs'] = []
+    # gait_events['left_strikes'] = []
+    # gait_events['left_toeooffs'] = []
+    # walk2_trial = walk2.add_trial(1,
+    #         gait_events=gait_events,
+    #         omit_trial_dir=True,
+    #         )
+    # walk2_trial.add_task(tasks.TaskUpdateGroundReactionColumnLabels)
 
-    # walk2: inverse kinematics
-    ik_setup_task = walk2_trial.add_task(osp.TaskIKSetup)
-    walk2_trial.add_task(osp.TaskIK, ik_setup_task)
-    walk2_trial.add_task(osp.TaskIKPost, ik_setup_task, 
-        error_markers=study.error_markers)
+    # # walk2: inverse kinematics
+    # ik_setup_task = walk2_trial.add_task(osp.TaskIKSetup)
+    # walk2_trial.add_task(osp.TaskIK, ik_setup_task)
+    # walk2_trial.add_task(osp.TaskIKPost, ik_setup_task, 
+    #     error_markers=study.error_markers)
 
-    # walk2: inverse dynamics
-    id_setup_task = walk2_trial.add_task(osp.TaskIDSetup, ik_setup_task)
-    walk2_trial.add_task(osp.TaskID, id_setup_task)
-    walk2_trial.add_task(osp.TaskIDPost, id_setup_task)
+    # # walk2: inverse dynamics
+    # id_setup_task = walk2_trial.add_task(osp.TaskIDSetup, ik_setup_task)
+    # walk2_trial.add_task(osp.TaskID, id_setup_task)
+    # walk2_trial.add_task(osp.TaskIDPost, id_setup_task)
 
-    # walk2: static optimization
-    so_setup_tasks = walk2_trial.add_task_cycles(osp.TaskSOSetup, ik_setup_task)
-    walk2_trial.add_task_cycles(osp.TaskSO, setup_tasks=so_setup_tasks)
-    walk2_trial.add_task_cycles(osp.TaskSOPost, setup_tasks=so_setup_tasks)
+    # # walk2: static optimization
+    # so_setup_tasks = walk2_trial.add_task_cycles(osp.TaskSOSetup, ik_setup_task)
+    # walk2_trial.add_task_cycles(osp.TaskSO, setup_tasks=so_setup_tasks)
+    # walk2_trial.add_task_cycles(osp.TaskSOPost, setup_tasks=so_setup_tasks)
 
-    # walk2: muscle redundancy solver
-    mrs_setup_tasks = walk2_trial.add_task_cycles(osp.TaskMRSDeGrooteSetup)
-    walk2_trial.add_task_cycles(osp.TaskMRSDeGroote, 
-        setup_tasks=mrs_setup_tasks)
-    walk2_trial.add_task_cycles(osp.TaskMRSDeGrootePost,
-        setup_tasks=mrs_setup_tasks)
+    # # walk2: muscle redundancy solver
+    # mrs_setup_tasks = walk2_trial.add_task_cycles(osp.TaskMRSDeGrooteSetup)
+    # walk2_trial.add_task_cycles(osp.TaskMRSDeGroote, 
+    #     setup_tasks=mrs_setup_tasks)
+    # walk2_trial.add_task_cycles(osp.TaskMRSDeGrootePost,
+    #     setup_tasks=mrs_setup_tasks)
 
-    # walk2: muscle redundancy solver Exotopology mods
-    helpers.generate_exotopology_tasks(walk2_trial, mrs_setup_tasks)
+    # # walk2: muscle redundancy solver Exotopology mods
+    # helpers.generate_exotopology_tasks(walk2_trial, mrs_setup_tasks)
