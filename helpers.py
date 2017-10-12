@@ -15,7 +15,7 @@ def get_mod_names():
 
 def generate_exotopology_tasks(trial, mrs_setup_tasks):
 
-    device_dofs = ['actH','actK','actA','passH','passK','passA']
+    device_dofs = ['actH','actK','actA']
     mod_names, descriptions, activeDOFs_list, passiveDOFs_list, subcases = \
         get_exotopology_flags(device_dofs)
 
@@ -183,11 +183,11 @@ def get_exotopology_flags(device_dofs, act_combo=None, pass_combo=None):
                 or pass_combo):
                 subcase = subcase + 'Pass'
 
-                mod_names.append(mod_name)
-                descriptions.append(description)
-                activeDOFs_list.append(activeDOFs)
-                passiveDOFs_list.append(passiveDOFs)
-                subcases.append(subcase)
+            mod_names.append(mod_name)
+            descriptions.append(description)
+            activeDOFs_list.append(activeDOFs)
+            passiveDOFs_list.append(passiveDOFs)
+            subcases.append(subcase)
 
 
     return mod_names, descriptions, activeDOFs_list, passiveDOFs_list, subcases

@@ -157,9 +157,9 @@ def add_to_study(study):
     walk2_trial.add_task(osp.TaskIDPost, id_setup_task)
 
     # walk2: static optimization
-    so_setup_tasks = walk2_trial.add_task_cycles(osp.TaskSOSetup, ik_setup_task)
-    walk2_trial.add_task_cycles(osp.TaskSO, setup_tasks=so_setup_tasks)
-    walk2_trial.add_task_cycles(osp.TaskSOPost, setup_tasks=so_setup_tasks)
+    # so_setup_tasks = walk2_trial.add_task_cycles(osp.TaskSOSetup, ik_setup_task)
+    # walk2_trial.add_task_cycles(osp.TaskSO, setup_tasks=so_setup_tasks)
+    # walk2_trial.add_task_cycles(osp.TaskSOPost, setup_tasks=so_setup_tasks)
 
     # walk2: muscle redundancy solver
     mrs_setup_tasks = walk2_trial.add_task_cycles(osp.TaskMRSDeGrooteSetup)

@@ -66,6 +66,9 @@ for subj in subjects:
     if subj == 01:
         import subject01
         subject01.add_to_study(study)
+    if subj == 02:
+        import subject02
+        subject02.add_to_study(study)
 
 # Copy data files for all study subjects
 study.add_task(TaskCopyMotionCaptureData, 
@@ -83,6 +86,20 @@ study.add_task(TaskCopyGenericModelFilesToResults)
 
 # Analysis
 # --------
+
+# Global results
+study.add_task(TaskMetabolicRate)
+study.add_task(TaskPlotDeviceMetabolicRankings)
+
+# All active devices
+actXXX = get_exotopology_flags(['actH','actK','actA'])[0]
+study.add_task(TaskMetabolicRate, mods=actXXX, suffix='actXXX')
+study.add_task(TaskPlotDeviceMetabolicRankings, mods=actXXX, suffix='actXXX')
+
+# Active hip-ankle device, with every passive device combination 
 actHA_passXXX = get_exotopology_flags(['passH','passK','passA'], 
     act_combo='actHA')[0]
 study.add_task(TaskMetabolicRate, mods=actHA_passXXX, suffix='actHA_passXXX')
+study.add_task(TaskPlotDeviceMetabolicRankings, mods=actHA_passXXX, 
+    suffix='actHA_passXXX')
+
