@@ -66,9 +66,26 @@ for subj in subjects:
     if subj == 01:
         import subject01
         subject01.add_to_study(study)
+
     if subj == 02:
         import subject02
         subject02.add_to_study(study)
+
+    if subj == 03:
+        import subject03
+        subject03.add_to_study(study)
+
+    if subj == 04:
+        import subject04
+        subject04.add_to_study(study)
+
+    if subj == 18:
+        import subject18
+        subject18.add_to_study(study)
+
+    if subj == 19:
+        import subject19
+        subject19.add_to_study(study)
 
 # Copy data files for all study subjects
 study.add_task(TaskCopyMotionCaptureData, 
@@ -82,24 +99,36 @@ study.add_task(TaskCopyMotionCaptureData,
     run500=(2, '_newCOP3'),
     )
  
+study.add_task(TaskCopyEMGData)
+
 study.add_task(TaskCopyGenericModelFilesToResults)
 
 # Analysis
 # --------
 
 # Global results
-study.add_task(TaskMetabolicRate)
+study.add_task(TaskAggregateMetabolicRate)
 study.add_task(TaskPlotDeviceMetabolicRankings)
+study.add_task(TaskAggregateMomentsExperiment)
+study.add_task(TaskPlotMoments, study.tasks[-1])
+for mod in study.mod_names:
+    study.add_task(TaskAggregateMomentsMod, mod)
+    study.add_task(TaskPlotMoments, study.tasks[-1], mod=mod)
+study.add_task(TaskAggregateMuscleActivity)
+study.add_task(TaskPlotMuscleActivity, study.tasks[-1])
 
 # All active devices
 actXXX = get_exotopology_flags(['actH','actK','actA'])[0]
-study.add_task(TaskMetabolicRate, mods=actXXX, suffix='actXXX')
+study.add_task(TaskAggregateMetabolicRate, mods=actXXX, suffix='actXXX')
 study.add_task(TaskPlotDeviceMetabolicRankings, mods=actXXX, suffix='actXXX')
 
 # Active hip-ankle device, with every passive device combination 
 actHA_passXXX = get_exotopology_flags(['passH','passK','passA'], 
     act_combo='actHA')[0]
-study.add_task(TaskMetabolicRate, mods=actHA_passXXX, suffix='actHA_passXXX')
+study.add_task(TaskAggregateMetabolicRate, mods=actHA_passXXX, suffix='actHA_passXXX')
 study.add_task(TaskPlotDeviceMetabolicRankings, mods=actHA_passXXX, 
     suffix='actHA_passXXX')
 
+# Validation
+# ----------
+study.add_task(TaskValidateAgainstEMG)

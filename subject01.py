@@ -136,9 +136,10 @@ def add_to_study(study):
     # Trial to use
     gait_events = dict()
     gait_events['right_strikes'] = [1.179, 2.282, 3.361, 4.488]
-    gait_events['right_toeoffs'] = [1.934, 3.033, 4.137]
-    gait_events['left_strikes'] = [1.728, 2.836, 3.943]
     gait_events['left_toeooffs'] = [1.368, 2.471, 3.578]
+    gait_events['left_strikes'] = [1.728, 2.836, 3.943]
+    gait_events['right_toeoffs'] = [1.934, 3.033, 4.137]
+
     walk2_trial = walk2.add_trial(1,
             gait_events=gait_events,
             omit_trial_dir=True,

@@ -6,18 +6,19 @@ import helpers
 
 def scale_setup_fcn(pmm, mset, sset, ikts):
     m = pmm.Measurement('torso', mset)
-    m.add_markerpair('RASI', 'CLAV')
-    m.add_markerpair('LASI', 'CLAV')
-    m.add_markerpair('LASI', 'C7')
-    m.add_markerpair('RASI', 'C7')
-    m.add_markerpair('RASI',' RACR')
-    m.add_markerpair('LASI', 'LACR')
+    m.add_markerpair('LPSH', 'LPSI')
+    m.add_markerpair('LASH', 'LASI')
+    m.add_markerpair('RPSH', 'RPSI')
+    m.add_markerpair('RASH', 'RASI')
+    m.add_markerpair('C7', 'RASI')
+    m.add_markerpair('C7', 'LASI')
     m.add_bodyscale('torso')
 
     m = pmm.Measurement('pelvis_z', mset)
-    m.add_markerpair('RPSI', 'LPSI')
+    m.add_markerpair('LPSI', 'RPSI')
     m.add_markerpair('RASI', 'LASI')
-    m.add_bodyscale('pelvis', 'YZ')
+    m.add_markerpair('RHJC', 'LHJC')
+    m.add_bodyscale('pelvis', 'Z')
 
     m = pmm.Measurement('thigh', mset)
     m.add_markerpair('LHJC', 'LLFC')
@@ -43,14 +44,10 @@ def scale_setup_fcn(pmm, mset, sset, ikts):
     m.add_bodyscale_bilateral('toes')
 
     m = pmm.Measurement('humerus', mset)
-    m.add_markerpair('RPSH', 'RLEL')
-    m.add_markerpair('RASH', 'RMEL')
-    m.add_markerpair('LASH', 'LMEL')
-    m.add_markerpair('LPSH', 'LLEL')
     m.add_markerpair('LACR', 'LMEL')
     m.add_markerpair('LACR', 'LLEL')
-    m.add_markerpair('RACR', 'RLEL')
     m.add_markerpair('RACR', 'RMEL')
+    m.add_markerpair('RACR', 'RLEL')
     m.add_bodyscale_bilateral('humerus')
 
     m = pmm.Measurement('radius_ulna', mset)
@@ -62,13 +59,10 @@ def scale_setup_fcn(pmm, mset, sset, ikts):
     m.add_bodyscale_bilateral('radius')
     m.add_bodyscale_bilateral('hand')
 
-    # Hamner/Arnold defined this measurement but did not use it.
-    #m = pmm.Measurement('pelvis_Y', mset)
-    #m.add_markerpair('LPSI', 'LHJC')
-    #m.add_markerpair('RPSI', 'RHJC')
-    #m.add_markerpair('RASI', 'RHJC')
-    #m.add_markerpair('LASI', 'LHJC')
-    #m.add_bodyscale('pelvis', 'Y')
+    m = pmm.Measurement('pelvis_Y', mset)
+    m.add_markerpair('RASI', 'RHJC')
+    m.add_markerpair('LASI', 'LHJC')
+    m.add_bodyscale('pelvis', 'Y')
 
     m = pmm.Measurement('pelvis_X', mset)
     m.add_markerpair('RASI', 'RPSI')
@@ -77,34 +71,37 @@ def scale_setup_fcn(pmm, mset, sset, ikts):
 
     m = pmm.Measurement('shank_width', mset)
     m.add_markerpair('LLMAL', 'LMMAL')
-    m.add_markerpair('RMMAL', 'RLMAL')
+    m.add_markerpair('RLMAL', 'RMMAL')
     m.add_bodyscale_bilateral('tibia', 'Z')
 
-    ikts.add_ikmarkertask_bilateral('ACR', True, 50.0)
-    ikts.add_ikmarkertask('C7', True, 100.0)
-    ikts.add_ikmarkertask('CLAV', True, 100.0)
-    ikts.add_ikmarkertask_bilateral('ASH', True, 10.0)
-    ikts.add_ikmarkertask_bilateral('PSH', True, 10.0)
+    # Unused m = pmm.Measurement('thigh_width', mset)
+    # Unused m.add_markerpair('LLFC', 'LMFC')
+    # Unused m.add_markerpair('RLFC', 'RMFC')
+
+    ikts.add_ikmarkertask_bilateral('ACR', True, 250.0)
+    ikts.add_ikmarkertask('C7', True, 500.0)
+    ikts.add_ikmarkertask('CLAV', True, 10.0)
     ikts.add_ikmarkertask_bilateral('LEL', True, 50.0)
     ikts.add_ikmarkertask_bilateral('MEL', True, 50.0)
     ikts.add_ikmarkertask_bilateral('FAradius', True, 50.0)
     ikts.add_ikmarkertask_bilateral('FAulna', True, 50.0)
-    ikts.add_ikmarkertask_bilateral('ASI', True, 100.0)
-    ikts.add_ikmarkertask_bilateral('PSI', True, 100.0)
+    ikts.add_ikmarkertask_bilateral('ASI', True, 500.0)
+    ikts.add_ikmarkertask_bilateral('PSI', True, 500.0)
     ikts.add_ikmarkertask_bilateral('HJC', True, 1000.0)
-    ikts.add_ikmarkertask_bilateral('LFC', True, 100.0)
-    ikts.add_ikmarkertask_bilateral('MFC', True, 100.0)
-    ikts.add_ikmarkertask_bilateral('LMAL', True, 100.0)
-    ikts.add_ikmarkertask_bilateral('MMAL', True, 100.0)
+    ikts.add_ikmarkertask_bilateral('LFC', True, 500.0)
+    ikts.add_ikmarkertask_bilateral('MFC', True, 500.0)
+    ikts.add_ikmarkertask_bilateral('LMAL', True, 500.0)
+    ikts.add_ikmarkertask_bilateral('MMAL', True, 500.0)
     ikts.add_ikmarkertask_bilateral('CAL', True, 25.0)
     ikts.add_ikmarkertask_bilateral('TOE', True, 25.0)
     ikts.add_ikmarkertask_bilateral('MT5', True, 25.0)
 
     ikts.add_ikcoordinatetask('pelvis_list', True, 0.0, 1.0)
-    ikts.add_ikcoordinatetask_bilateral('hip_flexion', True, 0.0, 10.0)
-    ikts.add_ikcoordinatetask_bilateral('hip_rotation', True, 0.0, 1.0)
-    ikts.add_ikcoordinatetask_bilateral('knee_angle', True, 0.0, 10.0)
+    ikts.add_ikcoordinatetask_bilateral('knee_angle', True, 0.0, 1.0)
     ikts.add_ikcoordinatetask_bilateral('ankle_angle', True, 0.0, 1.0)
+
+    ikts.add_ikmarkertask_bilateral('ASH', False, 10.0)
+    ikts.add_ikmarkertask_bilateral('PSH', False, 10.0)
 
     ikts.add_ikmarkertask_bilateral('FAsuperior', False, 0.0)
     ikts.add_ikmarkertask_bilateral('TH1', False, 0.0)
@@ -121,12 +118,13 @@ def scale_setup_fcn(pmm, mset, sset, ikts):
     ikts.add_ikmarkertask_bilateral('EJC', False, 0.0)
     ikts.add_ikmarkertask_bilateral('KJC', False, 0.0)
 
+
 def add_to_study(study):
-    subject = study.add_subject(2, 76.4757)
+    subject = study.add_subject(4, 80.46728644)
 
     cond_args = dict()
-    cond_args['walk100'] = (5, '_newCOP3')
-    cond_args['walk125'] = (4, '_newCOP3')
+    cond_args['walk175'] = (3, '_newCOP3')
+    cond_args['run500'] = (4, '_newCOP3')
     subject.cond_args = cond_args
 
     static = subject.add_condition('static')
@@ -134,8 +132,8 @@ def add_to_study(study):
 
     # `os.path.basename(__file__)` should be `subject02.py`.
     scale_setup_task = subject.add_task(osp.TaskScaleSetup,
-            init_time=0,
-            final_time=0.4, 
+            init_time=0.73,
+            final_time=3.89, 
             mocap_trial=static_trial,
             edit_setup_function=scale_setup_fcn,
             addtl_file_dep=['dodo.py', os.path.basename(__file__)])
@@ -147,47 +145,42 @@ def add_to_study(study):
 
     ## walk2 condition
     walk2 = subject.add_condition('walk2', metadata={'walking_speed': 1.25})
-    
-    # GRF gait landmarks
-    # walk2_trial= walk2.add_trial(1, omit_trial_dir=True)
+
+    ## GRF gait landmarks
+    # walk2_trial = walk2.add_trial(1, omit_trial_dir=True)
     # walk2_trial.add_task(tasks.TaskUpdateGroundReactionColumnLabels)
     # walk2_trial.add_task(osp.TaskGRFGaitLandmarks, threshold=10)
 
     # Trial to use
     gait_events = dict()
-    gait_events['right_strikes'] = [0.761, 1.921, 3.084, 4.257] #, 5.406]
-    gait_events['left_toeoffs'] = [0.939, 2.101, 3.268] #, 4.446]
-    gait_events['left_strikes'] = [1.349, 2.516, 3.667] #, 4.851]
-    gait_events['right_toeoffs'] = [1.548, 2.709, 3.842] #, 5.031]
+    gait_events['right_strikes'] = [0.262, 1.401, 4.733, 5.869]
+    gait_events['left_toeoffs'] = [0.431, 1.579, 4.893]
+    gait_events['left_strikes'] = [0.804, 1.946, 5.311]
+    gait_events['right_toeoffs'] = [0.980, 2.117, 5.490]
+    gait_events['stride_times'] = [1.401-0.262, 2.511-1.401, 5.869-4.733]
     walk2_trial = walk2.add_trial(1,
             gait_events=gait_events,
             omit_trial_dir=True,
             )
     walk2_trial.add_task(tasks.TaskUpdateGroundReactionColumnLabels)
-    
 
-    # # walk2: inverse kinematics
+    ## walk2: inverse kinematics
     ik_setup_task = walk2_trial.add_task(osp.TaskIKSetup)
     walk2_trial.add_task(osp.TaskIK, ik_setup_task)
     walk2_trial.add_task(osp.TaskIKPost, ik_setup_task, 
         error_markers=study.error_markers)
 
-    # # walk2: inverse dynamics
+    ## walk2: inverse dynamics
     id_setup_task = walk2_trial.add_task(osp.TaskIDSetup, ik_setup_task)
     walk2_trial.add_task(osp.TaskID, id_setup_task)
     walk2_trial.add_task(osp.TaskIDPost, id_setup_task)
 
-    # # walk2: static optimization
-    # so_setup_tasks = walk2_trial.add_task_cycles(osp.TaskSOSetup, ik_setup_task)
-    # walk2_trial.add_task_cycles(osp.TaskSO, setup_tasks=so_setup_tasks)
-    # walk2_trial.add_task_cycles(osp.TaskSOPost, setup_tasks=so_setup_tasks)
-
-    # # walk2: muscle redundancy solver
+    ## walk2: muscle redundancy solver
     mrs_setup_tasks = walk2_trial.add_task_cycles(osp.TaskMRSDeGrooteSetup)
     walk2_trial.add_task_cycles(osp.TaskMRSDeGroote, 
         setup_tasks=mrs_setup_tasks)
     walk2_trial.add_task_cycles(osp.TaskMRSDeGrootePost,
         setup_tasks=mrs_setup_tasks)
 
-    # # walk2: muscle redundancy solver Exotopology mods
+    ## walk2: muscle redundancy solver Exotopology mods
     helpers.generate_exotopology_tasks(walk2_trial, mrs_setup_tasks)
