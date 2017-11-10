@@ -55,7 +55,11 @@ error_markers.append('C7')
 study.error_markers = error_markers
 
 # List of modified muscle redundancy problems used in the study
-study.mod_names = get_mod_names()
+study.momentArms = 'fixed_direction'
+study.whichDevices = 'active_only'
+study.fixMomentArms = '[]'
+study.mod_names = get_exotopology_flags(momentArms=study.momentArms, 
+    whichDevices=study.whichDevices, fixMomentArms=study.fixMomentArms)[0]
 study.muscle_names = ['bifemsh_r', 'med_gas_r', 'glut_max2_r', 'psoas_r',
                       'rect_fem_r','semimem_r','soleus_r','tib_ant_r',
                       'vas_int_r']
@@ -71,9 +75,9 @@ for subj in subjects:
         import subject02
         subject02.add_to_study(study)
 
-    if subj == 03:
-        import subject03
-        subject03.add_to_study(study)
+    # if subj == 03:
+    #     import subject03
+    #     subject03.add_to_study(study)
 
     if subj == 04:
         import subject04
@@ -107,6 +111,7 @@ study.add_task(TaskCopyGenericModelFilesToResults)
 # --------
 
 # Global results
+study.add_task(TaskAggregatePeakPower)
 study.add_task(TaskAggregateMetabolicRate)
 study.add_task(TaskPlotDeviceMetabolicRankings)
 study.add_task(TaskAggregateMomentsExperiment)
@@ -117,17 +122,75 @@ for mod in study.mod_names:
 study.add_task(TaskAggregateMuscleActivity)
 study.add_task(TaskPlotMuscleActivity, study.tasks[-1])
 
-# All active devices
-actXXX = get_exotopology_flags(['actH','actK','actA'])[0]
-study.add_task(TaskAggregateMetabolicRate, mods=actXXX, suffix='actXXX')
-study.add_task(TaskPlotDeviceMetabolicRankings, mods=actXXX, suffix='actXXX')
+# Active devices only, fixed direction, free value moment arms
+if ((study.momentArms == 'fixed_direction') and 
+    (study.whichDevices == 'active_only') and
+    (study.fixMomentArms == '[]')):
+
+    actXxXxXx = get_exotopology_flags(momentArms='fixed_direction', 
+        whichDevices='active_only')[0]
+    study.add_task(TaskAggregatePeakPower, mods=actXxXxXx, suffix='actXxXxXx')
+    study.add_task(TaskAggregateMetabolicRate, mods=actXxXxXx, 
+        suffix='actXxXxXx')
+    study.add_task(TaskPlotDeviceMetabolicRankings, mods=actXxXxXx, 
+        suffix='actXxXxXx')
+
+# Active devices only, fixed direction, fixed value moment arms 
+if ((study.momentArms == 'fixed_direction') and 
+    (study.whichDevices == 'active_only') and
+    (study.fixMomentArms == '0.05')):
+    actXxXxXx_fixed = get_exotopology_flags(momentArms='fixed_direction', 
+        whichDevices='active_only', fixMomentArms='0.05')[0]
+    study.add_task(TaskAggregatePeakPower, mods=actXxXxXx_fixed, 
+        suffix='actXxXxXx_fixed')
+    study.add_task(TaskAggregateMetabolicRate, mods=actXxXxXx_fixed, 
+        suffix='actXxXxXx_fixed')
+    study.add_task(TaskPlotDeviceMetabolicRankings, mods=actXxXxXx_fixed, 
+        suffix='actXxXxXx_fixed')
+
+# # All active, free moment arm device solutions
+if ((study.momentArms == 'free') and 
+    (study.whichDevices == 'active_only') and
+    (study.fixMomentArms == '[]')):
+    actXXX = get_exotopology_flags(momentArms='free', 
+        whichDevices='active_only')[0]
+    study.add_task(TaskAggregatePeakPower, mods=actXXX, suffix='actXXX')
+    study.add_task(TaskAggregateMetabolicRate, mods=actXXX, suffix='actXXX')
+    study.add_task(TaskPlotDeviceMetabolicRankings, mods=actXXX, 
+        suffix='actXXX')
 
 # Active hip-ankle device, with every passive device combination 
-actHA_passXXX = get_exotopology_flags(['passH','passK','passA'], 
-    act_combo='actHA')[0]
-study.add_task(TaskAggregateMetabolicRate, mods=actHA_passXXX, suffix='actHA_passXXX')
-study.add_task(TaskPlotDeviceMetabolicRankings, mods=actHA_passXXX, 
-    suffix='actHA_passXXX')
+# (free moment arms) 
+if ((study.momentArms == 'free') and 
+    (study.whichDevices == 'all') and
+    (study.fixMomentArms == '[]')):
+    
+    actHA_passXXX = get_exotopology_flags(momentArms='free', 
+        whichDevices='passive_only', act_combo='actHA')[0]
+    study.add_task(TaskAggregatePeakPower, mods=actHA_passXXX, 
+        suffix='actHA_passXXX')
+    study.add_task(TaskAggregateMetabolicRate, mods=actHA_passXXX, 
+        suffix='actHA_passXXX')
+    study.add_task(TaskPlotDeviceMetabolicRankings, mods=actHA_passXXX, 
+        suffix='actHA_passXXX')
+
+# All variations on hip flexion, ankle plantarflexion strategies
+mods_HfAp1 = ['actHfAp', 'actHfAp_scaledID', 'actHfAp_fixed', 
+              'actHfAp_multControls','actHfAp_fixed_multControls', 
+              'actHfAp_exp']
+study.add_task(TaskAggregatePeakPower, mods=mods_HfAp1, suffix='actHfAp')
+study.add_task(TaskAggregateMetabolicRate, mods=mods_HfAp1, suffix='actHfAp')
+study.add_task(TaskPlotDeviceMetabolicRankings, mods=mods_HfAp1, 
+    suffix='actHfAp')
+mods_HfAp2 = ['actHfAp_scaledID', 'actHfAp_multControls',
+             'actHfAp_fixed_multControls', 'actHfAp_exp']
+study.add_task(TaskAggregateMuscleActivity, mods=mods_HfAp2, suffix='actHfAp')
+study.add_task(TaskPlotMuscleActivity, study.tasks[-1], suffix='actHfAp')
+for mod in mods_HfAp2:
+        study.add_task(TaskAggregateMomentsMod, mod)
+        study.add_task(TaskPlotMoments, study.tasks[-1], mod=mod)
+
+
 
 # Validation
 # ----------

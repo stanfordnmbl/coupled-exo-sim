@@ -2,49 +2,49 @@ import itertools
 import osimpipeline as osp
 import tasks
 
-def get_mod_names():
+def get_device_info(momentArms='free', whichDevices='all', fixMomentArms='[]'):
+
+    # fixMomentArms
+    # Set value as a string. To use default range [0.01 0.10] for moment arms
+    # set to empty brackets, i.e.'[]'
+
+    # Can moment arms be optimized in either direction or are they restricted
+    # to the anterior or posterior side of a joint?
+    if momentArms == 'free':
+        act_dofs_ref = ['actH','actK','actA']
+        pass_dofs_ref = ['passH','passK','passA']
+        # Can't fix moment arms in this case, so override user input
+        if not fixMomentArms == '[]':
+            import warnings
+            warnings.warn("Moment arms cannot be fixed when optimizing in both "
+                "directions across a DOF. Setting flag to free moment arm "
+                " optimization.")
+            fixMomentArms = '[]' 
+
+    elif momentArms == 'fixed_direction':
+        act_dofs_ref = ['actHf','actHe','actKf','actKe','actAd','actAp']
+        pass_dofs_ref = ['passHf','passHe','passKf','passKe','passAd','passAp']
+
+    # Which set of devices to choose from?
+    if whichDevices == 'active_only':
+        device_dofs = act_dofs_ref
+
+    elif whichDevices == 'passive_only':
+        device_dofs = pass_dofs_ref
+
+    elif whichDevices == 'all':
+        device_dofs = act_dofs_ref + pass_dofs_ref
+
+    return device_dofs, fixMomentArms, act_dofs_ref, pass_dofs_ref
+
+def get_exotopology_flags(momentArms='free', whichDevices='all', 
+    fixMomentArms='[]', act_combo=None, pass_combo=None,):
+
+    device_dofs, fixMomentArms, act_dofs_ref, pass_dofs_ref = get_device_info(
+        momentArms=momentArms, whichDevices=whichDevices, 
+        fixMomentArms=fixMomentArms)
 
     mod_names = list()
-
-    # Exotopology mod names
-    device_dofs = ['actH','actK','actA','passH','passK','passA']
-    exotopology_mod_names = get_exotopology_flags(device_dofs)[0]
-    mod_names += exotopology_mod_names
-
-    return mod_names
-
-def generate_exotopology_tasks(trial, mrs_setup_tasks):
-
-    device_dofs = ['actH','actK','actA','passH','passK','passA']
-    mod_names, descriptions, activeDOFs_list, passiveDOFs_list, subcases = \
-        get_exotopology_flags(device_dofs)
-
-    for mod_name, description, activeDOFs, passiveDOFs, subcase in  \
-        itertools.izip(mod_names, descriptions, 
-            activeDOFs_list, passiveDOFs_list, subcases):
-
-        mrsflags = [
-            "study='SoftExosuitDesign/Topology'",
-            "activeDOFs={%s}" % activeDOFs,
-            "passiveDOFs={%s}" % passiveDOFs,
-            "subcase='%s'" % subcase,
-            ]
-
-        mrsmod_tasks = trial.add_task_cycles(
-            osp.TaskMRSDeGrooteMod,
-            mod_name,
-            'ExoTopology: %s device' % description,
-            mrsflags,
-            setup_tasks=mrs_setup_tasks
-            )
-
-        trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
-            setup_tasks=mrsmod_tasks)
-
-def get_exotopology_flags(device_dofs, act_combo=None, pass_combo=None):
-
-    mod_names = list()
-    descriptions = list()
     activeDOFs_list = list()
     passiveDOFs_list = list()
     subcases = list()
@@ -52,59 +52,100 @@ def get_exotopology_flags(device_dofs, act_combo=None, pass_combo=None):
     for L in range(1, len(device_dofs)+1):
         for subset in itertools.combinations(device_dofs, L):
 
-            isAct = (any(word in subset for word in ['actH','actK','actA']) 
-                    or act_combo)
-            isPass = (any(word in subset for word in ['passH','passK','passA'])
-                     or pass_combo)
+            isAct = (any(word in subset for word in act_dofs_ref) or act_combo)
+            isPass = (any(word in subset for word in pass_dofs_ref) 
+                or pass_combo)
         
             mod_name = ''
-            description = ''
+
+            # Only one type of active assistance allowed at a time at each DOF
+            if (('actH' in subset) and ('actHf' in subset) or
+                ('actH' in subset) and ('actHe' in subset) or
+                ('actHf' in subset) and ('actHe' in subset)):
+                continue
+
+            if (('actK' in subset) and ('actKf' in subset) or
+                ('actK' in subset) and ('actKe' in subset) or
+                ('actKf' in subset) and ('actKe' in subset)):
+                continue
+
+            if (('actA' in subset) and ('actAp' in subset) or
+                ('actA' in subset) and ('actAp' in subset) or
+                ('actAp' in subset) and ('actAd' in subset)):
+                continue
 
             # Active DOFs
             act_dofs = list()
             if 'actH' in subset:
                 act_dofs.append('hip')
                 mod_name = 'actH'
-                description = 'active hip'
+            elif 'actHf' in subset:
+                act_dofs.append('hip/flex')
+                mod_name = 'actHf'
+            elif 'actHe' in subset:
+                act_dofs.append('hip/ext')
+                mod_name = 'actHe'
 
             if 'actK' in subset:
                 act_dofs.append('knee')
                 if not mod_name:
                     mod_name = 'actK'
-                    description = 'active knee'
                 else:
-                    mod_name = mod_name + 'K'
-                    description = description + '/knee'
+                    mod_name += 'K'
+            elif 'actKf' in subset:
+                act_dofs.append('knee/flex')
+                if not mod_name:
+                    mod_name = 'actKf'
+                else:
+                    mod_name += 'Kf'
+            elif 'actKe' in subset:
+                act_dofs.append('knee/ext')
+                if not mod_name:
+                    mod_name = 'actKe'
+                else:
+                    mod_name += 'Ke'
 
             if 'actA' in subset:
                 act_dofs.append('ankle')
                 if not mod_name:
                     mod_name = 'actA'
-                    description = 'active ankle'
                 else:
-                    mod_name = mod_name + 'A'
-                    description = description + '/ankle'
+                    mod_name += 'A'
+            elif 'actAp' in subset:
+                act_dofs.append('ankle/plantar')
+                if not mod_name:
+                    mod_name = 'actAp'
+                else:
+                    mod_name += 'Ap'
+            elif 'actAd' in subset:
+                act_dofs.append('ankle/dorsi')
+                if not mod_name:
+                    mod_name = 'actAd'
+                else:
+                    mod_name += 'Ad'
 
             if act_combo:
                 mod_name = act_combo
-                description = ''
                 if 'H' in act_combo:
                     act_dofs.append('hip')
-                    description = 'active hip'
+                # elif 'Hf' in act_combo:
+                #     act_dofs.append('hip/flex')
+                # elif 'He' in act_combo:
+                #     act_dofs.append('hip/ext')
 
                 if 'K' in act_combo:
                     act_dofs.append('knee')
-                    if not description:
-                        description = 'active knee'
-                    else:
-                        description = description + '/knee'
+                # elif 'Kf' in act_combo:
+                #     act_dofs.append('knee/flex')
+                # elif 'Ke' in act_combo:
+                #     act_dofs.append('knee/ext')
 
                 if 'A' in act_combo:
                     act_dofs.append('ankle')
-                    if not description:
-                        description = 'active ankle'
-                    else:
-                        description = description + '/ankle'
+                # elif 'Ap' in act_combo:
+                #     act_dofs.append('ankle/plantar')
+                # elif 'Ad' in act_combo:
+                #     act_dofs.append('ankle/dorsi')
 
             if len(act_dofs)==0:
                 activeDOFs = ''
@@ -118,52 +159,95 @@ def get_exotopology_flags(device_dofs, act_combo=None, pass_combo=None):
 
             if isAct and isPass:
                 mod_name += '_'
-                description += ' and '
+
+            # Only one type of passive assistance allowed at a time at each DOF
+            if (('passH' in subset) and ('passHf' in subset) or
+                ('passH' in subset) and ('passHe' in subset) or
+                ('passHf' in subset) and ('passHe' in subset)):
+                continue
+
+            if (('passK' in subset) and ('passKf' in subset) or
+                ('passK' in subset) and ('passKe' in subset) or
+                ('passKf' in subset) and ('passKe' in subset)):
+                continue
+
+            if (('passA' in subset) and ('passAp' in subset) or
+                ('passA' in subset) and ('passAp' in subset) or
+                ('passAp' in subset) and ('passAd' in subset)):
+                continue
 
             # Passive DOFs
             pass_dofs = list()
             if 'passH' in subset:
                 pass_dofs.append('hip')
-                mod_name = mod_name + 'passH'
-                description = description + 'passive hip'
+                mod_name += 'passH'
+            elif 'passHf' in subset:
+                pass_dofs.append('hip/flex')
+                mod_name += 'passHf'
+            elif 'passHe' in subset:
+                pass_dofs.append('hip/ext')
+                mod_name += 'passHe'
 
             if 'passK' in subset:
                 pass_dofs.append('knee')
                 if 'pass' not in mod_name:
-                    mod_name = mod_name + 'passK'
-                    description = description + 'passive knee'
+                    mod_name += 'passK'
                 else:
-                    mod_name = mod_name + 'K'
-                    description = description + '/knee'
+                    mod_name += 'K'
+            elif 'passKf' in subset:
+                pass_dofs.append('knee/flex')
+                if not mod_name:
+                    mod_name += 'passKf'
+                else:
+                    mod_name += 'Kf'
+            elif 'passKe' in subset:
+                pass_dofs.append('knee/ext')
+                if not mod_name:
+                    mod_name += 'passKe'
+                else:
+                    mod_name += 'Ke'
 
             if 'passA' in subset:
                 pass_dofs.append('ankle')
                 if 'pass' not in mod_name:
-                    mod_name = mod_name + 'passA'
-                    description = description + 'passive ankle'
+                    mod_name += 'passA'
                 else:
-                    mod_name = mod_name + 'A'
-                    description = description + '/ankle'
+                    mod_name += 'A'
+            elif 'passAp' in subset:
+                pass_dofs.append('ankle/plantar')
+                if not mod_name:
+                    mod_name += 'passAp'
+                else:
+                    mod_name += 'Ap'
+            elif 'passAd' in subset:
+                pass_dofs.append('ankle/dorsi')
+                if not mod_name:
+                    mod_name += 'passAd'
+                else:
+                    mod_name += 'Ad'
 
             if pass_combo:
                 mod_name += pass_combo
                 if 'H' in pass_combo:
                     pass_dofs.append('hip')
-                    description = description + 'passive hip'
+                # elif 'Hf' in pass_combo:
+                #     pass_dofs.append('hip/flex')
+                # elif 'He' in pass_combo:
+                #     pass_dofs.append('hip/ext')
 
                 if 'K' in pass_combo:
                     pass_dofs.append('knee')
-                    if 'passive' not in description:
-                        description = 'passive knee'
-                    else:
-                        description = description + '/knee'
+                # elif 'Kf' in pass_combo:
+                #     pass_dofs.append('knee/flex')
+                # elif 'Ke' in pass_combo:
+                #     pass_dofs.append('knee/ext')
 
                 if 'A' in pass_combo:
                     pass_dofs.append('ankle')
-                    if 'passive' not in description:
-                        description = 'passive ankle'
-                    else:
-                        description = description + '/ankle'
+                # elif 'Ap' in pass_combo:
+                #     pass_dofs.append('ankle/plantar')
+                # elif 'Ad' in pass_combo:
+                #     pass_dofs.append('ankle/dorsi')
 
             if len(pass_dofs)==0:
                 passiveDOFs = ''
@@ -176,18 +260,132 @@ def get_exotopology_flags(device_dofs, act_combo=None, pass_combo=None):
                     pass_dofs[2])
 
             subcase = ''
-            if (any(word in subset for word in ['actH','actK','actA']) 
-                or act_combo):
-                subcase = subcase + 'Act'
-            if (any(word in subset for word in ['passH','passK','passA']) 
-                or pass_combo):
-                subcase = subcase + 'Pass'
+            if (any(word in subset for word in act_dofs_ref) or act_combo):
+                subcase += 'Act'
+            if (any(word in subset for word in pass_dofs_ref) or pass_combo):
+                subcase += 'Pass'
+
+            if not fixMomentArms == '[]':
+                mod_name += '_fixed'
 
             mod_names.append(mod_name)
-            descriptions.append(description)
             activeDOFs_list.append(activeDOFs)
             passiveDOFs_list.append(passiveDOFs)
             subcases.append(subcase)
 
 
-    return mod_names, descriptions, activeDOFs_list, passiveDOFs_list, subcases
+    return mod_names, activeDOFs_list, passiveDOFs_list, subcases
+
+def generate_exotopology_tasks(trial, mrs_setup_tasks):
+
+    device_dofs, fixMomentArms = get_device_info(
+        momentArms=trial.study.momentArms,
+        whichDevices=trial.study.whichDevices,
+        fixMomentArms=trial.study.fixMomentArms)[:2]
+
+    mod_names, activeDOFs_list, passiveDOFs_list, subcases = \
+        get_exotopology_flags(momentArms=trial.study.momentArms,
+        whichDevices=trial.study.whichDevices,
+        fixMomentArms=trial.study.fixMomentArms)
+
+    for mod_name, activeDOFs, passiveDOFs, subcase in  \
+        itertools.izip(mod_names, 
+            activeDOFs_list, passiveDOFs_list, subcases):
+
+        mrsflags = [
+            "study='SoftExosuitDesign/Topology'",
+            "activeDOFs={%s}" % activeDOFs,
+            "passiveDOFs={%s}" % passiveDOFs,
+            "subcase='%s'" % subcase,
+            "fixMomentArms=%s" % fixMomentArms,
+            ]
+
+        mrsmod_tasks = trial.add_task_cycles(
+            osp.TaskMRSDeGrooteMod,
+            mod_name,
+            'ExoTopology: multiarticular device optimization',
+            mrsflags,
+            setup_tasks=mrs_setup_tasks
+            )
+
+        trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
+            setup_tasks=mrsmod_tasks)
+
+def generate_HfAp_tasks(trial, mrs_setup_tasks):
+
+    # "scaled-ID" assistive ankle-hip strategy
+    mrsflags = [
+        "study='ISB2017/Quinlivan2017'",
+        "shift_exo_peaks=true",
+        ]
+
+    mrsmod_tasks = trial.add_task_cycles(
+        osp.TaskMRSDeGrooteMod,
+        'actHfAp_scaledID',
+        'ExoTopology: "scaled-ID" assistive ankle-hip strategy',
+        mrsflags,
+        setup_tasks=mrs_setup_tasks
+        )
+
+    trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
+        setup_tasks=mrsmod_tasks)
+
+    # Max reduction case from experiment, assistive ankle-hip strategy
+    mrsflags = [
+        "study='ISB2017/Quinlivan2017'",
+        "shift_exo_peaks=true",
+        "exo_force_level=4",
+        ]
+
+    mrsmod_tasks = trial.add_task_cycles(
+        osp.TaskMRSDeGrooteMod,
+        'actHfAp_exp',
+        'ExoTopology: "scaled-ID" assistive ankle-hip strategy',
+        mrsflags,
+        setup_tasks=mrs_setup_tasks
+        )
+
+    trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
+        setup_tasks=mrsmod_tasks)
+
+    # multiple control solution, hip-ankle strategy, free moment arms
+    mrsflags = [
+        "study='SoftExosuitDesign/Topology'",
+        "activeDOFs={'hip/flex', 'ankle/plantar'}",
+        "passiveDOFs={}",
+        "subcase='Act'",
+        "fixMomentArms=[]",
+        "mult_controls=true",
+        ]
+
+    mrsmod_tasks = trial.add_task_cycles(
+        osp.TaskMRSDeGrooteMod,
+        'actHfAp_multControls',
+        'ExoTopology: multiarticular device optimization',
+        mrsflags,
+        setup_tasks=mrs_setup_tasks
+        )
+
+    trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
+        setup_tasks=mrsmod_tasks)
+
+    # multiple control solution, hip-ankle strategy, fixed moment arms
+    mrsflags = [
+        "study='SoftExosuitDesign/Topology'",
+        "activeDOFs={'hip/flex', 'ankle/plantar'}",
+        "passiveDOFs={}",
+        "subcase='Act'",
+        "fixMomentArms=0.05",
+        "mult_controls=true",
+        ]
+
+    mrsmod_tasks = trial.add_task_cycles(
+        osp.TaskMRSDeGrooteMod,
+        'actHfAp_fixed_multControls',
+        'ExoTopology: multiarticular device optimization',
+        mrsflags,
+        setup_tasks=mrs_setup_tasks
+        )
+
+    trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
+        setup_tasks=mrsmod_tasks)

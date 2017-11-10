@@ -187,3 +187,6 @@ def add_to_study(study):
 
     ## walk2: muscle redundancy solver Exotopology mods
     helpers.generate_exotopology_tasks(walk2_trial, mrs_setup_tasks)
+
+    # walk2: variations on hip flexion, ankle plantarflexion tasks
+    helpers.generate_HfAp_tasks(walk2_trial, mrs_setup_tasks)

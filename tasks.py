@@ -127,10 +127,12 @@ class TaskMRSDeGrooteModPost(osp.TaskMRSDeGrooteModPost):
         self.mrs_results_output_fpath = \
             mrsmod_task.mrs_setup_task.results_output_fpath
 
-        self.add_action([self.results_output_fpath],
-                        [os.path.join(self.path,
-                            'device_moment_arms.pdf')],
-                        self.plot_device_moment_arms)
+        if (('scaledID' not in self.mrsmod_task.mod_name) and
+            ('exp' not in self.mrsmod_task.mod_name)):
+            self.add_action([self.results_output_fpath],
+                            [os.path.join(self.path,
+                                'device_moment_arms.pdf')],
+                            self.plot_device_moment_arms)
 
         if 'pass' in self.mrsmod_task.mod_name:
             self.add_action([self.results_output_fpath],
@@ -440,7 +442,7 @@ class TaskMRSDeGrooteModPost(osp.TaskMRSDeGrooteModPost):
 
 class TaskAggregateMetabolicRate(osp.StudyTask):
     """Aggregate metabolic rate without and with mods across all subjects and
-    the provide contditions."""
+    gait cycles for each condition provided."""
     REGISTRY = []
     def __init__(self, study, mods=None, subjects=None, 
             conditions=['walk2'], suffix=''):
@@ -572,6 +574,105 @@ class TaskAggregateMetabolicRate(osp.StudyTask):
         with file(target[0], 'w') as f:
             f.write('# columns contain muscle metabolic rates normalized by '
                     'subject mass (W/kg)\n')
+            df.to_csv(f)
+
+class TaskAggregatePeakPower(osp.StudyTask):
+    """Aggregate peak instantaneous power for assisted cases across all 
+    subjects and gait cycles for each provided condition."""
+    REGISTRY = []
+    def __init__(self, study, mods=None, subjects=None, 
+            conditions=['walk2'], suffix=''):
+        super(TaskAggregatePeakPower, self).__init__(study)
+        self.suffix_path = suffix
+        if suffix != '':
+            suffix = '_' + suffix
+        self.name = 'aggregate_peak_power%s' % suffix
+        self.power_fpath = os.path.join(self.suffix_path, 
+            'peak_power%s.csv' % suffix)
+        self.doc = 'Aggregate peak instantaneous positive power normalized by '
+        'subject mass.'
+        self.study = study
+
+        cycles = list()
+        self.multiindex_tuples = list()
+
+        if mods == None:
+            mods = study.mod_names
+        if subjects == None:
+            subjects = [s.num for s in study.subjects]
+
+        for subject in study.subjects:
+            if not subject.num in subjects: continue
+            for cond_name in conditions:
+                cond = subject.get_condition(cond_name)
+                if not cond: continue
+                # We know there is only one overground trial, but perhaps it
+                # has not yet been added for this subject.
+                assert len(cond.trials) <= 1
+                if len(cond.trials) == 1:
+                    trial = cond.trials[0]
+                    for cycle in trial.cycles:
+                        cycles.append(cycle)
+                        self.multiindex_tuples.append((
+                            cycle.subject.name,
+                            cycle.condition.name,
+                            # This must be the full ID, not just the cycle
+                            # name, because 'cycle01' from subject 1 has
+                            # nothing to do with 'cycle01' from subject 2
+                            # (whereas the 'walk2' condition for subject 1 is
+                            # related to 'walk2' for subject 2).
+                            cycle.id))
+
+        self.mod_for_file_dep = list()
+        self.subject_masses = list()
+        deps = list()
+
+        for mod in mods:
+            for cycle in cycles:
+                self.mod_for_file_dep.append(mod)
+                self.subject_masses.append(cycle.subject.mass)
+                deps.append(os.path.join(
+                        self.study.config['results_path'],
+                        'mrsmod_%s' % mod, cycle.trial.rel_path, 'mrs', 
+                        cycle.name, '%s_%s_mrs.mat' % (study.name, cycle.id))
+                    )
+        self.add_action(deps,
+                [os.path.join(study.config['analysis_path'], self.power_fpath)], 
+                self.aggregate_peak_power)
+
+    def aggregate_peak_power(self, file_dep, target):
+        import numpy as np
+        from collections import OrderedDict
+        peak_norm_power = OrderedDict()
+        for ifile, fpath in enumerate(file_dep):
+            time = util.hdf2pandas(fpath, 'DatStore/time')
+            df_Texo = util.hdf2pandas(fpath, 'DatStore/ExoTorques_Act')
+            df_q = util.hdf2pandas(fpath, 'DatStore/q_exp')
+            
+            # Get angular velocities
+            df_dq = df_q.diff().divide(time.diff(), axis='index')
+
+            # Compute power
+            df_P = df_Texo.multiply(df_dq, axis='index')
+
+            # Get max value and normalize to subject mass
+            Pmax_norm = df_P.max().max() / self.subject_masses[ifile]
+
+            this_mod = self.mod_for_file_dep[ifile]
+            if not this_mod in peak_norm_power:
+                peak_norm_power[this_mod] = list()
+            peak_norm_power[this_mod].append(Pmax_norm)
+
+        index = pd.MultiIndex.from_tuples(self.multiindex_tuples,
+                names=['subject', 'condition', 'cycle'])
+        df = pd.DataFrame(peak_norm_power, index=index)
+
+        target_dir = os.path.dirname(target[0])
+        if not os.path.exists(target_dir):
+            os.makedirs(target_dir)
+        with file(target[0], 'w') as f:
+            f.write('peak instantaneous positive power normalized by subject '
+                'mass (W/kg)\n')
             df.to_csv(f)
 
 class TaskPlotDeviceMetabolicRankings(osp.StudyTask):
@@ -761,7 +862,7 @@ class TaskAggregateMomentsMod(osp.StudyTask):
     REGISTRY = []
     def __init__(self, study, mod_name, conditions=['walk2'], subjects=None):
         super(TaskAggregateMomentsMod, self).__init__(study)
-        self.name = 'aggregate_mod_results_%s' % mod_name
+        self.name = 'aggregate_mod_moments_%s' % mod_name
         self.doc = 'Aggregate actuator moments into a data file.'
         self.mod_name = mod_name
         self.conditions = conditions
@@ -915,13 +1016,20 @@ class TaskAggregateMuscleActivity(osp.StudyTask):
         self.name = 'aggregate_muscle_activity%s' % suffix
         self.doc = 'Aggregate muscle activity into a data file.'
 
+        # Create new lists so original doesn't get changed by reference
         if mods == None:
-            mods = study.mod_names
+            mods = list(study.mod_names)
+        else:
+            mods = list(mods)
 
+        # Prefix all mods so directory is correct
         mods_fpath = ['mrsmod_' + mod for mod in mods]
-        mods.insert(0, 'experiment')
-        mods_fpath.insert(0, 'experiments')
 
+        # Add experiment case is no mods specified. Otherwise, assumed that
+        # experiment case already has a task for it
+        if mods == None:
+            mods.insert(0, 'experiment')
+            mods_fpath.insert(0, 'experiments')
 
         if subjects == None:
             subjects = [s.num for s in study.subjects]
@@ -944,7 +1052,8 @@ class TaskAggregateMuscleActivity(osp.StudyTask):
                             self.cycles[cond_name].append(cycle)
 
                             # Results MAT file paths
-                            fpath = os.path.join(trial.results_exp_path, 'mrs',
+                            fpath = os.path.join(study.config['results_path'], 
+                                mod_fpath, subject.name, cond.name, 'mrs', 
                                 cycle.name, '%s_%s_mrs.mat' % (study.name,
                                 cycle.id))
                             deps.append(fpath)
@@ -1110,9 +1219,12 @@ class TaskCopyEMGData(osp.StudyTask):
 class TaskPlotMuscleActivity(osp.StudyTask):
     REGISTRY = []
     def __init__(self, study, agg_task, conditions=['walk2'], mod=None, 
-            subjects=None):
+            subjects=None, suffix=''):
         super(TaskPlotMuscleActivity, self).__init__(study)
-        self.name = 'plot_muscle_activity'
+        self.suffix_path = suffix
+        if suffix != '':
+            suffix = '_' + suffix
+        self.name = 'plot_muscle_activity%s' % suffix
         self.doc = 'Plot muscle activity for experiment and mod tasks'
 
         for icond, agg_target in enumerate(agg_task.targets):
@@ -1120,10 +1232,10 @@ class TaskPlotMuscleActivity(osp.StudyTask):
             # the same order.
             # self.agg_target = agg_target
             # self.actions += [self.plot_muscle_activity]
-            print agg_target
-            # self.add_action([],[],
-            #                 self.plot_muscle_activity,
-            #                 agg_target)
+            # print agg_target
+            self.add_action([],[],
+                            self.plot_muscle_activity,
+                            agg_target)
 
     def plot_muscle_activity(self, file_dep, target, agg_target):
 
