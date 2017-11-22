@@ -34,6 +34,7 @@ import osimpipeline as osp
 
 # This line is necessary for registering the tasks with python-doit.
 from osimpipeline.vital_tasks import *
+from osimpipeline.mrs_tasks import *
 
 # Custom tasks for this project.
 from tasks import *
@@ -107,26 +108,33 @@ study.add_task(TaskCopyEMGData)
 
 study.add_task(TaskCopyGenericModelFilesToResults)
 
+# Validation
+# ----------
+study.add_task(TaskValidateAgainstEMG)
+
 # Analysis
 # --------
+HfAp_agg_tasks = list()
+actHfAp_agg_task = list()
 
 # Global results
-study.add_task(TaskAggregatePeakPower)
-study.add_task(TaskAggregateMetabolicRate)
-study.add_task(TaskPlotDeviceMetabolicRankings)
 study.add_task(TaskAggregateMomentsExperiment)
 study.add_task(TaskPlotMoments, study.tasks[-1])
 for mod in study.mod_names:
     study.add_task(TaskAggregateMomentsMod, mod)
+    if mod == 'actHfAp':
+        actHfAp_agg_task.append(study.tasks[-1])
+
     study.add_task(TaskPlotMoments, study.tasks[-1], mod=mod)
 study.add_task(TaskAggregateMuscleActivity)
 study.add_task(TaskPlotMuscleActivity, study.tasks[-1])
+study.add_task(TaskAggregateTorqueParameters)
+study.add_task(TaskPlotTorqueParameters)
 
 # Active devices only, fixed direction, free value moment arms
 if ((study.momentArms == 'fixed_direction') and 
     (study.whichDevices == 'active_only') and
     (study.fixMomentArms == '[]')):
-
     actXxXxXx = get_exotopology_flags(momentArms='fixed_direction', 
         whichDevices='active_only')[0]
     study.add_task(TaskAggregatePeakPower, mods=actXxXxXx, suffix='actXxXxXx')
@@ -134,6 +142,31 @@ if ((study.momentArms == 'fixed_direction') and
         suffix='actXxXxXx')
     study.add_task(TaskPlotDeviceMetabolicRankings, mods=actXxXxXx, 
         suffix='actXxXxXx')
+    study.add_task(TaskPlotMetabolicReductionVsPeakPower, mods=actXxXxXx, 
+        suffix='actXxXxXx')
+    actXxXxXx_multControls = get_mult_controls_mod_names(study)
+    study.add_task(TaskAggregatePeakPower, mods=actXxXxXx_multControls, 
+        suffix='actXxXxXx_multControls')
+    study.add_task(TaskAggregateMetabolicRate, mods=actXxXxXx_multControls, 
+        suffix='actXxXxXx_multControls')
+    study.add_task(TaskPlotDeviceMetabolicRankings, mods=actXxXxXx_multControls, 
+        suffix='actXxXxXx_multControls')
+    study.add_task(TaskPlotMetabolicReductionVsPeakPower, 
+        mods=actXxXxXx_multControls, 
+        suffix='actXxXxXx_multControls')
+    study.add_task(TaskAggregateMuscleActivity, mods=actXxXxXx_multControls, 
+        suffix='actXxXxXx_multControls')
+    study.add_task(TaskPlotMuscleActivity, study.tasks[-1], 
+        suffix='actXxXxXx_multControls')
+    study.add_task(TaskAggregateTorqueParameters, mods=actXxXxXx_multControls, 
+        suffix='actXxXxXx_multControls')
+    study.add_task(TaskPlotTorqueParameters, mods=actXxXxXx_multControls, 
+        suffix='actXxXxXx_multControls')
+    for mod in actXxXxXx_multControls:
+        study.add_task(TaskAggregateMomentsMod, mod)
+        if (mod == 'actHfAp_multControls'):
+            HfAp_agg_tasks.append(study.tasks[-1])
+        study.add_task(TaskPlotMoments, study.tasks[-1], mod=mod)
 
 # Active devices only, fixed direction, fixed value moment arms 
 if ((study.momentArms == 'fixed_direction') and 
@@ -147,6 +180,8 @@ if ((study.momentArms == 'fixed_direction') and
         suffix='actXxXxXx_fixed')
     study.add_task(TaskPlotDeviceMetabolicRankings, mods=actXxXxXx_fixed, 
         suffix='actXxXxXx_fixed')
+    study.add_task(TaskPlotMetabolicReductionVsPeakPower, mods=actXxXxXx_fixed, 
+         suffix='actXxXxXx_fixed')
 
 # # All active, free moment arm device solutions
 if ((study.momentArms == 'free') and 
@@ -158,13 +193,14 @@ if ((study.momentArms == 'free') and
     study.add_task(TaskAggregateMetabolicRate, mods=actXXX, suffix='actXXX')
     study.add_task(TaskPlotDeviceMetabolicRankings, mods=actXXX, 
         suffix='actXXX')
+    study.add_task(TaskPlotMetabolicReductionVsPeakPower, mods=actXXX, 
+        suffix='actXXX')
 
 # Active hip-ankle device, with every passive device combination 
 # (free moment arms) 
 if ((study.momentArms == 'free') and 
     (study.whichDevices == 'all') and
     (study.fixMomentArms == '[]')):
-    
     actHA_passXXX = get_exotopology_flags(momentArms='free', 
         whichDevices='passive_only', act_combo='actHA')[0]
     study.add_task(TaskAggregatePeakPower, mods=actHA_passXXX, 
@@ -175,23 +211,28 @@ if ((study.momentArms == 'free') and
         suffix='actHA_passXXX')
 
 # All variations on hip flexion, ankle plantarflexion strategies
-mods_HfAp1 = ['actHfAp', 'actHfAp_scaledID', 'actHfAp_fixed', 
-              'actHfAp_multControls','actHfAp_fixed_multControls', 
-              'actHfAp_exp']
+mods_HfAp1 = ['actHfAp', 'actHfAp_scaledID', 'actHfAp_fixed', 'actHfAp_exp']
 study.add_task(TaskAggregatePeakPower, mods=mods_HfAp1, suffix='actHfAp')
 study.add_task(TaskAggregateMetabolicRate, mods=mods_HfAp1, suffix='actHfAp')
 study.add_task(TaskPlotDeviceMetabolicRankings, mods=mods_HfAp1, 
     suffix='actHfAp')
-mods_HfAp2 = ['actHfAp_scaledID', 'actHfAp_multControls',
-             'actHfAp_fixed_multControls', 'actHfAp_exp']
+study.add_task(TaskPlotMetabolicReductionVsPeakPower, mods=mods_HfAp1, 
+        suffix='actHfAp')
+mods_HfAp2 = ['actHfAp_scaledID', 'actHfAp_exp']
 study.add_task(TaskAggregateMuscleActivity, mods=mods_HfAp2, suffix='actHfAp')
 study.add_task(TaskPlotMuscleActivity, study.tasks[-1], suffix='actHfAp')
+study.add_task(TaskAggregateTorqueParameters, mods=mods_HfAp2, suffix='actHfAp')
+study.add_task(TaskPlotTorqueParameters, mods=mods_HfAp2, suffix='actHfAp')
 for mod in mods_HfAp2:
         study.add_task(TaskAggregateMomentsMod, mod)
+        # Ordering for WCB plot
+        if (mod == 'actHfAp_scaledID'):
+            HfAp_agg_tasks.append(study.tasks[-1])
+            HfAp_agg_tasks.append(actHfAp_agg_task[0])
+
         study.add_task(TaskPlotMoments, study.tasks[-1], mod=mod)
+study.add_task(TaskPlotHipFlexAnklePFMomentComparison, 
+    mod_agg_tasks=HfAp_agg_tasks)
 
 
 
-# Validation
-# ----------
-study.add_task(TaskValidateAgainstEMG)

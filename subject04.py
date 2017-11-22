@@ -146,18 +146,19 @@ def add_to_study(study):
     ## walk2 condition
     walk2 = subject.add_condition('walk2', metadata={'walking_speed': 1.25})
 
-    ## GRF gait landmarks
+    # GRF gait landmarks
     # walk2_trial = walk2.add_trial(1, omit_trial_dir=True)
     # walk2_trial.add_task(tasks.TaskUpdateGroundReactionColumnLabels)
-    # walk2_trial.add_task(osp.TaskGRFGaitLandmarks, threshold=10)
+    # walk2_trial.add_task(osp.TaskGRFGaitLandmarks, threshold=25)
 
     # Trial to use
     gait_events = dict()
-    gait_events['right_strikes'] = [0.262, 1.401, 4.733, 5.869]
-    gait_events['left_toeoffs'] = [0.431, 1.579, 4.893]
-    gait_events['left_strikes'] = [0.804, 1.946, 5.311]
-    gait_events['right_toeoffs'] = [0.980, 2.117, 5.490]
-    gait_events['stride_times'] = [1.401-0.262, 2.511-1.401, 5.869-4.733]
+    pad = 0.0
+    gait_events['right_strikes'] = [0.269+pad, 1.408+pad, 4.741+pad, 5.902+pad]
+    gait_events['left_toeoffs'] = [0.419-pad, 1.565-pad, 4.882-pad]
+    gait_events['left_strikes'] = [0.813+pad, 1.952+pad, 5.317+pad]
+    gait_events['right_toeoffs'] = [0.966-pad, 2.104-pad, 5.479-pad]
+    gait_events['stride_times'] = [1.408-0.269, 2.519-1.408, 5.902-4.741]
     walk2_trial = walk2.add_trial(1,
             gait_events=gait_events,
             omit_trial_dir=True,
@@ -187,3 +188,6 @@ def add_to_study(study):
 
     # walk2: variations on hip flexion, ankle plantarflexion tasks
     helpers.generate_HfAp_tasks(walk2_trial, mrs_setup_tasks)
+
+    # walk2: resolve device optimization problems w/ individual controls
+    helpers.generate_mult_controls_tasks(walk2_trial, mrs_setup_tasks)

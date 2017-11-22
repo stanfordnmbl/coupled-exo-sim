@@ -358,34 +358,58 @@ def generate_HfAp_tasks(trial, mrs_setup_tasks):
         "mult_controls=true",
         ]
 
-    mrsmod_tasks = trial.add_task_cycles(
-        osp.TaskMRSDeGrooteMod,
-        'actHfAp_multControls',
-        'ExoTopology: multiarticular device optimization',
-        mrsflags,
-        setup_tasks=mrs_setup_tasks
-        )
+def get_mult_controls_mod_names(study):
 
-    trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
-        setup_tasks=mrsmod_tasks)
+    device_dofs, fixMomentArms = get_device_info(
+        momentArms=study.momentArms,
+        whichDevices=study.whichDevices,
+        fixMomentArms=study.fixMomentArms)[:2]
 
-    # multiple control solution, hip-ankle strategy, fixed moment arms
-    mrsflags = [
-        "study='SoftExosuitDesign/Topology'",
-        "activeDOFs={'hip/flex', 'ankle/plantar'}",
-        "passiveDOFs={}",
-        "subcase='Act'",
-        "fixMomentArms=0.05",
-        "mult_controls=true",
-        ]
+    mod_names, activeDOFs_list, passiveDOFs_list, subcases = \
+        get_exotopology_flags(momentArms=study.momentArms,
+        whichDevices=study.whichDevices,
+        fixMomentArms=study.fixMomentArms)
 
-    mrsmod_tasks = trial.add_task_cycles(
-        osp.TaskMRSDeGrooteMod,
-        'actHfAp_fixed_multControls',
-        'ExoTopology: multiarticular device optimization',
-        mrsflags,
-        setup_tasks=mrs_setup_tasks
-        )
+    mult_controls_mod_names = list()
 
-    trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
-        setup_tasks=mrsmod_tasks)
+    for mod_name in mod_names:
+        mult_controls_mod_names.append('%s_multControls' % mod_name)
+
+    return mult_controls_mod_names
+
+def generate_mult_controls_tasks(trial, mrs_setup_tasks):
+
+    device_dofs, fixMomentArms = get_device_info(
+        momentArms=trial.study.momentArms,
+        whichDevices=trial.study.whichDevices,
+        fixMomentArms=trial.study.fixMomentArms)[:2]
+
+    mod_names, activeDOFs_list, passiveDOFs_list, subcases = \
+        get_exotopology_flags(momentArms=trial.study.momentArms,
+        whichDevices=trial.study.whichDevices,
+        fixMomentArms=trial.study.fixMomentArms)
+
+    for mod_name, activeDOFs, passiveDOFs, subcase in  \
+        itertools.izip(mod_names, 
+            activeDOFs_list, passiveDOFs_list, subcases):
+
+        mrsflags = [
+            "study='SoftExosuitDesign/Topology'",
+            "activeDOFs={%s}" % activeDOFs,
+            "passiveDOFs={}",
+            "subcase='%s'" % subcase,
+            "fixMomentArms=[]",
+            "mult_controls=true",
+            ]
+
+        mrsmod_tasks = trial.add_task_cycles(
+            osp.TaskMRSDeGrooteMod,
+            '%s_multControls' % mod_name,
+            'ExoTopology: multiarticular device optimization',
+            mrsflags,
+            setup_tasks=mrs_setup_tasks
+            )
+
+        mrsmod_post_tasks = trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
+            setup_tasks=mrsmod_tasks)
+
