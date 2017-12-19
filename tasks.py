@@ -1611,19 +1611,15 @@ class TaskPlotHipFlexAnklePFMomentComparison(osp.StudyTask):
             subax.yaxis.set_tick_params(labelsize=y_labelsize)
             return subax
 
-        from matplotlib import cm
-        start = 0.0
-        stop = 1.0
-        number_of_lines = len(self.mod_agg_tasks)
-        cm_subsection = np.linspace(start, stop, number_of_lines) 
-
-        cm_colors = [ cm.brg(x) for x in cm_subsection ]
-
-        fig = pl.figure(figsize=(6*1.2, 2.50*1.2))
+        fig = pl.figure(figsize=(6*1.2, 2.50*1.4))
         dof_names = ['hip_flexion_r', 'ankle_angle_r']
         ylabels = ['hip extension', 'ankle plantarflexion']
         for idof, dof_name in enumerate(dof_names):
-            ax = fig.add_subplot(1, len(dof_names), idof + 1)
+
+            from matplotlib import gridspec
+            gs = gridspec.GridSpec(2, 2, height_ratios=[6, 1]) 
+            ax = fig.add_subplot(gs[idof])
+            # ax = fig.add_subplot(2, len(dof_names), idof + 1)
             ax.axhline(color='k', linewidth=0.5, zorder=0)
 
             for iagg, agg_task in enumerate(self.mod_agg_tasks):
@@ -1642,20 +1638,25 @@ class TaskPlotHipFlexAnklePFMomentComparison(osp.StudyTask):
                     pgc = df_mean.index
 
 
-                    def plot(column_key, act_name, color):
+                    def plot(column_key, act_name):
                         if column_key in df_mean.columns:
                             y_mean = -df_mean[column_key]
                             y_std = -df_std[column_key]
                             if act_name == 'net':
-                                ax.plot(pgc, y_mean, color=color,
+                                ax.plot(pgc, y_mean, color='black',
                                     label='net joint moment')
                             else:
                                 if act_name == 'actHfAp_scaledID':
-                                    label = 'experiment'
+                                    label = 'original underactuated (8.0% avg. metabolic ' \
+                                            'reduction)'
+                                    color = 'blue'
                                 elif act_name == 'actHfAp': 
-                                    label = 'one control, DOF gains'
+                                    label = 'optimized underactuated ' \
+                                            '(16.4%)'
+                                    color = 'red'
                                 elif act_name == 'actHfAp_multControls':
-                                    label = 'independent DOF controls'
+                                    label = 'independently actuated (39.7%)'
+                                    color = colors['green']
 
                                 ax.plot(pgc, y_mean, color=color,
                                         label=label,
@@ -1664,45 +1665,25 @@ class TaskPlotHipFlexAnklePFMomentComparison(osp.StudyTask):
                                     color=color, alpha=0.3)
 
                     if iagg == 0:
-                        plot((dof_name, 'net'), 'net', 'black')
+                        plot((dof_name, 'net'), 'net')
 
 
                     column_key = (dof_name, 'active')
-                    plot(column_key, agg_task.mod_name, cm_colors[iagg])
-
-            if dof_name == 'ankle_angle_r':
-                ax.legend(frameon=False, fontsize=6)
+                    plot(column_key, agg_task.mod_name)
 
             if dof_name == 'hip_flexion_r':
-                # ax.legend(frameon=False, fontsize=7, loc=(0.07, 0.76))
-                import matplotlib.pyplot as plt
-                from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-                inset_axes = inset_axes(ax,
-                    width="50%", # width = 30% of parent_bbox
-                    height=0.9, # height : 1 inch
-                    loc=1)
+                handles, labels = ax.get_legend_handles_labels()
+                ax.legend(handles[1:], labels[1:], frameon=False, fontsize=7, 
+                          loc="best",
+                          title="assistive device torques")
+                ax.get_legend().get_title().set_fontsize(8)
+                # ax.get_legend().get_title().set_fontstyle('italic')
+                ax.get_legend().get_title().set_fontweight('bold')
 
-                columns = ['avg. \n metabolic cost \n reduction (%)', 
-                           'avg. norm. \n peak positive \n power (W/kg)']
-                rows = ['experiment', 'one control, \n DOF gains',
-                        'independent \n controls']
-                cell_text = []
-                cell_text.append(['7.97', '3.07'])
-                cell_text.append(['16.38', '3.10'])
-                cell_text.append(['39.68', '3.22'])
+                ax.text(16, 0.5, 'net joint moment', fontweight='bold')
 
-                the_table = plt.table(cellText=cell_text, rowLabels=rows, 
-                                  colLabels=columns, cellLoc='center',
-                                  rowLoc='center', fontsize=12, loc=1)
-                props = the_table.properties()
-                cells = props['child_artists']
-                for cell in cells:
-                    cell.set_height(0.25)
-                cells[0].set_height(0.4)
-                cells[1].set_height(0.4)
-                plt.xticks([])
-                plt.yticks([])
-                plt.box(on=False)
+            if dof_name == 'ankle_angle_r':
+                ax.text(55, 1.6, 'net joint moment', fontweight='bold')
 
 
             ax.set_xlim(0, 100)
@@ -1716,9 +1697,15 @@ class TaskPlotHipFlexAnklePFMomentComparison(osp.StudyTask):
             ax.xaxis.set_ticks_position('bottom')
             ax.yaxis.set_ticks_position('left')
 
+        # from matplotlib import rc
+        # rc('text', usetex=True)
+        txt = r'$\bf{Fig. 1:}$ Device torques for each assistive strategy ' \
+               '(dashed colored lines) and net joint moments (solid black ' \
+               'lines).'
+        fig.text(.5, .1, txt, ha='center')
         fig.tight_layout()
         fig.savefig(self.actHfAp_pdf_path)
-        fig.savefig(self.actHfAp_png_path, dpi=150)
+        fig.savefig(self.actHfAp_png_path, ppi=150)
         pl.close(fig)
 
 class TaskAggregateTorqueParameters(osp.StudyTask):

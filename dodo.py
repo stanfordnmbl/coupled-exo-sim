@@ -115,7 +115,6 @@ study.add_task(TaskValidateAgainstEMG)
 # Analysis
 # --------
 HfAp_agg_tasks = list()
-actHfAp_agg_task = list()
 
 # Global results
 study.add_task(TaskAggregateMomentsExperiment)
@@ -123,7 +122,7 @@ study.add_task(TaskPlotMoments, study.tasks[-1])
 for mod in study.mod_names:
     study.add_task(TaskAggregateMomentsMod, mod)
     if mod == 'actHfAp':
-        actHfAp_agg_task.append(study.tasks[-1])
+        HfAp_agg_tasks.insert(1, study.tasks[-1])
 
     study.add_task(TaskPlotMoments, study.tasks[-1], mod=mod)
 study.add_task(TaskAggregateMuscleActivity)
@@ -165,7 +164,7 @@ if ((study.momentArms == 'fixed_direction') and
     for mod in actXxXxXx_multControls:
         study.add_task(TaskAggregateMomentsMod, mod)
         if (mod == 'actHfAp_multControls'):
-            HfAp_agg_tasks.append(study.tasks[-1])
+            HfAp_agg_tasks.insert(2, study.tasks[-1])
         study.add_task(TaskPlotMoments, study.tasks[-1], mod=mod)
 
 # Active devices only, fixed direction, fixed value moment arms 
@@ -227,8 +226,7 @@ for mod in mods_HfAp2:
         study.add_task(TaskAggregateMomentsMod, mod)
         # Ordering for WCB plot
         if (mod == 'actHfAp_scaledID'):
-            HfAp_agg_tasks.append(study.tasks[-1])
-            HfAp_agg_tasks.append(actHfAp_agg_task[0])
+            HfAp_agg_tasks.insert(0, study.tasks[-1])
 
         study.add_task(TaskPlotMoments, study.tasks[-1], mod=mod)
 study.add_task(TaskPlotHipFlexAnklePFMomentComparison, 
