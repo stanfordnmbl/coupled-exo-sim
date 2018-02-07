@@ -38,7 +38,7 @@ def get_device_info(momentArms='free', whichDevices='all', fixMomentArms='[]'):
     return device_dofs, fixMomentArms, act_dofs_ref, pass_dofs_ref
 
 def get_exotopology_flags(momentArms='free', whichDevices='all', 
-    fixMomentArms='[]', act_combo=None, pass_combo=None,):
+    fixMomentArms='[]', act_combo=None, pass_combo=None):
 
     device_dofs, fixMomentArms, act_dofs_ref, pass_dofs_ref = get_device_info(
         momentArms=momentArms, whichDevices=whichDevices, 

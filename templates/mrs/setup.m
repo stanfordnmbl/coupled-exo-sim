@@ -27,7 +27,7 @@ Misc.MuscleNames_Input = {};
 %    'tib_ant_r' ...
 %    };
 % Misc.Mesh_Frequency = 20;
-Misc.costfun = 'Default';
+Misc.costfun = '@COST@';
 Misc.tendonStiffnessCoeff = 35;
 Misc.muscleStrainModifiers.vas_int_r = 3.0/0.6;
 % Misc.tendonStiffnessModifiers.vas_int_r = 0.5;

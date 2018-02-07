@@ -491,6 +491,10 @@ class TaskAggregateMetabolicRate(osp.StudyTask):
         self.suffix_path = suffix
         if suffix != '':
             suffix = '_' + suffix
+        self.costdir = ''
+        if not (study.costFunction == 'Default'):
+            suffix += '_%s' % study.costFunction
+            self.costdir = study.costFunction
         self.name = 'aggregate_metabolic_rate%s' % suffix
         self.whole_fpath = os.path.join(self.suffix_path, 
             'whole_body_metabolic_rates%s.csv' % suffix)
@@ -519,7 +523,7 @@ class TaskAggregateMetabolicRate(osp.StudyTask):
             self.mod_for_file_dep.append('experiment')
             deps.append(os.path.join(
                     cycle.trial.results_exp_path, 'mrs', cycle.name,
-                    '%s_%s_mrs.mat' % (study.name, cycle.id))
+                    self.costdir, '%s_%s_mrs.mat' % (study.name, cycle.id))
                     )
 
         # Prepare for processing simulations of mods.
@@ -529,7 +533,8 @@ class TaskAggregateMetabolicRate(osp.StudyTask):
                 deps.append(os.path.join(
                         self.study.config['results_path'],
                         'mrsmod_%s' % mod, cycle.trial.rel_path, 'mrs', 
-                        cycle.name, '%s_%s_mrs.mat' % (study.name, cycle.id))
+                        cycle.name, self.costdir,
+                        '%s_%s_mrs.mat' % (study.name, cycle.id))
                     )
 
         self.add_action(deps,
@@ -602,6 +607,10 @@ class TaskAggregatePeakPower(osp.StudyTask):
         self.suffix_path = suffix
         if suffix != '':
             suffix = '_' + suffix
+        self.costdir = ''
+        if not (study.costFunction == 'Default'):
+            suffix += '_%s' % study.costFunction
+            self.costdir = study.costFunction
         self.name = 'aggregate_peak_power%s' % suffix
         self.power_fpath = os.path.join(self.suffix_path, 
             'peak_power%s.csv' % suffix)
@@ -629,7 +638,8 @@ class TaskAggregatePeakPower(osp.StudyTask):
                 deps.append(os.path.join(
                         self.study.config['results_path'],
                         'mrsmod_%s' % mod, cycle.trial.rel_path, 'mrs', 
-                        cycle.name, '%s_%s_mrs.mat' % (study.name, cycle.id))
+                        cycle.name, self.costdir,
+                        '%s_%s_mrs.mat' % (study.name, cycle.id))
                     )
         self.add_action(deps,
                 [os.path.join(study.config['analysis_path'], self.power_fpath)], 
@@ -695,6 +705,10 @@ class TaskPlotMetabolicReductionVsPeakPower(osp.StudyTask):
         self.suffix_path = suffix
         if suffix != '':
             suffix = '_' + suffix
+        self.costdir = ''
+        if not (study.costFunction == 'Default'):
+            suffix += '_%s' % study.costFunction
+            self.costdir = study.costFunction
         self.name = 'plot_metabolics_versus_power%s' % suffix
         self.mods = mods if mods else self.study.mod_names
         self.mods_act1DOF = list()
@@ -836,6 +850,10 @@ class TaskPlotDeviceMetabolicRankings(osp.StudyTask):
         self.suffix_path = suffix
         if suffix != '':
             suffix = '_' + suffix
+        self.costdir = ''
+        if not (study.costFunction == 'Default'):
+            suffix += '_%s' % study.costFunction
+            self.costdir = study.costFunction 
         self.name = 'plot_device_metabolic_rankings%s' % suffix
         self.mods = mods
 
@@ -978,6 +996,12 @@ class TaskAggregateMomentsExperiment(osp.StudyTask):
         self.name = 'aggregate_experiment_moments'
         self.doc = 'Aggregate no-mod actuator moments into a data file.'
 
+        suffix = ''
+        self.costdir = ''
+        if not (study.costFunction == 'Default'):
+            suffix += '_%s' % study.costFunction
+            self.costdir = study.costFunction 
+
         if subjects == None:
             subjects = [s.num for s in study.subjects]
 
@@ -999,15 +1023,15 @@ class TaskAggregateMomentsExperiment(osp.StudyTask):
 
                         # Moment file paths
                         fpath = os.path.join(trial.results_exp_path, 'mrs',
-                            cycle.name, '%s_%s_mrs_moments.csv' % (study.name,
-                            cycle.id))
+                            cycle.name, self.costdir,
+                             '%s_%s_mrs_moments.csv' % (study.name, cycle.id))
                         deps.append(fpath)
 
             self.add_action(deps,
                     [
                         os.path.join(study.config['results_path'], 
                             'experiments',
-                            'experiment_%s_moments.csv' % cond_name),
+                            'experiment_%s_moments%s.csv' % (cond_name, suffix)),
                         ],
                     aggregate_moments, cond_name, self.cycles)
 
@@ -1019,6 +1043,12 @@ class TaskAggregateMomentsMod(osp.StudyTask):
         self.doc = 'Aggregate actuator moments into a data file.'
         self.mod_name = mod_name
         self.conditions = conditions
+
+        suffix = ''
+        self.costdir = ''
+        if not (study.costFunction == 'Default'):
+            suffix += '_%s' % study.costFunction
+            self.costdir = study.costFunction 
 
         if subjects == None:
             subjects = [s.num for s in study.subjects]
@@ -1041,7 +1071,7 @@ class TaskAggregateMomentsMod(osp.StudyTask):
                         deps.append(os.path.join(
                                 self.study.config['results_path'],
                                 'mrsmod_%s' % mod_name,
-                                trial.rel_path, 'mrs', cycle.name,
+                                trial.rel_path, 'mrs', cycle.name, self.costdir,
                                 '%s_%s_mrs_moments.csv' % (study.name,
                                     cycle.id))
                                 )
@@ -1049,8 +1079,8 @@ class TaskAggregateMomentsMod(osp.StudyTask):
             self.add_action(deps,
                     [os.path.join(study.config['results_path'], 
                         'mrsmod_%s' % mod_name,
-                        'mod_%s_%s_moments.csv' % (mod_name,
-                            cond_name)),
+                        'mod_%s_%s_moments%s.csv' % (mod_name,
+                            cond_name, suffix)),
                         ],
                     aggregate_moments, cond_name, self.cycles)
 
@@ -1166,6 +1196,10 @@ class TaskAggregateMuscleActivity(osp.StudyTask):
         self.suffix_path = suffix
         if suffix != '':
             suffix = '_' + suffix
+        self.costdir = ''
+        if not (study.costFunction == 'Default'):
+            suffix += '_%s' % study.costFunction
+            self.costdir = study.costFunction 
         self.name = 'aggregate_muscle_activity%s' % suffix
         self.doc = 'Aggregate muscle activity into a data file.'
 
@@ -1208,18 +1242,18 @@ class TaskAggregateMuscleActivity(osp.StudyTask):
                             # Results MAT file paths
                             fpath = os.path.join(study.config['results_path'], 
                                 mod_fpath, subject.name, cond.name, 'mrs', 
-                                cycle.name, '%s_%s_mrs.mat' % (study.name,
-                                cycle.id))
+                                cycle.name, self.costdir,
+                                '%s_%s_mrs.mat' % (study.name, cycle.id))
                             deps.append(fpath)
 
                 self.add_action(deps,
                         [
                             os.path.join(study.config['results_path'], 
-                                mod_fpath,'%s_%s_excitations.csv' % (
-                                    mod, cond_name)),
+                                mod_fpath,'%s_%s_excitations%s.csv' % (
+                                    mod, cond_name, suffix)),
                             os.path.join(study.config['results_path'], 
-                                mod_fpath,'%s_%s_activations.csv' % (
-                                    mod, cond_name)),
+                                mod_fpath,'%s_%s_activations%s.csv' % (
+                                    mod, cond_name, suffix)),
                             ],
                         self.aggregate_muscle_activity, cond_name, self.cycles)
 
@@ -1378,6 +1412,10 @@ class TaskPlotMuscleActivity(osp.StudyTask):
         self.suffix_path = suffix
         if suffix != '':
             suffix = '_' + suffix
+        self.costdir = ''
+        if not (study.costFunction == 'Default'):
+            suffix += '_%s' % study.costFunction
+            self.costdir = study.costFunction 
         self.name = 'plot_muscle_activity%s' % suffix
         self.doc = 'Plot muscle activity for experiment and mod tasks'
 
@@ -1446,7 +1484,12 @@ class TaskValidateAgainstEMG(osp.StudyTask):
     REGISTRY = []
     def __init__(self, study, conditions=['walk2']):
         super(TaskValidateAgainstEMG, self).__init__(study)
-        self.name = 'validate_against_emg'
+        suffix = ''
+        self.costdir = ''
+        if not (study.costFunction == 'Default'):
+            suffix += '_%s' % study.costFunction
+            self.costdir = study.costFunction 
+        self.name = 'validate_against_emg%s' % suffix
         self.doc = 'Plot muscle activity from simulation against EMG data.'
         self.subjects = ['subject01', 'subject02', 'subject04', 'subject18',
                          'subject19']
@@ -1458,12 +1501,12 @@ class TaskValidateAgainstEMG(osp.StudyTask):
                 emg_fpath = os.path.join(self.results_path, 'experiments',
                     subject, cond, 'expdata', 'processed_emg.csv')
                 exc_fpath = os.path.join(self.results_path, 'experiments',
-                    'experiment_%s_excitations.csv' % cond)
+                    'experiment_%s_excitations%s.csv' % (cond, suffix))
                 act_fpath = os.path.join(self.results_path, 'experiments',
-                    'experiment_%s_activations.csv' % cond)
+                    'experiment_%s_activations%s.csv' % (cond, suffix))
 
                 val_fname = os.path.join(self.validate_path, 
-                    '%s_%s_emg_validation' % (subject, cond))
+                    '%s_%s_emg_validation%s' % (subject, cond, suffix))
                 
                 self.add_action([emg_fpath, exc_fpath, act_fpath],
                                 [val_fname],
@@ -1716,6 +1759,10 @@ class TaskAggregateTorqueParameters(osp.StudyTask):
         self.suffix_path = suffix
         if suffix != '':
             suffix = '_' + suffix
+        self.costdir = ''
+        if not (study.costFunction == 'Default'):
+            suffix += '_%s' % study.costFunction
+            self.costdir = study.costFunction 
         self.name = 'aggregate_torque_parameters%s' % suffix
         self.doc = 'Aggregate parameters for active control signals.'
 
@@ -1730,11 +1777,11 @@ class TaskAggregateTorqueParameters(osp.StudyTask):
                 file_dep = os.path.join(
                         self.study.config['results_path'],
                         'mrsmod_%s' % mod,  
-                        'mod_%s_%s_moments.csv' % (mod, cond_name))
+                        'mod_%s_%s_moments%s.csv' % (mod, cond_name, suffix))
                 target = os.path.join(
                         self.study.config['results_path'], 
                         'mrsmod_%s' % mod, 
-                        'mod_%s_%s_parameters.csv' % (mod, cond_name))
+                        'mod_%s_%s_parameters%s.csv' % (mod, cond_name, suffix))
                 self.add_action([file_dep],
                                 [target], 
                                 self.aggregate_torque_parameters,
@@ -1836,6 +1883,10 @@ class TaskPlotTorqueParameters(osp.StudyTask):
         self.suffix_path = suffix
         if suffix != '':
             suffix = '_' + suffix
+        self.costdir = ''
+        if not (study.costFunction == 'Default'):
+            suffix += '_%s' % study.costFunction
+            self.costdir = study.costFunction 
         self.name = 'plot_torque_parameters%s' % suffix
         self.doc = 'Aggregate parameters for active control signals.'
 
@@ -1851,15 +1902,15 @@ class TaskPlotTorqueParameters(osp.StudyTask):
                 file_dep = os.path.join(
                         self.study.config['results_path'],
                         'mrsmod_%s' % mod,  
-                        'mod_%s_%s_parameters.csv' % (mod, cond_name))
+                        'mod_%s_%s_parameters%s.csv' % (mod, cond_name, suffix))
                 target0 = os.path.join(
                         self.study.config['results_path'], 
                         'mrsmod_%s' % mod, 
-                        'mod_%s_%s_parameters.pdf' % (mod, cond_name))
+                        'mod_%s_%s_parameters%s.pdf' % (mod, cond_name, suffix))
                 target1 = os.path.join(
                         self.study.config['results_path'], 
                         'mrsmod_%s' % mod, 
-                        'mod_%s_%s_parameters.png' % (mod, cond_name))
+                        'mod_%s_%s_parameters%s.png' % (mod, cond_name, suffix))
 
                 self.add_action([file_dep],
                                 [target0, target1], 

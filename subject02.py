@@ -183,7 +183,8 @@ def add_to_study(study):
     # walk2_trial.add_task_cycles(osp.TaskSOPost, setup_tasks=so_setup_tasks)
 
     # # walk2: muscle redundancy solver
-    mrs_setup_tasks = walk2_trial.add_task_cycles(osp.TaskMRSDeGrooteSetup)
+    mrs_setup_tasks = walk2_trial.add_task_cycles(osp.TaskMRSDeGrooteSetup,
+        cost=study.costFunction)
     walk2_trial.add_task_cycles(osp.TaskMRSDeGroote, 
         setup_tasks=mrs_setup_tasks)
     walk2_trial.add_task_cycles(osp.TaskMRSDeGrootePost,
@@ -193,7 +194,7 @@ def add_to_study(study):
     helpers.generate_exotopology_tasks(walk2_trial, mrs_setup_tasks)
 
     # walk2: variations on hip flexion, ankle plantarflexion tasks
-    helpers.generate_HfAp_tasks(walk2_trial, mrs_setup_tasks)
+    # helpers.generate_HfAp_tasks(walk2_trial, mrs_setup_tasks)
 
     # walk2: resolve device optimization problems w/ individual controls
-    helpers.generate_mult_controls_tasks(walk2_trial, mrs_setup_tasks)
+    # helpers.generate_mult_controls_tasks(walk2_trial, mrs_setup_tasks)
