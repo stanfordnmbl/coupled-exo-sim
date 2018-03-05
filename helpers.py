@@ -308,8 +308,8 @@ def generate_exotopology_tasks(trial, mrs_setup_tasks):
             setup_tasks=mrs_setup_tasks
             )
 
-        trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
-            setup_tasks=mrsmod_tasks)
+        # trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
+        #     setup_tasks=mrsmod_tasks)
 
 def generate_HfAp_tasks(trial, mrs_setup_tasks):
 

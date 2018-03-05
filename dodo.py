@@ -58,7 +58,8 @@ study.error_markers = error_markers
 # List of modified muscle redundancy problems used in the study
 study.momentArms = 'fixed_direction'
 study.whichDevices = 'active_only'
-study.fixMomentArms = '0.05'
+# A number in the range [0 1] or just empty brackets '[]'
+study.fixMomentArms = '[]'
 # 'Default' (activations squared) or 'Met'. Default is assumed if omitted.
 study.costFunction = 'Met' 
 study.mod_names = get_exotopology_flags(momentArms=study.momentArms, 
@@ -129,8 +130,8 @@ for mod in study.mod_names:
     study.add_task(TaskPlotMoments, study.tasks[-1], mod=mod)
 study.add_task(TaskAggregateMuscleActivity)
 study.add_task(TaskPlotMuscleActivity, study.tasks[-1])
-study.add_task(TaskAggregateTorqueParameters)
-study.add_task(TaskPlotTorqueParameters)
+# study.add_task(TaskAggregateTorqueParameters)
+# study.add_task(TaskPlotTorqueParameters)
 
 # Active devices only, fixed direction, free value moment arms
 if ((study.momentArms == 'fixed_direction') and 
@@ -145,29 +146,29 @@ if ((study.momentArms == 'fixed_direction') and
         suffix='actXxXxXx')
     study.add_task(TaskPlotMetabolicReductionVsPeakPower, mods=actXxXxXx, 
         suffix='actXxXxXx')
-    # actXxXxXx_multControls = get_mult_controls_mod_names(study)
-    # study.add_task(TaskAggregatePeakPower, mods=actXxXxXx_multControls, 
-    #     suffix='actXxXxXx_multControls')
-    # study.add_task(TaskAggregateMetabolicRate, mods=actXxXxXx_multControls, 
-    #     suffix='actXxXxXx_multControls')
-    # study.add_task(TaskPlotDeviceMetabolicRankings, mods=actXxXxXx_multControls, 
-    #     suffix='actXxXxXx_multControls')
-    # study.add_task(TaskPlotMetabolicReductionVsPeakPower, 
-    #     mods=actXxXxXx_multControls, 
-    #     suffix='actXxXxXx_multControls')
-    # study.add_task(TaskAggregateMuscleActivity, mods=actXxXxXx_multControls, 
-    #     suffix='actXxXxXx_multControls')
-    # study.add_task(TaskPlotMuscleActivity, study.tasks[-1], 
-    #     suffix='actXxXxXx_multControls')
+    actXxXxXx_multControls = get_mult_controls_mod_names(study)
+    study.add_task(TaskAggregatePeakPower, mods=actXxXxXx_multControls, 
+        suffix='actXxXxXx_multControls')
+    study.add_task(TaskAggregateMetabolicRate, mods=actXxXxXx_multControls, 
+        suffix='actXxXxXx_multControls')
+    study.add_task(TaskPlotDeviceMetabolicRankings, mods=actXxXxXx_multControls, 
+        suffix='actXxXxXx_multControls')
+    study.add_task(TaskPlotMetabolicReductionVsPeakPower, 
+        mods=actXxXxXx_multControls, 
+        suffix='actXxXxXx_multControls')
+    study.add_task(TaskAggregateMuscleActivity, mods=actXxXxXx_multControls, 
+        suffix='actXxXxXx_multControls')
+    study.add_task(TaskPlotMuscleActivity, study.tasks[-1], 
+        suffix='actXxXxXx_multControls')
     # study.add_task(TaskAggregateTorqueParameters, mods=actXxXxXx_multControls, 
     #     suffix='actXxXxXx_multControls')
     # study.add_task(TaskPlotTorqueParameters, mods=actXxXxXx_multControls, 
     #     suffix='actXxXxXx_multControls')
-    # for mod in actXxXxXx_multControls:
-    #     study.add_task(TaskAggregateMomentsMod, mod)
-    #     # if (mod == 'actHfAp_multControls'):
-    #         # HfAp_agg_tasks.insert(2, study.tasks[-1])
-    #     study.add_task(TaskPlotMoments, study.tasks[-1], mod=mod)
+    for mod in actXxXxXx_multControls:
+        study.add_task(TaskAggregateMomentsMod, mod)
+        # if (mod == 'actHfAp_multControls'):
+            # HfAp_agg_tasks.insert(2, study.tasks[-1])
+        study.add_task(TaskPlotMoments, study.tasks[-1], mod=mod)
 
 # Active devices only, fixed direction, fixed value moment arms 
 if ((study.momentArms == 'fixed_direction') and 

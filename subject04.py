@@ -191,4 +191,4 @@ def add_to_study(study):
     # helpers.generate_HfAp_tasks(walk2_trial, mrs_setup_tasks)
 
     # walk2: resolve device optimization problems w/ individual controls
-    # helpers.generate_mult_controls_tasks(walk2_trial, mrs_setup_tasks)
+    helpers.generate_mult_controls_tasks(walk2_trial, mrs_setup_tasks)
