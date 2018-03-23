@@ -126,6 +126,8 @@ def add_to_study(study):
             #scale_max_isometric_force=True,
             )
 
+    subject.add_task(tasks.TaskScaleMuscleMaxIsometricForce)
+
     ## walk2 condition
     walk2 = subject.add_condition('walk2', metadata={'walking_speed': 1.25})
     

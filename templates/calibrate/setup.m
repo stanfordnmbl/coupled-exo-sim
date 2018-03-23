@@ -27,17 +27,21 @@ Misc.MuscleNames_Input = {};
 %    'tib_ant_r' ...
 %    };
 % Misc.Mesh_Frequency = 20;
-Misc.costfun = '@COST@';
+Misc.study = 'ParameterCalibration';
+muscsToCal = {'med_gas_r','glut_max2_r','rect_fem_r','semimem_r','soleus_r','tib_ant_r','vas_int_r'};
+for m = 1:length(muscsToCal)
+   Misc.parameterCalibrationTerms.(muscsToCal{m}).costs = {'emg'};
+   Misc.parameterCalibrationTerms.(muscsToCal{m}).params = {'optimal_fiber_length'};
+end
+Misc.parameterCalibrationData.emg = '@EMG_PATH@';
 Misc.tendonStiffnessCoeff = 35;
-Misc.muscleStrainModifiers.vas_int_r = 3.0/0.6;
-% Misc.tendonStiffnessModifiers.vas_int_r = 0.5;
-% Misc.muscleShapeFactModifiers.vas_int_r = 6/4;
-Misc.muscleStrainModifiers.rect_fem_r = 3.0/0.6;
+Misc.muscleStrainModifiers.vas_int_r = 1.0/0.6;
+Misc.muscleStrainModifiers.rect_fem_r = 1.0/0.6;
 Misc.tendonStiffnessModifiers.soleus_r = 0.5;
 Misc.tendonStiffnessModifiers.med_gas_r = 0.5;
 tic;
 [Time,MExcitation,MActivation,RActivation,TForcetilde,TForce,MuscleNames,MuscleData,OptInfo,DatStore] = ...
-SolveMuscleRedundancy_FtildeState_actdyn(...
+SolveMuscleRedundancy_FtildeState(...
     '@MODEL@', ... % model_path
     '@IK_SOLUTION@', ... % IK_path
     '@ID_SOLUTION@', ... % ID_path
@@ -46,5 +50,5 @@ SolveMuscleRedundancy_FtildeState_actdyn(...
     Misc);
     % TODO '', ... % ID_path
 toc
-save @STUDYNAME@_@NAME@_mrs.mat -v7.3
+save @STUDYNAME@_@NAME@_calibrate.mat -v7.3
 

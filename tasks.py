@@ -119,6 +119,85 @@ class TaskUpdateGroundReactionColumnLabels(osp.TrialTask):
         data.dtype.names = new_names
         ndarray2storage(data, target[0])
 
+class TaskScaleMuscleMaxIsometricForce(osp.SubjectTask):
+    REGISTRY = []
+    def __init__(self, subject):
+        super(TaskScaleMuscleMaxIsometricForce, self).__init__(subject)
+        self.subject = subject
+        self.name = '%s_scale_max_force' % self.subject.name
+        self.doc = 'Scale subject muscle Fmax parameters from Handsfield2014'
+        self.generic_model_fpath = self.study.source_generic_model_fpath
+        self.subject_model_fpath = os.path.join(self.subject.results_exp_path, 
+            '%s.osim' % self.subject.name)
+        self.scaled_param_model_fpath = os.path.join(
+            self.subject.results_exp_path, 
+            '%s_scaled_Fmax.osim' % self.subject.name)
+
+        self.add_action([self.generic_model_fpath, self.subject_model_fpath],
+                        [self.scaled_param_model_fpath],
+                        self.scale_model_parameters)
+
+    def scale_model_parameters(self, file_dep, target):
+        """From Handsfields 2014 figure 5a and from Apoorva's muscle properties
+       spreadsheet.
+       
+       v: volume fraction
+       V: total volume
+       F: max isometric force
+       l: optimal fiber length
+
+       F = v * sigma * V / l
+
+       *_g: generic model.
+       *_s: subject-specific model.
+
+       F_g = v * sigma * V_g / l_g
+       F_s = v * sigma * V_s / l_s
+
+       F_s = (F_g * l_g / V_g) * V_s / l_s
+           = F_g * (V_s / V_g) * (l_g / l_s)
+
+        Author: Chris Dembia 
+        Borrowed from mrsdeviceopt GitHub repo:
+        https://github.com/chrisdembia/mrsdeviceopt          
+       """
+
+        print("Muscle force scaling: "
+              "total muscle volume and optimal fiber length.")
+
+        def total_muscle_volume_regression(mass):
+            return 91.0*mass + 588.0
+
+        generic_TMV = total_muscle_volume_regression(75.337)
+        subj_TMV = total_muscle_volume_regression(self.subject.mass)
+
+        import opensim as osm
+        generic_model = osm.Model(file_dep[0])
+        subj_model = osm.Model(file_dep[1])
+
+        generic_mset = generic_model.getMuscles()
+        subj_mset = subj_model.getMuscles()
+
+        for im in range(subj_mset.getSize()):
+            muscle_name = subj_mset.get(im).getName()
+
+            generic_muscle = generic_mset.get(muscle_name)
+            subj_muscle = subj_mset.get(muscle_name)
+
+            generic_OFL = generic_muscle.get_optimal_fiber_length()
+            subj_OFL = subj_muscle.get_optimal_fiber_length()
+
+            scale_factor = (subj_TMV / generic_TMV) * (generic_OFL / subj_OFL)
+            print("Scaling '%s' muscle force by %f." % (muscle_name,
+                scale_factor))
+
+            generic_force = generic_muscle.getMaxIsometricForce()
+            scaled_force = generic_force * scale_factor
+            subj_muscle.setMaxIsometricForce(scaled_force)
+
+        subj_model.printToXML(target[0])
+
+
 class TaskMRSDeGrooteModPost(osp.TaskMRSDeGrooteModPost):
     REGISTRY = []
     def __init__(self, trial, mrsmod_task, **kwargs):
