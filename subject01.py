@@ -127,6 +127,7 @@ def add_to_study(study):
             )
 
     subject.add_task(tasks.TaskScaleMuscleMaxIsometricForce)
+    subject.scaled_model_fpath = '%s_scaled_Fmax.osim' % subject.name
 
     ## walk2 condition
     walk2 = subject.add_condition('walk2', metadata={'walking_speed': 1.25})
@@ -163,6 +164,10 @@ def add_to_study(study):
     # so_setup_tasks = walk2_trial.add_task_cycles(osp.TaskSOSetup, ik_setup_task)
     # walk2_trial.add_task_cycles(osp.TaskSO, setup_tasks=so_setup_tasks)
     # walk2_trial.add_task_cycles(osp.TaskSOPost, setup_tasks=so_setup_tasks)
+
+    # walk2: parameter calibration
+    calibrate_setup_tasks = walk2_trial.add_task_cycles(
+        osp.TaskCalibrateParametersSetup)
 
     # walk2: muscle redundancy solver
     mrs_setup_tasks = walk2_trial.add_task_cycles(osp.TaskMRSDeGrooteSetup,

@@ -81,6 +81,16 @@ class TaskCopyMotionCaptureData(osp.TaskCopyMotionCaptureData):
                             'expdata','ground_reaction_orig.mot').replace(
                                 '\\','\\\\') 
                         )) 
+                # EMG
+                regex_replacements.append(
+                    (
+                        os.path.join(subject.name, 'Results', datastr,
+                            '%s%02i_gait_controls.sto' % (datastr, arg[0])
+                            ).replace('\\','\\\\'),
+                        os.path.join('experiments', subject.name,
+                            condname, 'expdata', 'emg.sto').replace('\\','\\\\'
+                            )
+                        ))
             regex_replacements.append((
                         os.path.join(subject.name, 'Data',
                             'Static_FJC.trc').replace('\\','\\\\'),
@@ -196,6 +206,123 @@ class TaskScaleMuscleMaxIsometricForce(osp.SubjectTask):
             subj_muscle.setMaxIsometricForce(scaled_force)
 
         subj_model.printToXML(target[0])
+
+class TaskCalibrateParametersSetup(osp.SetupTask):
+    REGISTRY = []
+    def __init__(self, trial, **kwargs):
+        super(TaskCalibrateParametersSetup, self).__init__('calibrate', trial,
+            **kwargs)
+        self.doc = "Create a setup file for a parameter calibration tool."
+        self.kinematics_file = os.path.join(self.trial.results_exp_path, 'ik',
+                '%s_%s_ik_solution.mot' % (self.study.name, self.trial.id))
+        self.rel_kinematics_file = os.path.relpath(self.kinematics_file,
+                self.path)
+        self.kinetics_file = os.path.join(self.trial.results_exp_path,
+                'id', 'results', '%s_%s_id_solution.sto' % (self.study.name,
+                    self.trial.id))
+        self.rel_kinetics_file = os.path.relpath(self.kinetics_file,
+                self.path)
+        self.emg_file = os.path.join(self.trial.results_exp_path, 
+                'expdata', 'emg.sto')
+        self.rel_emg_file = os.path.relpath(self.emg_file, self.path)
+        self.results_setup_fpath = os.path.join(self.path, 'setup.m')
+        self.results_output_fpath = os.path.join(self.path, 
+            '%s_%s_calibrate.mat' % (self.study.name, self.tricycle.id))
+
+        # Fill out setup.m template and write to results directory
+        self.create_setup_action()
+
+    def create_setup_action(self): 
+        self.add_action(
+                    ['templates/%s/setup.m' % self.tool],
+                    [self.results_setup_fpath],
+                    self.fill_setup_template,  
+                    init_time=self.init_time,
+                    final_time=self.final_time,      
+                    )
+
+
+    def fill_setup_template(self, file_dep, target,
+                            init_time=None, final_time=None):
+        with open(file_dep[0]) as ft:
+            content = ft.read()
+            content = content.replace('@STUDYNAME@', self.study.name)
+            content = content.replace('@NAME@', self.tricycle.id)
+            # TODO should this be an RRA-adjusted model?
+            content = content.replace('@MODEL@', os.path.relpath(
+                self.subject.scaled_model_fpath, self.path))
+            content = content.replace('@REL_PATH_TO_TOOL@', os.path.relpath(
+                self.study.config['optctrlmuscle_path'], self.path))
+            # TODO provide slop on either side? start before the cycle_start?
+            # end after the cycle_end?
+            content = content.replace('@INIT_TIME@',
+                    '%.5f' % init_time)
+            content = content.replace('@FINAL_TIME@', 
+                    '%.5f' % final_time)
+            content = content.replace('@IK_SOLUTION@',
+                    self.rel_kinematics_file)
+            content = content.replace('@ID_SOLUTION@',
+                    self.rel_kinetics_file)
+            content = content.replace('@SIDE@',
+                    self.trial.primary_leg[0])
+            content = content.replace('@EMG_PATH@', self.rel_emg_file)
+
+        with open(target[0], 'w') as f:
+            f.write(content)
+
+class TaskCalibrateParameters(task.ToolTask):
+    REGISTRY = []
+    def __init__(self, trial, calibrate_setup_task, **kwargs):
+        super(TaskCalibrateParameters, self).__init__(calibrate_setup_task, 
+            trial, opensim=False, **kwargs)
+        self.doc = "Run parameter calibration tool via DeGroote MRS solver."
+        self.results_setup_fpath = calibrate_setup_task.results_setup_fpath
+        self.results_output_fpath = calibrate_setup_task.results_output_fpath
+
+        self.file_dep += [
+                self.results_setup_fpath,
+                self.subject_scaled_model_fpath,
+                calibrate_setup_task.kinematics_file,
+                calibrate_setup_task.kinetics_file,
+                calibrate_setup_task.emg_file,
+                ]
+
+        self.actions += [
+                self.run_parameter_calibration,
+                self.delete_muscle_analysis_results,
+                ]
+
+        self.targets += [
+                self.results_output_fpath
+                ]
+
+    def run_parameter_calibration(self):
+        with util.working_directory(self.path):
+            # On Mac, CmdAction was causing MATLAB ipopt with GPOPS output to
+            # not display properly.
+
+            status = os.system('matlab %s -logfile matlab_log.txt -wait -r "try, '
+                    "run('%s'); disp('SUCCESS'); "
+                    'catch ME; disp(getReport(ME)); exit(2), end, exit(0);"\n'
+                    % ('-automation' if os.name == 'nt' else '',
+                        self.results_setup_fpath)
+                    )
+            if status != 0:
+                print 'Non-zero exist status. Continuing....'
+                # raise Exception('Non-zero exit status.')
+
+            # Wait until output mat file exists to finish the action
+            while True:
+                time.sleep(3.0)
+
+                mat_exists = os.path.isfile(self.results_output_fpath)
+                if mat_exists:
+                    break
+
+    def delete_muscle_analysis_results(self):
+        if os.path.exists(os.path.join(self.path, 'results')):
+            import shutil
+            shutil.rmtree(os.path.join(self.path, 'results'))
 
 
 class TaskMRSDeGrooteModPost(osp.TaskMRSDeGrooteModPost):
@@ -1401,14 +1528,14 @@ class TaskCopyEMGData(osp.StudyTask):
         self.data_path = self.study.config['motion_capture_data_path']  
         self.results_path = self.study.config['results_path']
         self.cond_map = {
-                    'walk1' : 'walk100',
-                    'walk2' : 'walk125',
-                    'walk3' : 'walk150',
-                    'walk4' : 'walk175',
-                    'run1' : 'run200',
-                    'run2' : 'run300',
-                    'run3' : 'run400',
-                    'run4' : 'run500'
+                    'walk1' : 'Walk_100',
+                    'walk2' : 'Walk_125',
+                    'walk3' : 'Walk_150',
+                    'walk4' : 'Walk_175',
+                    'run1' : 'Run_200',
+                    'run2' : 'Run_300',
+                    'run3' : 'Run_400',
+                    'run4' : 'Run_500'
                     }
 
         self.actions += [self.copy_emg_data]
