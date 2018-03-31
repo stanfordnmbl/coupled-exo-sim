@@ -127,7 +127,8 @@ def add_to_study(study):
             )
 
     subject.add_task(tasks.TaskScaleMuscleMaxIsometricForce)
-    subject.scaled_model_fpath = '%s_scaled_Fmax.osim' % subject.name
+    subject.scaled_model_fpath = os.path.join(subject.results_exp_path,
+        '%s_scaled_Fmax.osim' % subject.name)
 
     ## walk2 condition
     walk2 = subject.add_condition('walk2', metadata={'walking_speed': 1.25})
@@ -138,10 +139,10 @@ def add_to_study(study):
 
     # Trial to use
     gait_events = dict()
-    gait_events['right_strikes'] = [1.179, 2.282, 3.361, 4.488]
-    gait_events['left_toeooffs'] = [1.368, 2.471, 3.578]
-    gait_events['left_strikes'] = [1.728, 2.836, 3.943]
-    gait_events['right_toeoffs'] = [1.934, 3.033, 4.137]
+    gait_events['right_strikes'] = [1.179, 2.282, 3.361, 4.488] #, 5.572]
+    gait_events['left_toeooffs'] = [1.368, 2.471, 3.578] #, 4.680]
+    gait_events['left_strikes'] = [1.728, 2.836, 3.943] #, 5.051]
+    gait_events['right_toeoffs'] = [1.934, 3.033, 4.137] #, 5.252]
 
     walk2_trial = walk2.add_trial(1,
             gait_events=gait_events,
@@ -167,7 +168,11 @@ def add_to_study(study):
 
     # walk2: parameter calibration
     calibrate_setup_tasks = walk2_trial.add_task_cycles(
-        osp.TaskCalibrateParametersSetup)
+        tasks.TaskCalibrateParametersSetup)
+    walk2_trial.add_task_cycles(tasks.TaskCalibrateParameters, 
+        setup_tasks=calibrate_setup_tasks)
+    walk2_trial.add_task_cycles(tasks.TaskCalibrateParametersPost,
+        setup_tasks=calibrate_setup_tasks)
 
     # walk2: muscle redundancy solver
     mrs_setup_tasks = walk2_trial.add_task_cycles(osp.TaskMRSDeGrooteSetup,
@@ -185,3 +190,79 @@ def add_to_study(study):
 
     # walk2: resolve device optimization problems w/ individual controls
     helpers.generate_mult_controls_tasks(walk2_trial, mrs_setup_tasks)
+
+    ## walk1 condition
+    walk1 = subject.add_condition('walk1', metadata={'walking_speed': 1.00})
+
+    # GRF gait landmarks
+    # walk1_trial_temp = walk1.add_trial(99, omit_trial_dir=True)
+    # walk1_trial_temp.add_task(osp.TaskGRFGaitLandmarks)
+    # walk1_trial_temp.add_task(tasks.TaskUpdateGroundReactionColumnLabels)
+    
+    gait_events = dict()
+    gait_events['right_strikes'] = [0.487, 1.757, 3.020, 4.302]
+    gait_events['left_toeooffs'] = [0.716, 1.980, 3.256]
+    gait_events['left_strikes'] = [1.125, 2.393, 3.663]
+    gait_events['right_toeoffs'] = [1.351, 2.624, 3.886]
+
+    walk1_trial = walk1.add_trial(1,
+            gait_events=gait_events,
+            omit_trial_dir=True,
+            )
+
+    # walk1: inverse kinematics
+    ik_setup_task = walk1_trial.add_task(osp.TaskIKSetup)
+    walk1_trial.add_task(osp.TaskIK, ik_setup_task)
+    walk1_trial.add_task(osp.TaskIKPost, ik_setup_task, 
+        error_markers=study.error_markers)
+
+    # walk1: inverse dynamics
+    id_setup_task = walk1_trial.add_task(osp.TaskIDSetup, ik_setup_task)
+    walk1_trial.add_task(osp.TaskID, id_setup_task)
+    walk1_trial.add_task(osp.TaskIDPost, id_setup_task)
+
+    # walk1: parameter calibration
+    calibrate_setup_tasks = walk1_trial.add_task_cycles(
+        tasks.TaskCalibrateParametersSetup)
+    walk1_trial.add_task_cycles(tasks.TaskCalibrateParameters, 
+        setup_tasks=calibrate_setup_tasks)
+    walk1_trial.add_task_cycles(tasks.TaskCalibrateParametersPost,
+        setup_tasks=calibrate_setup_tasks)
+
+    ## walk3 condition
+    walk3 = subject.add_condition('walk3', metadata={'walking_speed': 1.50})
+
+    # GRF gait landmarks
+    # walk3_trial_temp = walk3.add_trial(99, omit_trial_dir=True)
+    # walk3_trial_temp.add_task(osp.TaskGRFGaitLandmarks)
+    # walk3_trial_temp.add_task(tasks.TaskUpdateGroundReactionColumnLabels)
+    
+    gait_events = dict()
+    gait_events['right_strikes'] = [0.911, 1.934, 2.934, 3.978]
+    gait_events['left_toeooffs'] = [1.081, 2.089, 3.110]
+    gait_events['left_strikes'] = [1.428, 2.440, 3.436]
+    gait_events['right_toeoffs'] = [1.598, 2.614, 3.638]
+
+    walk3_trial = walk3.add_trial(1,
+            gait_events=gait_events,
+            omit_trial_dir=True,
+            )
+
+    # walk3: inverse kinematics
+    ik_setup_task = walk3_trial.add_task(osp.TaskIKSetup)
+    walk3_trial.add_task(osp.TaskIK, ik_setup_task)
+    walk3_trial.add_task(osp.TaskIKPost, ik_setup_task, 
+        error_markers=study.error_markers)
+
+    # walk3: inverse dynamics
+    id_setup_task = walk3_trial.add_task(osp.TaskIDSetup, ik_setup_task)
+    walk3_trial.add_task(osp.TaskID, id_setup_task)
+    walk3_trial.add_task(osp.TaskIDPost, id_setup_task)
+
+    # walk3: parameter calibration
+    calibrate_setup_tasks = walk3_trial.add_task_cycles(
+        tasks.TaskCalibrateParametersSetup)
+    walk3_trial.add_task_cycles(tasks.TaskCalibrateParameters, 
+        setup_tasks=calibrate_setup_tasks)
+    walk3_trial.add_task_cycles(tasks.TaskCalibrateParametersPost,
+        setup_tasks=calibrate_setup_tasks)

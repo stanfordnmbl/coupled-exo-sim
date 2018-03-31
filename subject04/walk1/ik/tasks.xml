@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<OpenSimDocument Version="30000">
+    <IKTaskSet name="exotopology_subject04_walk1">
+        <objects>
+            
+            <!-- Upper-body markers (anatomical and tracking). -->
+            <IKMarkerTask name="CLAV">
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
+            <IKMarkerTask name="C7">
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
+
+            <IKMarkerTask name="LACR">
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
+            <IKMarkerTask name="RACR">
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
+
+            <IKMarkerTask name="LLEL">
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
+            <IKMarkerTask name="RLEL">
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
+            <IKMarkerTask name="LMEL">
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
+            <IKMarkerTask name="RMEL">
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
+
+            <IKMarkerTask name="LUA1">
+                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+            <IKMarkerTask name="RUA1">
+                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+            <IKMarkerTask name="LUA2">
+                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+            <IKMarkerTask name="RUA2">
+                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+            <IKMarkerTask name="LUA3">
+                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+            <IKMarkerTask name="RUA3">
+                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+            <IKMarkerTask name="LFAsuperior">
+                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+            <IKMarkerTask name="RFAsuperior">
+                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+            <IKMarkerTask name="LFAradius">
+                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+            <IKMarkerTask name="RFAradius">
+                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+            <IKMarkerTask name="LFAulna">
+                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+            <IKMarkerTask name="RFAulna">
+                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+
+            <!-- Lower-body anatomical markers -->
+            <IKMarkerTask name="LASI">
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
+            <IKMarkerTask name="RASI">
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
+            <IKMarkerTask name="LPSI">
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
+            <IKMarkerTask name="RPSI">
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
+            <IKMarkerTask name="LCAL">
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
+            <IKMarkerTask name="RCAL">
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
+            <IKMarkerTask name="LTOE">
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
+            <IKMarkerTask name="RTOE">
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
+            <IKMarkerTask name="LMT5">
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
+            <IKMarkerTask name="RMT5">
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
+
+            <!-- Lower-body tracking markers. -->
+            <IKMarkerTask name="LTH1">
+                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+            <IKMarkerTask name="RTH1">
+                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+            <IKMarkerTask name="LTH2">
+                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+            <IKMarkerTask name="RTH2">
+                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+            <IKMarkerTask name="LTH3">
+                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+            <IKMarkerTask name="RTH3">
+                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+            <IKMarkerTask name="LTB1">
+                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+            <IKMarkerTask name="RTB1">
+                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+            <IKMarkerTask name="LTB2">
+                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+            <IKMarkerTask name="RTB2">
+                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+            <IKMarkerTask name="LTB3">
+                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+            <IKMarkerTask name="RTB3">
+                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+        </objects>
+        <groups />
+    </IKTaskSet>
+</OpenSimDocument>

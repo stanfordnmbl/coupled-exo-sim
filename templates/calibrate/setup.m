@@ -28,15 +28,15 @@ Misc.MuscleNames_Input = {};
 %    };
 % Misc.Mesh_Frequency = 20;
 Misc.study = 'ParameterCalibration';
-muscsToCal = {'med_gas_r','glut_max2_r','rect_fem_r','semimem_r','soleus_r','tib_ant_r','vas_int_r'};
+muscsToCal = {'med_gas_r','glut_max2_r','rect_fem_r','semimem_r','soleus_r','tib_ant_r','vas_int_r','psoas_r'};
 for m = 1:length(muscsToCal)
    Misc.parameterCalibrationTerms.(muscsToCal{m}).costs = {'emg'};
    Misc.parameterCalibrationTerms.(muscsToCal{m}).params = {'optimal_fiber_length'};
 end
+Misc.parameterCalibrationTerms.psoas_r.bounds.excitation.lower = 0;
+Misc.parameterCalibrationTerms.psoas_r.bounds.excitation.upper = 0.3;
 Misc.parameterCalibrationData.emg = '@EMG_PATH@';
 Misc.tendonStiffnessCoeff = 35;
-Misc.muscleStrainModifiers.vas_int_r = 1.0/0.6;
-Misc.muscleStrainModifiers.rect_fem_r = 1.0/0.6;
 Misc.tendonStiffnessModifiers.soleus_r = 0.5;
 Misc.tendonStiffnessModifiers.med_gas_r = 0.5;
 tic;

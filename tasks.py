@@ -32,25 +32,42 @@ class TaskCopyMotionCaptureData(osp.TaskCopyMotionCaptureData):
         walk175=None, run200=None, run300=None, run400=None, run500=None):
         regex_replacements = list()
 
+        default_args = dict()
+        default_args['walk100'] = walk100
+        default_args['walk125'] = walk125
+        default_args['walk150'] = walk150
+        default_args['walk175'] = walk175
+        default_args['run200'] = run200
+        default_args['run300'] = run300
+        default_args['run400'] = run400
+        default_args['run500'] = run500
+
         for subject in study.subjects:
 
-            cond_args = subject.cond_args
-            if 'walk100' in cond_args:
-                walk100 = cond_args['walk100']
-            if 'walk125' in cond_args:
-                walk125 = cond_args['walk125']
-            if 'walk150' in cond_args:
-                walk150 = cond_args['walk150']
-            if 'walk175' in cond_args:
-                walk175 = cond_args['walk175']
-            if 'run200' in cond_args:
-                run200 = cond_args['run200']
-            if 'run300' in cond_args:
-                run300 = cond_args['run300']
-            if 'run400' in cond_args:
-                run400 = cond_args['run400']
-            if 'run500' in cond_args:
-                run500 = cond_args['run500']
+            cond_args = subject.cond_args            
+            if 'walk100' in cond_args: walk100 = cond_args['walk100']
+            else: walk100 = default_args['walk100']
+
+            if 'walk125' in cond_args: walk125 = cond_args['walk125']
+            else: walk125 = default_args['walk125']
+
+            if 'walk150' in cond_args: walk150 = cond_args['walk150']
+            else: walk150 = default_args['walk150']
+
+            if 'walk175' in cond_args: walk175 = cond_args['walk175']
+            else: walk175 = default_args['walk175']
+
+            if 'run200' in cond_args: run200 = cond_args['run200']
+            else: run200 = default_args['run200']
+
+            if 'run300' in cond_args: run300 = cond_args['run300']
+            else: run300 = default_args['run300']
+
+            if 'run400' in cond_args: run400 = cond_args['run400']
+            else: run400 = default_args['run400']
+
+            if 'run500' in cond_args: run500 = cond_args['run500']
+            else: run500 = default_args['run500']
 
             for datastr, condname, arg in [
                     ('Walk_100', 'walk1', walk100),
@@ -88,8 +105,8 @@ class TaskCopyMotionCaptureData(osp.TaskCopyMotionCaptureData):
                             '%s%02i_gait_controls.sto' % (datastr, arg[0])
                             ).replace('\\','\\\\'),
                         os.path.join('experiments', subject.name,
-                            condname, 'expdata', 'emg.sto').replace('\\','\\\\'
-                            )
+                            condname, 'expdata', 'emg_with_headers.sto'
+                            ).replace('\\','\\\\')
                         ))
             regex_replacements.append((
                         os.path.join(subject.name, 'Data',
@@ -101,6 +118,45 @@ class TaskCopyMotionCaptureData(osp.TaskCopyMotionCaptureData):
 
         super(TaskCopyMotionCaptureData, self).__init__(study,
                 regex_replacements)
+
+class TaskRemoveEMGFileHeaders(osp.StudyTask):
+    REGISTRY = []
+    def __init__(self, study):
+        super(TaskRemoveEMGFileHeaders, self).__init__(study)
+        self.name = '%s_remove_emg_file_headers' % study.name
+        self.doc = 'Remove headers from EMG data files.'
+
+        file_dep = list()
+        target = list()
+        for subject in study.subjects:
+            for cond in subject.conditions:
+                if cond.name == 'static': continue
+                file_dep += [os.path.join(subject.results_exp_path,
+                    cond.name, 'expdata', 'emg_with_headers.sto')]
+                target += [os.path.join(subject.results_exp_path,
+                    cond.name, 'expdata', 'emg.sto')]
+
+        self.add_action(file_dep, target, self.remove_file_headers)
+
+    def remove_file_headers(self, file_dep, target):
+        
+        for i, fpath in enumerate(file_dep):
+            infile = open(fpath, 'r').readlines()
+            if os.path.isfile(target[i]):
+                print 'File ' + target[i] + ' already exists. Deleting...'
+                os.remove(target[i])
+            print 'Writing to ' + target[i]
+            with open(target[i], 'w') as outfile:
+                prev_line = ''
+                writing = False
+                for index, line in enumerate(infile):
+                    if 'endheader' in prev_line:
+                        writing = True
+
+                    if writing:
+                        outfile.write(line)
+
+                    prev_line = line
 
 class TaskUpdateGroundReactionColumnLabels(osp.TrialTask):
     REGISTRY = []
@@ -270,7 +326,7 @@ class TaskCalibrateParametersSetup(osp.SetupTask):
         with open(target[0], 'w') as f:
             f.write(content)
 
-class TaskCalibrateParameters(task.ToolTask):
+class TaskCalibrateParameters(osp.ToolTask):
     REGISTRY = []
     def __init__(self, trial, calibrate_setup_task, **kwargs):
         super(TaskCalibrateParameters, self).__init__(calibrate_setup_task, 
@@ -281,7 +337,7 @@ class TaskCalibrateParameters(task.ToolTask):
 
         self.file_dep += [
                 self.results_setup_fpath,
-                self.subject_scaled_model_fpath,
+                self.subject.scaled_model_fpath,
                 calibrate_setup_task.kinematics_file,
                 calibrate_setup_task.kinetics_file,
                 calibrate_setup_task.emg_file,
@@ -308,10 +364,11 @@ class TaskCalibrateParameters(task.ToolTask):
                         self.results_setup_fpath)
                     )
             if status != 0:
-                print 'Non-zero exist status. Continuing....'
-                # raise Exception('Non-zero exit status.')
+                # print 'Non-zero exist status. Continuing....'
+                raise Exception('Non-zero exit status.')
 
             # Wait until output mat file exists to finish the action
+            import time
             while True:
                 time.sleep(3.0)
 
@@ -324,6 +381,113 @@ class TaskCalibrateParameters(task.ToolTask):
             import shutil
             shutil.rmtree(os.path.join(self.path, 'results'))
 
+class TaskCalibrateParametersPost(osp.PostTask):
+    REGISTRY = []
+    def __init__(self, trial, calibrate_setup_task, **kwargs):
+        super(TaskCalibrateParametersPost, self).__init__(calibrate_setup_task,
+            trial, **kwargs)
+        self.doc = 'Postprocessing of parameter calibration results.'
+        self.setup_task = calibrate_setup_task
+        self.results_output_fpath = self.setup_task.results_output_fpath
+
+        self.emg_fpath = os.path.join(trial.results_exp_path, 'expdata', 
+            'emg_with_headers.sto')
+
+        self.add_action([self.emg_fpath,
+                         self.results_output_fpath],
+                        [os.path.join(self.path, 'muscle_activity'),
+                         os.path.join(self.path, 'reserve_activity.pdf')],
+                        self.plot_muscle_and_reserve_activity)
+
+    def plot_muscle_and_reserve_activity(self, file_dep, target):
+
+        emg = util.storage2numpy(file_dep[0])
+        time = emg['time']
+
+        def min_index(vals):
+            idx, val = min(enumerate(vals), key=lambda p: p[1])
+            return idx
+
+        start_idx = min_index(abs(time-self.setup_task.cycle.start))
+        end_idx = min_index(abs(time-self.setup_task.cycle.end))
+
+        # Load mat file fields
+        muscle_names = util.hdf2list(file_dep[1], 'MuscleNames', type=str)
+        df_exc = util.hdf2pandas(file_dep[1], 'MExcitation', labels=muscle_names)
+        df_act = util.hdf2pandas(file_dep[1], 'MActivation', labels=muscle_names)
+        dof_names = util.hdf2list(file_dep[1], 'DatStore/DOFNames', 
+            type=str)
+
+        pgc_emg = np.linspace(0, 100, len(time[start_idx:end_idx]))
+        pgc_exc = np.linspace(0, 100, len(df_exc.index))
+        pgc_act = np.linspace(0, 100, len(df_act.index))
+
+        muscles = self.study.muscle_names
+        fig = pl.figure(figsize=(12, 12))
+        nice_act_names = {
+                'glut_max2_r': 'glut. max.',
+                'psoas_r': 'iliopsoas',
+                'semimem_r': 'hamstrings',
+                'rect_fem_r': 'rect. fem.',
+                'bifemsh_r': 'bi. fem. s.h.',
+                'vas_int_r': 'vasti',
+                'med_gas_r': 'gastroc.',
+                'soleus_r': 'soleus',
+                'tib_ant_r': 'tib. ant.',
+                }
+
+        emg_map = {
+                'med_gas_r': 'gasmed_r',
+                'glut_max2_r': 'glmax2_r',
+                'rect_fem_r': 'recfem_r',
+                'semimem_r': 'semimem_r',
+                'soleus_r': 'soleus_r',
+                'tib_ant_r': 'tibant_r',
+                'vas_int_r': 'vasmed_r', 
+        }
+
+        emg_muscles = ['bflh_r', 'gaslat_r', 'gasmed_r', 'glmax1_r', 'glmax2_r',
+                       'glmax3_r', 'glmed1_r', 'glmed2_r', 'glmed3_r', 
+                       'recfem_r', 'semimem_r', 'semiten_r', 'soleus_r',
+                       'tibant_r', 'vaslat_r', 'vasmed_r']
+
+        for imusc, musc_name in enumerate(muscles):
+            side_len = np.ceil(np.sqrt(len(muscles)))
+            ax = fig.add_subplot(side_len, side_len, imusc + 1)
+            ax.axhline(color='k', linewidth=0.5, zorder=0)
+            y_exc = df_exc[musc_name]
+            y_act = df_act[musc_name]
+            exc_plot, = ax.plot(pgc_exc, y_exc, color='blue', 
+                linestyle='--')
+            act_plot, = ax.plot(pgc_act, y_act, color='red', 
+                linestyle='--')
+            handles = [exc_plot, act_plot   ]
+            labels = ['%s exc.' % nice_act_names[musc_name],
+                      '%s act.' % nice_act_names[musc_name]]
+            ax.legend(handles, labels)
+            
+            if emg_map.get(musc_name):
+                y_emg = emg[emg_map[musc_name]]
+                ax.plot(pgc_emg, y_emg[start_idx:end_idx], color='black', 
+                    linestyle='-')
+
+            # ax.legend(frameon=False, fontsize=6)
+            ax.set_xlim(0, 100)
+            ax.set_ylim(0, 1.0)
+            ax.set_title(nice_act_names[musc_name])
+            ax.set_xlabel('time (% gait cycle)')
+            ax.spines['right'].set_visible(False)
+            ax.spines['top'].set_visible(False)
+            ax.xaxis.set_ticks_position('bottom')
+            ax.yaxis.set_ticks_position('left')
+        fig.tight_layout()
+        fig.savefig(target[0]+'.pdf')
+        fig.savefig(target[0]+'.png', dpi=600)
+        pl.close(fig)
+
+        # Plot reserve activity
+        df_res = util.hdf2pandas(file_dep[1],'RActivation', labels=dof_names)
+        pp.plot_reserve_activity(target[1], df_res)
 
 class TaskMRSDeGrooteModPost(osp.TaskMRSDeGrooteModPost):
     REGISTRY = []
@@ -1537,6 +1701,17 @@ class TaskCopyEMGData(osp.StudyTask):
                     'run3' : 'Run_400',
                     'run4' : 'Run_500'
                     }
+        self.cond_map2 = {
+                    'walk1' : 'walk100',
+                    'walk2' : 'walk125',
+                    'walk3' : 'walk150',
+                    'walk4' : 'walk175',
+                    'run1' : 'run200',
+                    'run2' : 'run300',
+                    'run3' : 'run400',
+                    'run4' : 'run500'
+                    }
+
 
         self.actions += [self.copy_emg_data]
 
@@ -1546,12 +1721,20 @@ class TaskCopyEMGData(osp.StudyTask):
 
                 if cond.name=='static': continue
 
+                if self.cond_map2[cond.name] in subject.cond_args:
+                    args = subject.cond_args[self.cond_map2[cond.name]]
+                    num_tag = args[0]
+                else:
+                    num_tag = 2
+
                 emg_fpath = os.path.join(self.data_path, subject.name, 
                     'Results', self.cond_map[cond.name], 
-                    '%s_gait_controls.sto' % self.cond_map[cond.name])
+                    '%s%02i_gait_controls.sto' % (self.cond_map[cond.name],
+                        num_tag))
                 states_fpath = os.path.join(self.data_path, subject.name, 
                     'Results', self.cond_map[cond.name], 
-                    '%s_gait_states.sto' % self.cond_map[cond.name])
+                    '%s%02i_gait_states.sto' % (self.cond_map[cond.name],
+                        num_tag))
 
                 emg = util.storage2numpy(emg_fpath)
                 names = emg.dtype.names

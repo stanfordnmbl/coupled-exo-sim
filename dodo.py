@@ -106,6 +106,8 @@ study.add_task(TaskCopyMotionCaptureData,
     run400=(2, '_newCOP3'),
     run500=(2, '_newCOP3'),
     )
+
+study.add_task(TaskRemoveEMGFileHeaders)
  
 study.add_task(TaskCopyEMGData)
 
