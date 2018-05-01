@@ -265,7 +265,7 @@ class TaskScaleMuscleMaxIsometricForce(osp.SubjectTask):
 
 class TaskCalibrateParametersSetup(osp.SetupTask):
     REGISTRY = []
-    def __init__(self, trial, **kwargs):
+    def __init__(self, trial, param_dict, cost_dict, **kwargs):
         super(TaskCalibrateParametersSetup, self).__init__('calibrate', trial,
             **kwargs)
         self.doc = "Create a setup file for a parameter calibration tool."
@@ -285,6 +285,9 @@ class TaskCalibrateParametersSetup(osp.SetupTask):
         self.results_output_fpath = os.path.join(self.path, 
             '%s_%s_calibrate.mat' % (self.study.name, self.tricycle.id))
 
+        self.param_dict = param_dict
+        self.cost_dict = cost_dict
+
         # Fill out setup.m template and write to results directory
         self.create_setup_action()
 
@@ -302,6 +305,27 @@ class TaskCalibrateParametersSetup(osp.SetupTask):
                             init_time=None, final_time=None):
         with open(file_dep[0]) as ft:
             content = ft.read()
+
+            possible_params = ['optimal_fiber_length', 'tendon_slack_length',
+                               'pennation_angle', 'muscle_strain']
+            paramstr = ''
+            for param in possible_params:
+                if param in self.param_dict:
+                    paramstr += param + ' = true;\n'
+                else:
+                    paramstr += param + ' = false;\n'
+
+            possible_costs = ['emg']
+            coststr = ''
+            for cost in possible_costs:
+                if cost in self.cost_dict:
+                    coststr += cost + ' = true;\n'
+                else:
+                    coststr += cost + ' = false;\n'
+
+            content = content.replace('Misc = struct();',
+                'Misc = struct();\n' + paramstr + coststr + '\n')
+
             content = content.replace('@STUDYNAME@', self.study.name)
             content = content.replace('@NAME@', self.tricycle.id)
             # TODO should this be an RRA-adjusted model?
@@ -322,6 +346,21 @@ class TaskCalibrateParametersSetup(osp.SetupTask):
             content = content.replace('@SIDE@',
                     self.trial.primary_leg[0])
             content = content.replace('@EMG_PATH@', self.rel_emg_file)
+            if 'optimal_fiber_length' in self.param_dict:
+                content = content.replace('@lMo_MUSCLES@',
+                        ','.join(self.param_dict['optimal_fiber_length']))
+            if 'tendon_slack_length' in self.param_dict:
+                content = content.replace('@lTs_MUSCLES@',
+                        ','.join(self.param_dict['tendon_slack_length']))
+            if 'pennation_angle' in self.param_dict:
+                content = content.replace('@alf_MUSCLES@',
+                        ','.join(self.param_dict['pennation_angle']))
+            if 'muscle_strain' in self.param_dict:
+                content = content.replace('@e0_MUSCLES@',
+                        ','.join(self.param_dict['muscle_strain']))
+            if 'emg' in self.cost_dict:
+                content = content.replace('@emg_MUSCLES@',
+                        ','.join(self.cost_dict['emg']))
 
         with open(target[0], 'w') as f:
             f.write(content)
@@ -381,6 +420,70 @@ class TaskCalibrateParameters(osp.ToolTask):
             import shutil
             shutil.rmtree(os.path.join(self.path, 'results'))
 
+def get_muscle_parameters_as_list(fpath):
+
+    import h5py
+    hdf_output = h5py.File(fpath, 'r')
+    result = hdf_output['OptInfo']['result']
+    parameter = result['solution']['parameter'][:]
+    auxdata = hdf_output['OptInfo']['result']['setup']['auxdata']
+    indices = auxdata['parameterCalibrationIndices']
+
+    lMo = list()
+    lTs = list()
+    alf = list()
+    e0 = list()
+    musc_names = list()
+    for musc in indices:
+        musc_names.append(musc)
+        for param in indices[musc]:
+            if param == 'optimal_fiber_length':
+                idx_lMo = int(indices[musc][param][0][0])-1
+                lMo.append(parameter[idx_lMo][0])
+            elif param == 'tendon_slack_length':
+                idx_lTs = int(indices[musc][param][0][0])-1
+                lTs.append(parameter[idx_lTs][0])
+            elif param == 'pennation_angle':
+                idx_alf = int(indices[musc][param][0][0])-1
+                alf.append(parameter[idx_alf][0])
+            elif param == 'muscle_strain':
+                idx_e0 = int(indices[musc][param][0][0])-1
+                e0.append(parameter[idx_e0][0])
+
+    return lMo, lTs, alf, e0, musc_names
+
+def get_muscle_parameters_as_dict(fpath):
+
+    import h5py
+    hdf_output = h5py.File(fpath, 'r')
+    result = hdf_output['OptInfo']['result']
+    parameter = result['solution']['parameter'][:]
+    auxdata = hdf_output['OptInfo']['result']['setup']['auxdata']
+    indices = auxdata['parameterCalibrationIndices']
+
+    lMo = dict()
+    lTs = dict()
+    alf = dict()
+    e0 = dict()
+    musc_names = list()
+    for musc in indices:
+        musc_names.append(musc)
+        for param in indices[musc]:
+            if param == 'optimal_fiber_length':
+                idx_lMo = int(indices[musc][param][0][0])-1
+                lMo[musc] = parameter[idx_lMo][0]
+            elif param == 'tendon_slack_length':
+                idx_lTs = int(indices[musc][param][0][0])-1
+                lTs[musc] = parameter[idx_lTs][0]
+            elif param == 'pennation_angle':
+                idx_alf = int(indices[musc][param][0][0])-1
+                alf[musc] = parameter[idx_alf][0]
+            elif param == 'muscle_strain':
+                idx_e0 = int(indices[musc][param][0][0])-1
+                e0[musc] = parameter[idx_e0][0]
+
+    return lMo, lTs, alf, e0, musc_names
+
 class TaskCalibrateParametersPost(osp.PostTask):
     REGISTRY = []
     def __init__(self, trial, calibrate_setup_task, **kwargs):
@@ -398,6 +501,13 @@ class TaskCalibrateParametersPost(osp.PostTask):
                         [os.path.join(self.path, 'muscle_activity'),
                          os.path.join(self.path, 'reserve_activity.pdf')],
                         self.plot_muscle_and_reserve_activity)
+
+        self.add_action([self.results_output_fpath],
+                        [os.path.join(self.path, 'optimal_fiber_length.pdf'),
+                         os.path.join(self.path, 'tendon_slack_length.pdf'),
+                         os.path.join(self.path, 'pennation_angle.pdf'),
+                         os.path.join(self.path, 'muscle_strain.pdf')],
+                        self.plot_muscle_parameters)
 
     def plot_muscle_and_reserve_activity(self, file_dep, target):
 
@@ -488,6 +598,459 @@ class TaskCalibrateParametersPost(osp.PostTask):
         # Plot reserve activity
         df_res = util.hdf2pandas(file_dep[1],'RActivation', labels=dof_names)
         pp.plot_reserve_activity(target[1], df_res)
+
+    def plot_muscle_parameters(self, file_dep, target):
+
+        lMo, lTs, alf, e0, musc_names = get_muscle_parameters_as_dict(
+            file_dep[0])
+
+        # Plot muscle parameters
+        def param_barplot(param_name, param, output_fpath):
+
+            fig = pl.figure(figsize=(11,6))
+            ax = fig.add_subplot(1,1,1)
+            musc_names = list(param.keys())
+            pos = np.arange(len(musc_names))
+
+            param_to_plot = [(val - 1.0)*100 for val in param.values()]
+            bar = ax.bar(pos, param_to_plot, color='green')
+            ax.set_xticks(pos)
+            ax.set_xticklabels(musc_names, fontsize=10)
+            ax.set_ylabel('Percent Change in ' + param_name, fontsize=12)
+            ax.set_ylim([-30, 30])
+            ax.set_yticks(np.linspace(-30, 30, 13))
+            ax.grid(which='both', axis='both', linestyle='--')
+            ax.set_axisbelow(True)
+
+            fig.tight_layout()
+            fig.savefig(output_fpath)
+            pl.close(fig)
+
+        if lMo:
+            param_barplot('Optimal Fiber Length', lMo, target[0])
+
+        if lTs:
+            param_barplot('Tendon Slack Length', lTs, target[1])
+
+        if alf:
+            param_barplot('Pennation Angle', alf, target[2])
+
+        if e0:
+            param_barplot('Muscle Strain', e0, target[3])
+
+def construct_multiindex_tuples_for_subject(subject, conditions, 
+    muscles=None, cycles_to_exclude=None):
+    ''' Construct multiindex tuples and list of cycles for DataFrame indexing.
+    '''
+    
+    multiindex_tuples = list()
+    cycles = list()
+
+    for cond_name in conditions:
+        cond = subject.get_condition(cond_name)
+        if not cond: continue
+        # We know there is only one overground trial, but perhaps it
+        # has not yet been added for this subject.
+        assert len(cond.trials) <= 1
+        if len(cond.trials) == 1:
+            trial = cond.trials[0]
+            for cycle in trial.cycles:
+                if cycle.name in cycles_to_exclude: continue
+                cycles.append(cycle)
+                if not muscles:
+                    multiindex_tuples.append((
+                        cycle.condition.name,
+                        # This must be the full ID, not just the cycle
+                        # name, because 'cycle01' from subject 1 has
+                        # nothing to do with 'cycle01' from subject 2
+                        # (whereas the 'walk2' condition for subject 1 is
+                        # related to 'walk2' for subject 2).
+                        cycle.id))
+                if muscles:
+                    for mname in muscles:
+                        multiindex_tuples.append((
+                            cycle.condition.name,
+                            cycle.id,
+                            mname))
+
+    return multiindex_tuples, cycles
+
+class TaskAggregateMuscleParameters(osp.SubjectTask):
+    """Aggregate calibrated muscle parameters for a given subject."""
+    REGISTRY = []
+    def __init__(self, subject, param_dict, 
+            conditions=['walk1','walk2','walk3'], 
+            cycles_to_exclude=['cycle03']):
+        super(TaskAggregateMuscleParameters, self).__init__(subject)
+        self.name = '%s_aggregate_muscle_parameters' % self.subject.name
+        self.csv_fpaths = list()
+        self.csv_params = list()
+        self.param_dict = param_dict
+        self.conditions = conditions
+        self.cycles_to_exclude = cycles_to_exclude
+        
+        for param in param_dict:
+            muscle_names = param_dict[param]
+            multiindex_tuples, cycles = construct_multiindex_tuples_for_subject( 
+                self.subject, conditions, muscle_names, self.cycles_to_exclude)
+
+            # Prepare for processing simulations of experiments.
+            deps = list()
+            for cycle in cycles:
+                if cycle.name in cycles_to_exclude: continue
+                deps.append(os.path.join(
+                        cycle.trial.results_exp_path, 'calibrate', cycle.name,
+                        '%s_%s_calibrate.mat' % (self.study.name, cycle.id))
+                        )
+
+            csv_path = os.path.join(self.subject.results_exp_path, 
+                '%s_agg.csv' % param)
+            self.csv_params.append(param)
+            self.csv_fpaths.append(csv_path)
+            self.add_action(deps,
+                    [csv_path],
+                    self.aggregate_muscle_parameters, param, multiindex_tuples)
+
+    def aggregate_muscle_parameters(self, file_dep, target, param,
+            multiindex_tuples):
+        from collections import OrderedDict
+        muscle_params = OrderedDict()
+        for ifile, fpath in enumerate(file_dep):
+            lMo, lTs, alf, e0, musc_names = get_muscle_parameters_as_dict(fpath)
+            if not param in muscle_params:
+                muscle_params[param] = list()
+            for musc in self.param_dict[param]:
+                if param == 'optimal_fiber_length':
+                    muscle_params[param].append(lMo[musc])
+                elif param == 'tendon_slack_length':
+                    muscle_params[param].append(lTs[musc])
+                elif param == 'pennation_angle':
+                    muscle_params[param].append(alf[musc])
+                elif param == 'muscle_strain':
+                    muscle_params[param].append(e0[musc])
+       
+        # http://pandas.pydata.org/pandas-docs/stable/advanced.html#advanced-hierarchical
+        index = pd.MultiIndex.from_tuples(multiindex_tuples,
+                names=['condition', 'cycle', 'muscle'])
+
+        df = pd.DataFrame(muscle_params, index=index)
+
+        target_dir = os.path.dirname(target[0])
+        if not os.path.exists(target_dir):
+            os.makedirs(target_dir)
+        with file(target[0], 'w') as f:
+            f.write('# columns contain calibrated muscle parameters for ' 
+                    '%s \n' % self.subject.name)
+            df.to_csv(f)
+
+class TaskPlotMuscleParameters(osp.SubjectTask):
+    REGISTRY = []
+    def __init__(self, subject, agg_task, cycles_to_exclude=None, **kwargs):
+        super(TaskPlotMuscleParameters, self).__init__(subject)
+        self.name = '%s_plot_muscle_parameters' % subject.name
+        self.doc = 'Plot aggregated muscle parameters from calibration.'
+        self.agg_task = agg_task
+        self.cycles_to_exclude = cycles_to_exclude
+
+        for csv_fpath, param in zip(agg_task.csv_fpaths, agg_task.csv_params):
+            self.add_action([csv_fpath],
+                            [os.path.join(self.subject.results_exp_path, param)],
+                            self.plot_muscle_parameters, param)
+
+    def plot_muscle_parameters(self, file_dep, target, param):
+
+        # Process muscle parameters
+        df = pd.read_csv(file_dep[0], index_col=[0, 1, 2], skiprows=1)
+        if self.cycles_to_exclude:
+            for cycle in self.cycles_to_exclude:
+                for cond in self.agg_task.conditions:
+                    cycle_id = '%s_%s_%s' % (self.subject.name, cond, cycle)
+                    df.drop(cycle_id, level='cycle', inplace=True)
+
+        df_mean = df.mean(level='muscle')
+        df_std = df.std(level='muscle')
+
+        def param_barplot(param_name, param_mean, param_std, musc_names, 
+                output_fpath):
+
+            fig = pl.figure(figsize=(11,6))
+            ax = fig.add_subplot(1,1,1)
+            pos = np.arange(len(musc_names))
+
+            param_mean_to_plot = [(val - 1.0)*100 for val in param_mean]
+            param_std_to_plot = [val*100 for val in param_std]
+            bar = ax.bar(pos, param_mean_to_plot, yerr=param_std_to_plot,
+                color='green')
+            ax.set_xticks(pos)
+            ax.set_xticklabels(musc_names, fontsize=10)
+            ax.set_ylabel('Percent Change in ' + param_name, fontsize=12)
+            ax.set_ylim([-30, 30])
+            ax.set_yticks(np.linspace(-30, 30, 13))
+            ax.grid(which='both', axis='both', linestyle='--')
+            ax.set_axisbelow(True)
+
+            fig.tight_layout()
+            fig.savefig(output_fpath)
+            pl.close(fig)
+
+        if param == 'optimal_fiber_length':
+            lMo_mean = df_mean['optimal_fiber_length']
+            lMo_std = df_std['optimal_fiber_length']
+            param_barplot('Optimal Fiber Length', lMo_mean, lMo_std, 
+                lMo_mean.index, target[0]+'.pdf')
+            lMo_mean.to_csv(target[0]+'.csv')
+
+        if param == 'tendon_slack_length':
+            lTs_mean = df_mean['tendon_slack_length']
+            lTs_std = df_std['tendon_slack_length']
+            param_barplot('Tendon Slack Length', lTs_mean, lTs_std, 
+                lTs_mean.index, target[0]+'.pdf')
+            lTs_mean.to_csv(target[0]+'.csv')
+
+        if param == 'pennation_angle':
+            alf_mean = df_mean['pennation_angle']
+            alf_std = df_std['pennation_angle']
+            param_barplot('Pennation Angle', alf_mean, alf_std, 
+                alf_mean.index, target[0]+'.pdf')
+            alf_mean.to_csv(target[0]+'.csv')
+
+        if param == 'muscle_strain':
+            e0_mean = df_mean['muscle_strain']
+            e0_std = df_std['muscle_strain']
+            param_barplot('Muscle Strain', e0_mean, e0_std, 
+                e0_mean.index, target[0]+'.pdf')
+            e0_mean.to_csv(target[0]+'.csv')
+
+class TaskMRSDeGrooteGenericMTParamsSetup(osp.TaskMRSDeGrooteSetup):
+    REGISTRY = []
+    def __init__(self, trial, cost='Default', **kwargs):
+        super(TaskMRSDeGrooteGenericMTParamsSetup, self).__init__(trial, 
+            cost=cost, alt_tool_name='mrs_genericMTparams', **kwargs)
+
+        self.scaled_generic_model = os.path.join(
+            self.study.config['results_path'], 'experiments', 
+            self.subject.name, '%s.osim' % self.subject.name)
+
+        self.file_dep += [self.scaled_generic_model]
+
+    def fill_setup_template(self, file_dep, target,
+                            init_time=None, final_time=None):
+        with open(file_dep[0]) as ft:
+            content = ft.read()
+            content = content.replace('@STUDYNAME@', self.study.name)
+            content = content.replace('@NAME@', self.tricycle.id)
+            # TODO should this be an RRA-adjusted model?
+            content = content.replace('@MODEL@', os.path.relpath(
+                self.scaled_generic_model, self.path))
+            content = content.replace('@REL_PATH_TO_TOOL@', os.path.relpath(
+                self.study.config['optctrlmuscle_path'], self.path))
+            # TODO provide slop on either side? start before the cycle_start?
+            # end after the cycle_end?
+            content = content.replace('@INIT_TIME@',
+                    '%.5f' % init_time)
+            content = content.replace('@FINAL_TIME@', 
+                    '%.5f' % final_time)
+            content = content.replace('@IK_SOLUTION@',
+                    self.rel_kinematics_file)
+            content = content.replace('@ID_SOLUTION@',
+                    self.rel_kinetics_file)
+            content = content.replace('@SIDE@',
+                    self.trial.primary_leg[0])
+            content = content.replace('@COST@', self.cost)
+
+        with open(target[0], 'w') as f:
+            f.write(content)
+
+class TaskMRSDeGrooteSetup(osp.TaskMRSDeGrooteSetup):
+    REGISTRY = []
+    def __init__(self, trial, param_dict, cost='Default', **kwargs):
+        super(TaskMRSDeGrooteSetup, self).__init__(trial, 
+            cost=cost, **kwargs)
+        self.param_dict = param_dict
+
+        if 'optimal_fiber_length' in self.param_dict:
+            self.lMo_modifiers_fpath = os.path.join(
+                self.subject.results_exp_path, 'optimal_fiber_length.csv')
+            self.lMo_modifiers_relpath = os.path.relpath(
+                self.lMo_modifiers_fpath, self.path)
+            self.file_dep += [self.lMo_modifiers_fpath]
+
+        if 'tendon_slack_length' in self.param_dict:
+            self.lTs_modifiers_fpath = os.path.join(
+                self.subject.results_exp_path, 'tendon_slack_length.csv')
+            self.lTs_modifiers_relpath = os.path.relpath(
+                self.lTs_modifiers_fpath, self.path)
+            self.file_dep += [self.lTs_modifiers_fpath]
+
+        if 'pennation_angle' in self.param_dict:
+            self.alf_modifiers_fpath = os.path.join(
+                self.subject.results_exp_path, 'pennation_angle.csv')
+            self.alf_modifiers_relpath = os.path.relpath(
+                self.alf_modifiers_fpath, self.path)
+            self.file_dep += [self.alf_modifiers_fpath]
+
+        if 'muscle_strain' in self.param_dict:
+            self.e0_modifiers_fpath = os.path.join(
+                self.subject.results_exp_path, 'muscle_strain.csv')
+            self.e0_modifiers_relpath = os.path.relpath(
+                self.e0_modifiers_fpath, self.path)
+            self.file_dep += [self.e0_modifiers_fpath]
+
+    def fill_setup_template(self, file_dep, target,
+                            init_time=None, final_time=None):
+        with open(file_dep[0]) as ft:
+            content = ft.read()
+
+            possible_params = ['optimal_fiber_length', 'tendon_slack_length',
+                               'pennation_angle', 'muscle_strain']
+            paramstr = ''
+            for param in possible_params:
+                if param in self.param_dict:
+                    paramstr += param + ' = true;\n'
+                else:
+                    paramstr += param + ' = false;\n'
+
+            content = content.replace('Misc = struct();',
+                'Misc = struct();\n' + paramstr + '\n')
+
+            content = content.replace('@STUDYNAME@', self.study.name)
+            content = content.replace('@NAME@', self.tricycle.id)
+            # TODO should this be an RRA-adjusted model?
+            content = content.replace('@MODEL@', os.path.relpath(
+                self.subject.scaled_model_fpath, self.path))
+            content = content.replace('@REL_PATH_TO_TOOL@', os.path.relpath(
+                self.study.config['optctrlmuscle_path'], self.path))
+            # TODO provide slop on either side? start before the cycle_start?
+            # end after the cycle_end?
+            content = content.replace('@INIT_TIME@',
+                    '%.5f' % init_time)
+            content = content.replace('@FINAL_TIME@', 
+                    '%.5f' % final_time)
+            content = content.replace('@IK_SOLUTION@',
+                    self.rel_kinematics_file)
+            content = content.replace('@ID_SOLUTION@',
+                    self.rel_kinetics_file)
+            content = content.replace('@SIDE@',
+                    self.trial.primary_leg[0])
+            content = content.replace('@COST@', self.cost)
+            if 'optimal_fiber_length' in self.param_dict:
+                content = content.replace('@lMo_MODIFIERS@', 
+                        self.lMo_modifiers_relpath)
+            if 'tendon_slack_length' in self.param_dict:
+                content = content.replace('@lTs_MODIFIERS@', 
+                        self.lTs_modifiers_relpath)
+            if 'pennation_angle' in self.param_dict:
+                content = content.replace('@alf_MODIFIERS@', 
+                        self.alf_modifiers_relpath)
+            if 'muscle_strain' in self.param_dict:
+                content = content.replace('@e0_MODIFIERS@', 
+                        self.e0_modifiers_relpath)
+
+        with open(target[0], 'w') as f:
+            f.write(content)
+
+class TaskMRSDeGrooteMod(osp.TaskMRSDeGrooteMod):
+    def __init__(self, trial, mrs_setup_task, mod_name, description,
+        mrsflags, **kwargs):
+        super(TaskMRSDeGrooteMod, self).__init__(trial, mrs_setup_task, 
+            mod_name, description, mrsflags, **kwargs)
+        self.mrs_setup_task = mrs_setup_task
+
+        if 'optimal_fiber_length' in self.mrs_setup_task.param_dict:
+            self.lMo_modifiers_fpath = \
+                self.mrs_setup_task.lMo_modifiers_fpath
+            self.lMo_modifiers_relpath = os.path.relpath(
+                self.lMo_modifiers_fpath, self.path)
+            self.file_dep += [self.lMo_modifiers_fpath]
+
+        if 'tendon_slack_length' in self.mrs_setup_task.param_dict:
+            self.lTs_modifiers_fpath = \
+                self.mrs_setup_task.lTs_modifiers_fpath
+            self.lTs_modifiers_relpath = os.path.relpath(
+                self.lTs_modifiers_fpath, self.path)
+            self.file_dep += [self.lTs_modifiers_fpath]
+
+        if 'pennation_angle' in self.mrs_setup_task.param_dict:
+            self.alf_modifiers_fpath = \
+                self.mrs_setup_task.alf_modifiers_fpath
+            self.alf_modifiers_relpath = os.path.relpath(
+                self.alf_modifiers_fpath, self.path)
+            self.file_dep += [self.alf_modifiers_fpath]
+
+        if 'muscle_strain' in self.mrs_setup_task.param_dict:
+            self.e0_modifiers_fpath = \
+                self.mrs_setup_task.e0_modifiers_fpath
+            self.e0_modifiers_relpath = os.path.relpath(
+                self.e0_modifiers_fpath, self.path)
+            self.file_dep += [self.e0_modifiers_fpath]
+
+    def fill_setup_template(self, file_dep, target, 
+                            init_time=None, final_time=None):
+        with open(self.setup_template_fpath) as ft:
+            content = ft.read()
+
+            if type(self.mrsflags) is list:
+                list_of_flags = self.mrsflags 
+            else:
+             list_of_flags = self.mrsflags(self.cycle)
+
+            # Insert flags for the mod.
+            flagstr = ''
+            for flag in list_of_flags:
+                flagstr += 'Misc.%s;\n' % flag
+
+            possible_params = ['optimal_fiber_length', 'tendon_slack_length',
+                               'pennation_angle', 'muscle_strain']
+            paramstr = ''
+            for param in possible_params:
+                if param in self.mrs_setup_task.param_dict:
+                    paramstr += param + ' = true;\n'
+                else:
+                    paramstr += param + ' = false;\n'
+
+            content = content.replace('Misc = struct();',
+                    'Misc = struct();\n' +
+                    flagstr + paramstr + '\n' +
+                    # In case the description has multiple lines, add comment
+                    # symbol in front of every line.
+                    '% ' + self.description.replace('\n', '\n% ') + '\n')
+
+            content = content.replace('@STUDYNAME@', self.study.name)
+            content = content.replace('@NAME@', self.tricycle.id)
+            # TODO should this be an RRA-adjusted model?
+            content = content.replace('@MODEL@', os.path.relpath(
+                self.subject.scaled_model_fpath, self.path))
+            content = content.replace('@REL_PATH_TO_TOOL@', os.path.relpath(
+                self.study.config['optctrlmuscle_path'], self.path))
+            # TODO provide slop on either side? start before the cycle_start?
+            # end after the cycle_end?
+            content = content.replace('@INIT_TIME@',
+                    '%.5f' % init_time)
+            content = content.replace('@FINAL_TIME@', 
+                    '%.5f' % final_time)
+
+            content = content.replace('@IK_SOLUTION@',
+                    os.path.relpath(self.kinematics_fpath, self.path))
+            content = content.replace('@ID_SOLUTION@',
+                    os.path.relpath(self.kinetics_fpath, self.path))
+            content = content.replace('@SIDE@',
+                    self.trial.primary_leg[0])
+            content = content.replace('@COST@', self.cost)
+            if 'optimal_fiber_length' in self.param_dict:
+                content = content.replace('@lMo_MODIFIERS@', 
+                        self.lMo_modifiers_relpath)
+            if 'tendon_slack_length' in self.param_dict:
+                content = content.replace('@lTs_MODIFIERS@', 
+                        self.lTs_modifiers_relpath)
+            if 'pennation_angle' in self.param_dict:
+                content = content.replace('@alf_MODIFIERS@', 
+                        self.alf_modifiers_relpath)
+            if 'muscle_strain' in self.param_dict:
+                content = content.replace('@e0_MODIFIERS@', 
+                        self.e0_modifiers_relpath)
+
+        with open(self.setup_fpath, 'w') as f:
+            f.write(content)
 
 class TaskMRSDeGrooteModPost(osp.TaskMRSDeGrooteModPost):
     REGISTRY = []
@@ -830,6 +1393,8 @@ def construct_multiindex_tuples(study, subjects, conditions,
             if len(cond.trials) == 1:
                 trial = cond.trials[0]
                 for cycle in trial.cycles:
+                    if study.cycles_to_plot:
+                        if not (cycle.name in study.cycles_to_plot): continue
                     cycles.append(cycle)
                     if not muscle_level:
                         multiindex_tuples.append((
@@ -890,6 +1455,8 @@ class TaskAggregateMetabolicRate(osp.StudyTask):
 
         # Prepare for processing simulations of experiments.
         for cycle in cycles:
+            if study.cycles_to_plot:
+                if not (cycle.name in study.cycles_to_plot): continue
             self.mod_for_file_dep.append('experiment')
             deps.append(os.path.join(
                     cycle.trial.results_exp_path, 'mrs', cycle.name,
@@ -899,6 +1466,8 @@ class TaskAggregateMetabolicRate(osp.StudyTask):
         # Prepare for processing simulations of mods.
         for mod in mods:
             for cycle in cycles:
+                if study.cycles_to_plot:
+                    if not (cycle.name in study.cycles_to_plot): continue
                 self.mod_for_file_dep.append(mod)
                 deps.append(os.path.join(
                         self.study.config['results_path'],
@@ -1003,6 +1572,8 @@ class TaskAggregatePeakPower(osp.StudyTask):
 
         for mod in mods:
             for cycle in cycles:
+                if study.cycles_to_plot:
+                    if not (cycle.name in study.cycles_to_plot): continue
                 self.mod_for_file_dep.append(mod)
                 self.subject_masses.append(cycle.subject.mass)
                 deps.append(os.path.join(
@@ -1389,6 +1960,8 @@ class TaskAggregateMomentsExperiment(osp.StudyTask):
                 if len(cond.trials) == 1:
                     trial = cond.trials[0]
                     for cycle in trial.cycles:
+                        if study.cycles_to_plot:
+                            if not (cycle.name in study.cycles_to_plot): continue
                         self.cycles[cond_name].append(cycle)
 
                         # Moment file paths
@@ -1437,6 +2010,8 @@ class TaskAggregateMomentsMod(osp.StudyTask):
                 if len(cond.trials) == 1:
                     trial = cond.trials[0]
                     for cycle in trial.cycles:
+                        if study.cycles_to_plot:
+                            if not (cycle.name in study.cycles_to_plot): continue
                         self.cycles[cond_name].append(cycle)
                         deps.append(os.path.join(
                                 self.study.config['results_path'],
@@ -1558,18 +2133,155 @@ class TaskPlotMoments(osp.StudyTask):
         fig.savefig(self.agg_target.replace('.csv', '.png'), dpi=600)
         pl.close(fig)
 
-class TaskAggregateMuscleActivity(osp.StudyTask):
+def aggregate_muscle_activity(file_dep, target, cond_name, cycles):
+
+    num_time_points = 400
+    pgc = np.linspace(0, 100, num_time_points)
+
+    muscle_names = None
+
+    subject_array = list()
+    cycle_array = list()
+    muscle_array = list()
+    all_exc = list()
+    all_act = list()
+    for icycle, fpath in enumerate(file_dep):
+        cycle = cycles[cond_name][icycle]
+
+        muscle_names = util.hdf2list(fpath, 'MuscleNames', type=str)
+        exc_df = util.hdf2pandas(fpath,
+            'MExcitation', labels=muscle_names)
+        act_df = util.hdf2pandas(fpath,
+            'MActivation', labels=muscle_names)
+
+        exc_index = np.linspace(0, 100, len(exc_df.index.values))
+        act_index = np.linspace(0, 100, len(act_df.index.values))
+        for muscle in exc_df.columns:
+            subject_array.append(cycle.subject.name)
+            cycle_array.append(cycle.id)
+            muscle_array.append(muscle)
+            exc = np.interp(pgc, exc_index, exc_df[muscle])
+            act = np.interp(pgc, act_index, act_df[muscle])
+            all_exc.append(exc)
+            all_act.append(act)
+
+    all_exc_array = np.array(all_exc).transpose()
+    all_act_array = np.array(all_act).transpose()
+
+    multiindex_arrays = [subject_array, cycle_array, muscle_array]
+    columns = pd.MultiIndex.from_arrays(multiindex_arrays,
+            names=['subject', 'cycle', 'muscle'])
+
+    all_exc_df = pd.DataFrame(all_exc_array, columns=columns, index=pgc)
+    target_dir = os.path.dirname(target[0])
+    if not os.path.exists(target_dir):
+        os.makedirs(target_dir)
+    with file(target[0], 'w') as f:
+        f.write('# all columns are muscle excitations.\n')
+        all_exc_df.to_csv(f)
+
+    all_act_df = pd.DataFrame(all_act_array, columns=columns, index=pgc)
+    target_dir = os.path.dirname(target[1])
+    if not os.path.exists(target_dir):
+        os.makedirs(target_dir)
+    with file(target[1], 'w') as f:
+        f.write('# all columns are muscle activations.\n')
+        all_act_df.to_csv(f)
+    # How to read this in: df.read_csv(..., index_col=0, header=[0, 1, 2],
+    #                                  skiprows=1)
+
+class TaskAggregateMuscleActivityExperiment(osp.StudyTask):
     REGISTRY = []
-    def __init__(self, study, mods=None, 
-            subjects=None, conditions=['walk2'], suffix=''):
-        super(TaskAggregateMuscleActivity, self).__init__(study)
+    def __init__(self, study, subjects=None, conditions=['walk2'], 
+            suffix='', alt_tool_name=None):
+        super(TaskAggregateMuscleActivityExperiment, self).__init__(study)
+
         self.suffix_path = suffix
         if suffix != '':
             suffix = '_' + suffix
+
+        cost = ''
         self.costdir = ''
         if not (study.costFunction == 'Default'):
             suffix += '_%s' % study.costFunction
-            self.costdir = study.costFunction 
+            cost = '_' + study.costFunction
+            self.costdir = study.costFunction
+
+        if alt_tool_name:
+            alt_tool_tag = '_%s' % alt_tool_name
+            suffix += alt_tool_tag
+            tool = alt_tool_name
+        else: 
+            alt_tool_tag = ''
+            tool = 'mrs'
+
+        self.name = 'aggregate_muscle_activity_experiment%s' % suffix
+        self.doc = 'Aggregate muscle activity into a data file.'
+
+        if subjects == None:
+            subjects = [s.name for s in study.subjects]
+
+        self.cycles = dict()
+        for cond_name in conditions:
+            self.cycles[cond_name] = list()
+            deps = []
+            for subject in study.subjects:
+                if not subject.name in subjects: continue
+                cond = subject.get_condition(cond_name)
+                if not cond: continue
+                # We know there is only one overground trial, but perhaps it
+                # has not yet been added for this subject.
+                assert len(cond.trials) <= 1
+                if len(cond.trials) == 1:
+                    trial = cond.trials[0]
+                    for cycle in trial.cycles:
+                        if study.cycles_to_plot:
+                            if not (cycle.name in study.cycles_to_plot): continue
+                        self.cycles[cond_name].append(cycle)
+
+                        # Results MAT file paths
+                        fpath = os.path.join(study.config['results_path'], 
+                            'experiments', subject.name, cond.name, tool, 
+                            cycle.name, self.costdir,
+                            '%s_%s_mrs.mat' % (study.name, cycle.id))
+                        deps.append(fpath)
+
+            self.add_action(deps,
+                    [
+                        os.path.join(study.config['results_path'], 'experiments',
+                            'experiment_%s_excitations%s.csv' % (
+                                cond_name, suffix)),
+                        os.path.join(study.config['results_path'], 'experiments',
+                            'experiment_%s_activations%s.csv' % (
+                                cond_name, suffix)),
+                        ],
+                    aggregate_muscle_activity, cond_name, self.cycles)
+
+class TaskAggregateMuscleActivityMod(osp.StudyTask):
+    REGISTRY = []
+    def __init__(self, study, mods=None, subjects=None, conditions=['walk2'], 
+            suffix='', alt_tool_name=None):
+        super(TaskAggregateMuscleActivityMod, self).__init__(study)
+
+        self.suffix_path = suffix
+        if suffix != '':
+            suffix = '_' + suffix
+
+        cost = ''
+        self.costdir = ''
+        if not (study.costFunction == 'Default'):
+            suffix += '_%s' % study.costFunction
+            cost = '_' + study.costFunction
+            self.costdir = study.costFunction
+
+        if alt_tool_name:
+            alt_tool_tag = '_%s' % alt_tool_name
+            suffix += alt_tool_tag
+            tool = alt_tool_name
+        else: 
+            alt_tool_tag = ''
+            tool = 'mrs'
+
         self.name = 'aggregate_muscle_activity%s' % suffix
         self.doc = 'Aggregate muscle activity into a data file.'
 
@@ -1583,14 +2295,8 @@ class TaskAggregateMuscleActivity(osp.StudyTask):
         # Prefix all mods so directory is correct
         mods_fpath = ['mrsmod_' + mod for mod in mods]
 
-        # Add experiment case is no mods specified. Otherwise, assumed that
-        # experiment case already has a task for it
-        if mods == None:
-            mods.insert(0, 'experiment')
-            mods_fpath.insert(0, 'experiments')
-
         if subjects == None:
-            subjects = [s.num for s in study.subjects]
+            subjects = [s.name for s in study.subjects]
 
         self.cycles = dict()
         for mod, mod_fpath in zip(mods, mods_fpath):
@@ -1598,7 +2304,7 @@ class TaskAggregateMuscleActivity(osp.StudyTask):
                 self.cycles[cond_name] = list()
                 deps = []
                 for subject in study.subjects:
-                    if not subject.num in subjects: continue
+                    if not subject.name in subjects: continue
                     cond = subject.get_condition(cond_name)
                     if not cond: continue
                     # We know there is only one overground trial, but perhaps it
@@ -1607,11 +2313,13 @@ class TaskAggregateMuscleActivity(osp.StudyTask):
                     if len(cond.trials) == 1:
                         trial = cond.trials[0]
                         for cycle in trial.cycles:
+                            if study.cycles_to_plot:
+                                if not (cycle.name in study.cycles_to_plot): continue
                             self.cycles[cond_name].append(cycle)
 
                             # Results MAT file paths
                             fpath = os.path.join(study.config['results_path'], 
-                                mod_fpath, subject.name, cond.name, 'mrs', 
+                                mod_fpath, subject.name, cond.name, tool, 
                                 cycle.name, self.costdir,
                                 '%s_%s_mrs.mat' % (study.name, cycle.id))
                             deps.append(fpath)
@@ -1619,70 +2327,13 @@ class TaskAggregateMuscleActivity(osp.StudyTask):
                 self.add_action(deps,
                         [
                             os.path.join(study.config['results_path'], 
-                                mod_fpath,'%s_%s_excitations%s.csv' % (
-                                    mod, cond_name, suffix)),
+                                mod_fpath,'%s%s_%s_excitations%s.csv' % (
+                                    mod, alt_tool_tag, cond_name, suffix)),
                             os.path.join(study.config['results_path'], 
-                                mod_fpath,'%s_%s_activations%s.csv' % (
-                                    mod, cond_name, suffix)),
+                                mod_fpath,'%s%s_%s_activations%s.csv' % (
+                                    mod, alt_tool_tag, cond_name, suffix)),
                             ],
-                        self.aggregate_muscle_activity, cond_name, self.cycles)
-
-    def aggregate_muscle_activity(self, file_dep, target, cond_name, cycles):
-
-        num_time_points = 400
-        pgc = np.linspace(0, 100, num_time_points)
-
-        muscle_names = None
-
-        subject_array = list()
-        cycle_array = list()
-        muscle_array = list()
-        all_exc = list()
-        all_act = list()
-        for icycle, fpath in enumerate(file_dep):
-            cycle = cycles[cond_name][icycle]
-
-            muscle_names = util.hdf2list(fpath, 'MuscleNames', type=str)
-            exc_df = util.hdf2pandas(fpath,
-                'MExcitation', labels=muscle_names)
-            act_df = util.hdf2pandas(fpath,
-                'MActivation', labels=muscle_names)
-
-            exc_index = np.linspace(0, 100, len(exc_df.index.values))
-            act_index = np.linspace(0, 100, len(act_df.index.values))
-            for muscle in exc_df.columns:
-                subject_array.append(cycle.subject.name)
-                cycle_array.append(cycle.id)
-                muscle_array.append(muscle)
-                exc = np.interp(pgc, exc_index, exc_df[muscle])
-                act = np.interp(pgc, act_index, act_df[muscle])
-                all_exc.append(exc)
-                all_act.append(act)
-
-        all_exc_array = np.array(all_exc).transpose()
-        all_act_array = np.array(all_act).transpose()
-
-        multiindex_arrays = [subject_array, cycle_array, muscle_array]
-        columns = pd.MultiIndex.from_arrays(multiindex_arrays,
-                names=['subject', 'cycle', 'muscle'])
-
-        all_exc_df = pd.DataFrame(all_exc_array, columns=columns, index=pgc)
-        target_dir = os.path.dirname(target[0])
-        if not os.path.exists(target_dir):
-            os.makedirs(target_dir)
-        with file(target[0], 'w') as f:
-            f.write('# all columns are muscle excitations.\n')
-            all_exc_df.to_csv(f)
-
-        all_act_df = pd.DataFrame(all_act_array, columns=columns, index=pgc)
-        target_dir = os.path.dirname(target[1])
-        if not os.path.exists(target_dir):
-            os.makedirs(target_dir)
-        with file(target[1], 'w') as f:
-            f.write('# all columns are muscle activations.\n')
-            all_act_df.to_csv(f)
-        # How to read this in: df.read_csv(..., index_col=0, header=[0, 1, 2],
-        #                                  skiprows=1)
+                        aggregate_muscle_activity, cond_name, self.cycles)
 
 class TaskCopyEMGData(osp.StudyTask):
     REGISTRY = []
@@ -2003,6 +2654,325 @@ class TaskValidateAgainstEMG(osp.StudyTask):
         fig.savefig(target[0]+'.png', dpi=600)
         pl.close(fig)
 
+class TaskPlotDeviceComparison(osp.StudyTask):
+    REGISTRY = []
+    def __init__(self, study, plot_lists, folder, condition='walk2', 
+            subjects=None):
+        super(TaskPlotDeviceComparison, self).__init__(study)
+        self.name = 'plot_device_comparison_%s' % folder
+        self.doc = 'Plot to compare assistive moments across devices.'
+        self.device_list = plot_lists['device_list']
+        self.label_list = plot_lists['label_list']
+        self.color_list = plot_lists['color_list']
+        self.folder = folder
+        self.study_subjects = [s.name for s in self.study.subjects]
+
+        if ('He' in folder) or ('Hf' in folder):
+            self.legend_dof = 'hip_flexion_r'
+        elif ('Ke' in folder) or ('Kf' in folder):
+            self.legend_dof = 'knee_angle_r'
+        else:
+            self.legend_dof = 'ankle_angle_r'
+
+        self.dof_names = list()
+        self.dof_labels = list()
+        if ('He' in folder) or ('Hf' in folder):
+            self.dof_names.append('hip_flexion_r')
+            self.dof_labels.append('hip extension')
+        if ('Ke' in folder) or ('Kf' in folder):
+            self.dof_names.append('knee_angle_r')
+            self.dof_labels.append('knee extension')
+        if ('Ap' in folder) or ('Ad' in folder):
+            self.dof_names.append('ankle_angle_r')
+            self.dof_labels.append('ankle plantarflexion')
+
+        if condition:
+            cond = '_' + condition
+        else:
+            cond = ''
+
+        if study.costFunction:
+            if not (study.costFunction == 'Default'):
+                cost = '_' + study.costFunction
+            else:
+                cost = ''
+        else:
+            cost = ''
+
+        if subjects == None:
+            self.subjects = [s.name for s in study.subjects]
+        else:
+            self.subjects = subjects
+
+        moment_deps = list()
+        
+        for device in self.device_list:
+            fname = 'mod_%s%s_moments%s.csv' % (device, cond, cost)
+            moment_deps.append(
+                os.path.join(study.config['results_path'], 'mrsmod_%s' % device,
+                    fname))
+
+        activity_deps = list()
+        fname ='experiment%s_activations%s.csv' % (cond, cost)
+        activity_deps.append(
+            os.path.join(study.config['results_path'], 'experiments',
+                fname))
+        for device in self.device_list:
+            fname = '%s%s_activations_%s%s.csv' % (device, cond, folder, cost)
+            activity_deps.append(
+                os.path.join(study.config['results_path'], 'mrsmod_%s' % device,
+                    fname))
+
+        # actions
+        output_path = os.path.join(study.config['analysis_path'], folder)
+        self.add_action([os.path.join(study.config['analysis_path'], folder, 
+                            'whole_body_metabolic_rates_%s%s.csv' % (folder, 
+                            cost))], 
+                        [os.path.join(
+                            output_path,'%s_metabolics_comparison' % folder)],
+                        self.plot_metabolics)
+
+        self.add_action(moment_deps, 
+                        [output_path], 
+                        self.plot_moments)
+
+        self.add_action(activity_deps,
+                       [os.path.join(
+                            output_path, '%s_activity_comparison' % folder)],
+                        self.plot_muscle_activity)
+
+    def plot_moments(self, file_dep, target):
+
+        # import packages and define subroutines for plotting
+        from matplotlib import gridspec
+        def plot_dof(ax, df, dof, actuator, label, color):
+            # Average over cycles.
+            # axis=1 for columns (not rows).
+            for subj in self.study_subjects:
+                if not (subj in self.subjects):
+                    df.drop(subj, axis='columns', inplace=True)
+
+            df_by_subj_dof_musc = df.groupby(
+                    level=['subject', 'DOF', 'actuator'], axis=1).mean()
+            df_mean = df_by_subj_dof_musc.groupby(
+                level=['DOF', 'actuator'], axis=1).mean()
+            df_std = df_by_subj_dof_musc.groupby(
+                level=['DOF', 'actuator'], axis=1).std()
+            pgc = df_mean.index
+
+            if (dof, actuator) in df_mean.columns:
+                y_mean = -df_mean[(dof, actuator)]
+                y_std = -df_std[(dof, actuator)]
+                if actuator == 'net':
+                    ax.plot(pgc, y_mean, color=color, label=label, 
+                        linestyle='-', linewidth=2)
+                else:
+                    ax.plot(pgc, y_mean, color=color, label=label, 
+                        linestyle='--')
+                    ax.fill_between(pgc, y_mean-y_std, y_mean+y_std, color=color, 
+                        alpha=0.3)
+
+        def set_axis(ax, idof, dof, dof_labels):
+            if dof == 'hip_flexion_r':
+                ax.set_xlim(0, 100)
+                ax.set_ylim(-1.0, 1.0)
+                ax.set_yticks(np.linspace(-1.0, 1.0, 5))
+            elif dof == 'knee_angle_r':
+                ax.set_xlim(0, 100)
+                ax.set_ylim(-1.0, 1.0)
+                ax.set_yticks(np.linspace(-1.0, 1.0, 5))
+            elif dof == 'ankle_angle_r':
+                ax.set_xlim(0, 100)
+                ax.set_ylim(-0.5, 2.0)
+
+            # if idof < len(self.dof_names)-1:
+            #     ax.set_xticklabels([])
+            ax.set_ylabel('%s (N-m/kg)' % dof_labels[idof])
+            ax.set_xlabel('time (% gait cycle)')
+            ax.spines['right'].set_visible(False)
+            ax.spines['top'].set_visible(False)
+            ax.xaxis.set_ticks_position('bottom')
+            ax.yaxis.set_ticks_position('left')
+            if dof == self.legend_dof:
+                handles, labels = ax.get_legend_handles_labels()
+                ax.legend(handles, labels, frameon=False, fontsize=7, 
+                    loc="best")
+                ax.get_legend().get_title().set_fontsize(8)
+                # ax.get_legend().get_title().set_fontstyle('italic')
+                ax.get_legend().get_title().set_fontweight('bold')
+
+        plot_iterate = zip(file_dep, self.device_list, self.label_list, 
+            self.color_list)
+
+        for not_first, (dep, device, label, color) in enumerate(plot_iterate):
+
+            # Get dataframes
+            df = pd.read_csv(dep, index_col=0,
+                            header=[0, 1, 2, 3], skiprows=1)
+            # Skip compare dataframe on first iteration, since they are the same
+            if not_first:
+                df_compare = pd.read_csv(file_dep[0], index_col=0,
+                            header=[0, 1, 2, 3], skiprows=1)
+                label_compare = self.label_list[0]
+                color_compare = self.color_list[0]
+
+            fig = pl.figure(figsize=(3.5, 3.5*len(self.dof_names)))
+            handles = set()
+            labels = set()
+            for idof, dof in enumerate(self.dof_names):
+
+                gs = gridspec.GridSpec(len(self.dof_names), 1) 
+                ax = fig.add_subplot(gs[idof])
+                # ax = fig.add_subplot(2, len(dof_names), idof + 1)
+                ax.axhline(color='k', linewidth=0.5, zorder=0)
+                plot_dof(ax, df, dof, 'net', 'net joint moment', 'black')
+                plot_dof(ax, df, dof, 'active', label, color)
+                if not_first:
+                    plot_dof(ax, df_compare, dof, 'active', label_compare, 
+                        color_compare)
+                set_axis(ax, idof, dof, self.dof_labels)
+
+            fig.tight_layout()
+            fname = '%s_moments_comparison' % device
+            fig.savefig(os.path.join(target[0], fname + '.pdf'))
+            fig.savefig(os.path.join(target[0], fname + '.png'), ppi=600)
+            pl.close(fig)
+
+
+        fig = pl.figure(figsize=(3.5, 3.5*len(self.dof_names)))
+        for idof, dof in enumerate(self.dof_names):
+            gs = gridspec.GridSpec(len(self.dof_names), 1)
+            ax = fig.add_subplot(gs[idof])
+            ax.axhline(color='k', linewidth=0.5, zorder=0)
+            for idep, (dep, device, label, color) in enumerate(plot_iterate):
+                df = pd.read_csv(dep, index_col=0,
+                            header=[0, 1, 2, 3], skiprows=1)
+                if not idep:
+                    plot_dof(ax, df, dof, 'net', 'net joint moment', 'black')
+                plot_dof(ax, df, dof, 'active', label, color)
+
+            set_axis(ax, idof, dof, self.dof_labels)
+
+        fig.tight_layout()
+        fname = '%s_all_moments_comparison' % self.folder
+        fig.savefig(os.path.join(target[0], fname + '.pdf'))
+        fig.savefig(os.path.join(target[0], fname + '.png'), ppi=600)
+        pl.close(fig)
+
+    def plot_metabolics(self, file_dep, target):
+
+        df_met = pd.read_csv(file_dep[0], index_col=[0, 1, 2], skiprows=1)
+        for subj in self.study_subjects:
+            if not (subj in self.subjects):
+                df_met.drop(subj, axis='index', inplace=True)
+
+        df_met_walk2 = df_met.xs('walk2', level='condition')
+        df_met_relchange = df_met_walk2.subtract(df_met_walk2['experiment'],
+                axis='index').divide(df_met_walk2['experiment'], 
+                axis='index')
+        df_met_relchange.drop('experiment', axis='columns', inplace=True)
+        df_met_by_subjs = df_met_relchange.groupby(level='subject').mean()
+        met_mean = df_met_by_subjs.mean()[self.device_list] * 100
+        met_std = df_met_by_subjs.std()[self.device_list] * 100
+
+        fig = pl.figure(figsize=(4, 6))
+        ax = fig.add_subplot(1,1,1)
+        ind = np.arange(len(self.device_list))
+
+        barlist = ax.bar(ind, met_mean, yerr=met_std)
+        for barelt, color in zip(barlist, self.color_list):
+            barelt.set_color(color)
+
+        ax.set_xticks(ind)
+        ax.set_xticklabels(self.label_list)
+        ax.set_ylabel('reduction in metabolic cost (%)')
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.xaxis.set_ticks_position('top')
+
+        fig.tight_layout()
+        fig.savefig(target[0] + '.pdf')
+        fig.savefig(target[0] + '.png', ppi=600)
+        pl.close(fig)
+
+    def plot_muscle_activity(self, file_dep, target):
+
+        device_list = ['experiment'] + self.device_list
+        label_list = ['unassisted'] + self.label_list
+        color_list = ['black'] + self.color_list
+        plot_iterate = zip(file_dep, device_list, label_list, color_list)
+
+        fig = pl.figure(figsize=(8, 8))
+        muscles = self.study.muscle_names
+        nice_act_names = {
+                'glut_max2_r': 'glut. max.',
+                'psoas_r': 'iliopsoas',
+                'semimem_r': 'hamstrings',
+                'rect_fem_r': 'rect. fem.',
+                'bifemsh_r': 'bi. fem. s.h.',
+                'vas_int_r': 'vasti',
+                'med_gas_r': 'gastroc.',
+                'soleus_r': 'soleus',
+                'tib_ant_r': 'tib. ant.',
+                }
+
+        mean_list = list()
+        std_list = list()
+        pgc_list = list()
+        for dep in file_dep:
+            df = pd.read_csv(dep, index_col=0,
+                    header=[0, 1, 2], skiprows=1)
+            for subj in self.study_subjects:
+                if not (subj in self.subjects):
+                    df.drop(subj, axis='columns', inplace=True)
+
+            # Average over cycles.
+            df_by_subj_musc = df.groupby(
+                    level=['subject', 'muscle'], axis=1).mean()
+            df_mean = df_by_subj_musc.groupby(level=['muscle'],
+                    axis=1).mean()
+            df_std = df_by_subj_musc.groupby(level=['muscle'],
+                    axis=1).std()
+            pgc = df_mean.index
+
+            mean_list.append(df_mean)
+            std_list.append(df_std)
+            pgc_list.append(pgc)
+
+        for imusc, musc_name in enumerate(muscles):
+            side_len = np.ceil(np.sqrt(len(muscles)))
+            ax = fig.add_subplot(side_len, side_len, imusc + 1)
+            ax.axhline(color='k', linewidth=0.5, zorder=0)
+
+            for i, (dep, device, label, color) in enumerate(plot_iterate):
+                df_mean = mean_list[i]
+                pgc = pgc_list[i]
+
+                y_mean = df_mean[musc_name]
+                ax.plot(pgc, y_mean, label=label, color=color, linestyle='-')
+                # ax.legend(frameon=False, fontsize=6)
+                ax.set_xlim(0, 100)
+                ax.set_ylim(0, 1.0)
+                ax.set_title(nice_act_names[musc_name])
+                ax.set_xlabel('time (% gait cycle)')
+                ax.spines['right'].set_visible(False)
+                ax.spines['top'].set_visible(False)
+                ax.xaxis.set_ticks_position('bottom')
+                ax.yaxis.set_ticks_position('left')
+
+            if not imusc:
+                handles, labels = ax.get_legend_handles_labels()
+                ax.legend(handles, labels, frameon=False, fontsize=7, 
+                    loc="best")
+                ax.get_legend().get_title().set_fontsize(8)
+                # ax.get_legend().get_title().set_fontstyle('italic')
+                ax.get_legend().get_title().set_fontweight('bold')
+
+        fig.tight_layout()
+        fig.savefig(target[0] + '.pdf')
+        fig.savefig(target[0] + '.png', dpi=600)
+        pl.close(fig)
+
 class TaskPlotHipFlexAnklePFMomentComparison(osp.StudyTask):
     REGISTRY = []
     def __init__(self, study, mod_agg_tasks, conditions=['walk2'],
@@ -2137,7 +3107,169 @@ class TaskPlotHipFlexAnklePFMomentComparison(osp.StudyTask):
         fig.text(.5, .1, txt, ha='center')
         fig.tight_layout()
         fig.savefig(self.actHfAp_pdf_path)
-        fig.savefig(self.actHfAp_png_path, ppi=150)
+        fig.savefig(self.actHfAp_png_path, ppi=600)
+        pl.close(fig)
+
+class TaskPlotMuscleActivityComparison(osp.StudyTask):
+    REGISTRY = []
+    def __init__(self, study, plot_lists, folder, condition='walk2', 
+            subjects=None):
+        super(TaskPlotMuscleActivityComparison, self).__init__(study)
+        self.name = 'plot_muscle_activity_comparison'
+        self.doc = 'Plot to compare muscle activity solutions.'
+        self.solution_list = plot_lists['solution_list']
+        self.label_list = plot_lists['label_list']
+        self.color_list = plot_lists['color_list']
+        self.folder = folder
+        self.study_subjects = [s.name for s in self.study.subjects]
+
+        if condition:
+            cond = '_' + condition
+        else:
+            cond = ''
+
+        if study.costFunction:
+            if not (study.costFunction == 'Default'):
+                cost = '_' + study.costFunction
+            else:
+                cost = ''
+        else:
+            cost = ''
+
+        if subjects == None:
+            self.subjects = [s.name for s in study.subjects]
+        else:
+            self.subjects = subjects
+
+        # EMG paths
+        self.emg_fpaths = list()
+        for subject in self.subjects:
+            self.emg_fpaths.append(
+                os.path.join(study.config['results_path'], 
+                    'experiments', subject, 'walk2', 'expdata', 
+                    'processed_emg.csv'))
+
+        # actions
+        output_path = os.path.join(study.config['analysis_path'], folder)
+        self.add_action(self.solution_list,
+                   [os.path.join(
+                        output_path, 'muscle_activity_comparison')],
+                    self.plot_muscle_activity)
+
+        
+
+    def plot_muscle_activity(self, file_dep, target):
+
+        df_emg_list = list()
+        iterate = zip(self.emg_fpaths, self.subjects)
+        for iemg, (emg_fpath, subj) in enumerate(iterate):
+            df_emg = pd.read_csv(emg_fpath, index_col=0, header=[0, 1], 
+                skiprows=1)
+            df_emg.drop('%s_walk2_cycle01' % subj, axis='columns', inplace=True)
+            df_emg.drop('%s_walk2_cycle02' % subj, axis='columns', inplace=True)
+            # col_name = '%s_walk2_cycle03' % subj
+            # df_emg.rename(columns = {col_name : 'walk2_cycle03'}, inplace=True)
+            df_emg_list.append(df_emg)
+
+        df_emg_joined = df_emg_list[0]
+        for df_emg in df_emg_list[1:]:
+            df_emg_joined = df_emg_joined.join(df_emg)
+
+        df_emg_mean = df_emg_joined.groupby(level=['muscle'], axis=1).mean()
+        emg_pgc = df_emg_mean.index.values
+
+        emg_map = {
+                'med_gas_r': 'gasmed_r',
+                'glut_max2_r': 'glmax2_r',
+                'rect_fem_r': 'recfem_r',
+                'semimem_r': 'semimem_r',
+                'soleus_r': 'soleus_r',
+                'tib_ant_r': 'tibant_r',
+                'vas_int_r': 'vasmed_r', 
+        }
+
+        emg_muscles = ['bflh_r', 'gaslat_r', 'gasmed_r', 'glmax1_r', 'glmax2_r',
+                       'glmax3_r', 'glmed1_r', 'glmed2_r', 'glmed3_r', 
+                       'recfem_r', 'semimem_r', 'semiten_r', 'soleus_r',
+                       'tibant_r', 'vaslat_r', 'vasmed_r']
+
+        plot_iterate = zip(file_dep, self.label_list, self.color_list)
+
+        fig = pl.figure(figsize=(8, 8))
+        muscles = self.study.muscle_names
+        nice_act_names = {
+                'glut_max2_r': 'glut. max.',
+                'psoas_r': 'iliopsoas',
+                'semimem_r': 'hamstrings',
+                'rect_fem_r': 'rect. fem.',
+                'bifemsh_r': 'bi. fem. s.h.',
+                'vas_int_r': 'vasti',
+                'med_gas_r': 'gastroc.',
+                'soleus_r': 'soleus',
+                'tib_ant_r': 'tib. ant.',
+                }
+
+        mean_list = list()
+        std_list = list()
+        pgc_list = list()
+        for dep in file_dep:
+            df = pd.read_csv(dep, index_col=0,
+                    header=[0, 1, 2], skiprows=1)
+            for subj in self.study_subjects:
+                if not (subj in self.subjects) and (subj in df.columns):
+                    df.drop(subj, axis='columns', inplace=True)
+
+            # Average over cycles.
+            df_by_subj_musc = df.groupby(
+                    level=['subject', 'muscle'], axis=1).mean()
+            df_mean = df_by_subj_musc.groupby(level=['muscle'],
+                    axis=1).mean()
+            df_std = df_by_subj_musc.groupby(level=['muscle'],
+                    axis=1).std()
+            pgc = df_mean.index
+
+            mean_list.append(df_mean)
+            std_list.append(df_std)
+            pgc_list.append(pgc)
+
+        for imusc, musc_name in enumerate(muscles):
+            side_len = np.ceil(np.sqrt(len(muscles)))
+            ax = fig.add_subplot(side_len, side_len, imusc + 1)
+            ax.axhline(color='k', linewidth=0.5, zorder=0)
+
+            if emg_map.get(musc_name):
+                y_emg = df_emg_mean[emg_map[musc_name]]
+                ax.plot(emg_pgc, y_emg, label='emg', color='black', 
+                    linestyle='--')
+
+            for i, (dep, label, color) in enumerate(plot_iterate):
+                df_mean = mean_list[i]
+                pgc = pgc_list[i]
+
+                y_mean = df_mean[musc_name]
+                ax.plot(pgc, y_mean, label=label, color=color, linestyle='-')
+                # ax.legend(frameon=False, fontsize=6)
+
+            ax.set_xlim(0, 100)
+            ax.set_ylim(0, 1.0)
+            ax.set_title(nice_act_names[musc_name])
+            ax.set_xlabel('time (% gait cycle)')
+            ax.spines['right'].set_visible(False)
+            ax.spines['top'].set_visible(False)
+            ax.xaxis.set_ticks_position('bottom')
+            ax.yaxis.set_ticks_position('left')
+
+            if not imusc:
+                handles, labels = ax.get_legend_handles_labels()
+                ax.legend(handles, labels, frameon=False, fontsize=7, 
+                    loc="best")
+                ax.get_legend().get_title().set_fontsize(8)
+                # ax.get_legend().get_title().set_fontstyle('italic')
+                ax.get_legend().get_title().set_fontweight('bold')
+
+        fig.tight_layout()
+        fig.savefig(target[0] + '.pdf')
+        fig.savefig(target[0] + '.png', dpi=600)
         pl.close(fig)
 
 class TaskAggregateTorqueParameters(osp.StudyTask):

@@ -276,6 +276,49 @@ def get_exotopology_flags(momentArms='free', whichDevices='all',
 
     return mod_names, activeDOFs_list, passiveDOFs_list, subcases
 
+def generate_main_tasks(trial):
+
+    # walk2: inverse kinematics
+    ik_setup_task = trial.add_task(osp.TaskIKSetup)
+    trial.add_task(osp.TaskIK, ik_setup_task)
+    trial.add_task(osp.TaskIKPost, ik_setup_task, 
+        error_markers=trial.study.error_markers)
+
+    # walk2: inverse dynamics
+    id_setup_task = trial.add_task(osp.TaskIDSetup, ik_setup_task)
+    trial.add_task(osp.TaskID, id_setup_task)
+    trial.add_task(osp.TaskIDPost, id_setup_task)
+
+    # walk2: muscle redundancy solver w/ generic MT parameters
+    # mrs_genericMT_setup_tasks = trial.add_task_cycles(
+    #     tasks.TaskMRSDeGrooteGenericMTParamsSetup,
+    #     cost=trial.study.costFunction)
+    # trial.add_task_cycles(osp.TaskMRSDeGroote, 
+    #     setup_tasks=mrs_genericMT_setup_tasks)
+    # trial.add_task_cycles(osp.TaskMRSDeGrootePost,
+    #     setup_tasks=mrs_genericMT_setup_tasks)
+
+    # walk2: parameter calibration
+    calibrate_setup_tasks = trial.add_task_cycles(
+        tasks.TaskCalibrateParametersSetup, 
+        trial.study.param_dict, 
+        trial.study.cost_dict)
+    trial.add_task_cycles(tasks.TaskCalibrateParameters, 
+        setup_tasks=calibrate_setup_tasks)
+    trial.add_task_cycles(tasks.TaskCalibrateParametersPost,
+        setup_tasks=calibrate_setup_tasks)
+
+    # walk2: muscle redundancy solver
+    mrs_setup_tasks = trial.add_task_cycles(tasks.TaskMRSDeGrooteSetup,
+        trial.study.param_dict,
+        cost=trial.study.costFunction)
+    trial.add_task_cycles(osp.TaskMRSDeGroote, 
+        setup_tasks=mrs_setup_tasks)
+    trial.add_task_cycles(osp.TaskMRSDeGrootePost,
+        setup_tasks=mrs_setup_tasks)
+
+    return mrs_setup_tasks
+
 def generate_exotopology_tasks(trial, mrs_setup_tasks):
 
     device_dofs, fixMomentArms = get_device_info(
@@ -301,15 +344,15 @@ def generate_exotopology_tasks(trial, mrs_setup_tasks):
             ]
 
         mrsmod_tasks = trial.add_task_cycles(
-            osp.TaskMRSDeGrooteMod,
+            tasks.TaskMRSDeGrooteMod,
             mod_name,
             'ExoTopology: multiarticular device optimization',
             mrsflags,
             setup_tasks=mrs_setup_tasks
             )
 
-        # trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
-        #     setup_tasks=mrsmod_tasks)
+        trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
+            setup_tasks=mrsmod_tasks)
 
 def generate_HfAp_tasks(trial, mrs_setup_tasks):
 
@@ -338,7 +381,7 @@ def generate_HfAp_tasks(trial, mrs_setup_tasks):
         ]
 
     mrsmod_tasks = trial.add_task_cycles(
-        osp.TaskMRSDeGrooteMod,
+        tasks.TaskMRSDeGrooteMod,
         'actHfAp_exp',
         'ExoTopology: "scaled-ID" assistive ankle-hip strategy',
         mrsflags,
@@ -403,7 +446,7 @@ def generate_mult_controls_tasks(trial, mrs_setup_tasks):
             ]
 
         mrsmod_tasks = trial.add_task_cycles(
-            osp.TaskMRSDeGrooteMod,
+            tasks.TaskMRSDeGrooteMod,
             '%s_multControls' % mod_name,
             'ExoTopology: multiarticular device optimization',
             mrsflags,
@@ -413,3 +456,45 @@ def generate_mult_controls_tasks(trial, mrs_setup_tasks):
         mrsmod_post_tasks = trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
             setup_tasks=mrsmod_tasks)
 
+def generate_param_controls_tasks(trial, mrs_setup_tasks):
+
+    device_dofs, fixMomentArms = get_device_info(
+        momentArms=trial.study.momentArms,
+        whichDevices=trial.study.whichDevices,
+        fixMomentArms=trial.study.fixMomentArms)[:2]
+
+    mod_names, activeDOFs_list, passiveDOFs_list, subcases = \
+        get_exotopology_flags(momentArms=trial.study.momentArms,
+        whichDevices=trial.study.whichDevices,
+        fixMomentArms=trial.study.fixMomentArms)
+
+
+    param_mods = ['actHfAp', 'actHeKe', 'actKfAp']
+
+    for mod_name, activeDOFs, passiveDOFs, subcase in  \
+        itertools.izip(mod_names, 
+            activeDOFs_list, passiveDOFs_list, subcases):
+
+        if not (mod_name in param_mods): continue
+
+        if subcase == 'Act':
+            subcase = 'ActParam'
+
+        mrsflags = [
+            "study='SoftExosuitDesign/Topology'",
+            "activeDOFs={%s}" % activeDOFs,
+            "passiveDOFs={}",
+            "subcase='%s'" % subcase,
+            "fixMomentArms=[]",
+            ]
+
+        mrsmod_tasks = trial.add_task_cycles(
+            tasks.TaskMRSDeGrooteMod,
+            '%s_paramControls' % mod_name,
+            'ExoTopology: multiarticular device optimization',
+            mrsflags,
+            setup_tasks=mrs_setup_tasks
+            )
+
+        mrsmod_post_tasks = trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
+            setup_tasks=mrsmod_tasks)
