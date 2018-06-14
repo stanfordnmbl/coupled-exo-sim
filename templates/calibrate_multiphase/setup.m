@@ -20,13 +20,19 @@ Misc.DofNames_Input = {...
 %                       'knee_angle_@SIDE@', ...
 %                       'ankle_angle_@SIDE@', ...
 %                       };
-Misc.MuscleNames_Input = {};
-%Misc.MuscleNames_Input = {...
-%    'soleus_r', ...
-%    'med_gas_r', ...
-%    'tib_ant_r' ...
-%    };
-% Misc.Mesh_Frequency = 20;
+%Misc.MuscleNames_Input = {};
+Misc.MuscleNames_Input = {...
+	'bifemsh_r', ...
+	'med_gas_r', ...
+	'glut_max2_r', ...
+	'rect_fem_r', ...
+	'semimem_r', ...
+    'soleus_r', ...
+    'tib_ant_r', ...
+	'vas_int_r', ...
+	'psoas_r' ...
+    };
+Misc.Mesh_Frequency = 20;
 
 Misc.study = 'ParameterCalibration';
 Misc.parameterCalibrationTerms = struct()
@@ -137,18 +143,33 @@ if exist('emg', 'var') && emg
 	end
 end
 
-Misc.parameterCalibrationData.emg = '@EMG_PATH@';
 Misc.tendonStiffnessCoeff = 35;
 Misc.tendonStiffnessModifiers.soleus_r = 0.5;
 Misc.tendonStiffnessModifiers.med_gas_r = 0.5;
+IK_paths = {'@IK_SOLUTIONS@'}; 
+IK_paths = strsplit(IK_paths{1}, ',');
+ID_paths = {'@ID_SOLUTIONS@'}; 
+ID_paths = strsplit(ID_paths{1}, ',');
+EMG_paths = {'@EMG_PATHS@'};
+EMG_paths = strsplit(EMG_paths{1}, ',');
+Misc.parameterCalibrationData.emg = EMG_paths;
+init_times = {'@INIT_TIMES@'};
+init_times = strsplit(init_times{1}, ',');
+final_times = {'@FINAL_TIMES@'};
+final_times = strsplit(final_times{1}, ',');
+times = cell(0);
+for i = 1:length(init_times)
+	times{i} = [str2num(init_times{i}) str2num(final_times{i})];
+end
+cycle_ids = {'@CYCLE_IDS@'};
+Misc.cycle_ids = strsplit(cycle_ids{1}, ',');
 tic;
-[Time,MExcitation,MActivation,RActivation,TForcetilde,TForce,MuscleNames,MuscleData,OptInfo,DatStore] = ...
-SolveMuscleRedundancy_FtildeState(...
+[MExcitation,MActivation,RActivation,MuscleNames,DOFNames,OptInfo,DatStore] = SolveMuscleRedundancy_FtildeState_MultiPhase(...
     '@MODEL@', ... % model_path
-    '@IK_SOLUTION@', ... % IK_path
-    '@ID_SOLUTION@', ... % ID_path
-    [@INIT_TIME@, @FINAL_TIME@], ... % time
-    'results', ... % OutPath
+    IK_paths, ... % IK_paths
+    ID_paths, ... % ID_paths
+    times, ... % times
+    'results', ... % OutPath 
     Misc);
     % TODO '', ... % ID_path
 toc

@@ -121,7 +121,7 @@ def scale_setup_fcn(pmm, mset, sset, ikts):
     ikts.add_ikmarkertask_bilateral('EJC', False, 0.0)
     ikts.add_ikmarkertask_bilateral('KJC', False, 0.0)
 
-def add_to_study(study):
+def add_to_study(study):    
     subject = study.add_subject(2, 76.4757)
 
     cond_args = dict()
@@ -168,13 +168,15 @@ def add_to_study(study):
             omit_trial_dir=True,
             )
     walk2_trial.add_task(tasks.TaskUpdateGroundReactionColumnLabels)
+
+    # Set the time in the gait cycle when to start fitting a parameterization
+    # of the optimized exoskeleton torque. 
+    walk2_trial.get_cycle(3).fit_start_time = 3.46
     
     # walk2: main study tasks
     mrs_setup_tasks = helpers.generate_main_tasks(walk2_trial)
     helpers.generate_exotopology_tasks(walk2_trial, mrs_setup_tasks)
-    # helpers.generate_HfAp_tasks(walk2_trial, mrs_setup_tasks)
     helpers.generate_mult_controls_tasks(walk2_trial, mrs_setup_tasks)
-    helpers.generate_param_controls_tasks(walk2_trial, mrs_setup_tasks)
 
     ## walk1 condition
     walk1 = subject.add_condition('walk1', metadata={'walking_speed': 1.00})
@@ -222,6 +224,23 @@ def add_to_study(study):
     agg_task = subject.add_task(tasks.TaskAggregateMuscleParameters,
         study.param_dict, 
         conditions=['walk1','walk2','walk3'], 
-        cycles_to_exclude=['cycle02','cycle03'])
+        cycles_to_exclude=['cycle03'])
     subject.add_task(tasks.TaskPlotMuscleParameters, agg_task, 
-        cycles_to_exclude=['cycle02','cycle03'])
+        cycles_to_exclude=['cycle03'])
+
+    # multi-phase parameter calibration (trial does not matter)
+    calibrate_setup_task = walk3_trial.add_task(
+        tasks.TaskCalibrateParametersMultiPhaseSetup,
+        ['walk1','walk2','walk3'],
+        ['cycle01','cycle02'],
+        study.param_dict,
+        study.cost_dict,
+        passive_precalibrate=True)
+
+    walk3_trial.add_task(
+        tasks.TaskCalibrateParametersMultiPhase,
+        calibrate_setup_task)
+
+    walk3_trial.add_task(
+        tasks.TaskCalibrateParametersMultiPhasePost,
+        calibrate_setup_task)
