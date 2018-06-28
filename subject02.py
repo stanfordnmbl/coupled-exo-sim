@@ -6,7 +6,7 @@ import helpers
 
 def scale_setup_fcn(pmm, mset, sset, ikts):
     m = pmm.Measurement('torso', mset)
-    m.add_markerpair('RASI', 'CLAV')
+    m.add_markerpair('RASI', 'CLAV')    
     m.add_markerpair('LASI', 'CLAV')
     m.add_markerpair('LASI', 'C7')
     m.add_markerpair('RASI', 'C7')
@@ -172,11 +172,16 @@ def add_to_study(study):
     # Set the time in the gait cycle when to start fitting a parameterization
     # of the optimized exoskeleton torque. 
     walk2_trial.get_cycle(3).fit_start_time = 3.46
+    walk2_trial.get_cycle(3).peak_torque = 45.749503287345590 # N-m
+    walk2_trial.get_cycle(3).peak_time = 3.770801870141614 # s
+    walk2_trial.get_cycle(3).rise_time = 0.367949905100557 # s
+    walk2_trial.get_cycle(3).fall_time = 0.217250193376961 # s
     
     # walk2: main study tasks
     mrs_setup_tasks = helpers.generate_main_tasks(walk2_trial)
     helpers.generate_exotopology_tasks(walk2_trial, mrs_setup_tasks)
     helpers.generate_mult_controls_tasks(walk2_trial, mrs_setup_tasks)
+    helpers.generate_param_controls_tasks(walk2_trial, mrs_setup_tasks)
 
     ## walk1 condition
     walk1 = subject.add_condition('walk1', metadata={'walking_speed': 1.00})

@@ -386,42 +386,42 @@ def generate_exotopology_tasks(trial, mrs_setup_tasks):
             trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
                 setup_tasks=mrsmod_fixed_opt_tasks)
 
-            # Tasks to fit Hermite-Simpson parameterized curves to optimized 
-            # exoskeleton torque profiles
-            param_info = dict()
-            param_info['min_param'] = 2
-            param_info['max_param'] = 8
-            fitopt_setup_tasks = trial.add_task_cycles(
-                tasks.TaskFitOptimizedExoSetup,
-                param_info,
-                'hermite', 
-                setup_tasks=mrsmod_fixed_opt_tasks,
-                )
-            trial.add_task_cycles(tasks.TaskFitOptimizedExo,
-                setup_tasks=fitopt_setup_tasks)
+            # # Tasks to fit Hermite-Simpson parameterized curves to optimized 
+            # # exoskeleton torque profiles
+            # param_info = dict()
+            # param_info['min_param'] = 2
+            # param_info['max_param'] = 8
+            # fitopt_setup_tasks = trial.add_task_cycles(
+            #     tasks.TaskFitOptimizedExoSetup,
+            #     param_info,
+            #     'hermite', 
+            #     setup_tasks=mrsmod_fixed_opt_tasks,
+            #     )
+            # trial.add_task_cycles(tasks.TaskFitOptimizedExo,
+            #     setup_tasks=fitopt_setup_tasks)
 
 
-            mrsflags = [
-                "study='SoftExosuitDesign/Topology'",
-                "activeDOFs={%s}" % activeDOFs,
-                "passiveDOFs={%s}" % passiveDOFs,
-                "subcase='%s'" % 'FitOpt',
-                "fixMomentArms=1.0",
-                ]
+            # mrsflags = [
+            #     "study='SoftExosuitDesign/Topology'",
+            #     "activeDOFs={%s}" % activeDOFs,
+            #     "passiveDOFs={%s}" % passiveDOFs,
+            #     "subcase='%s'" % 'FitOpt',
+            #     "fixMomentArms=1.0",
+            #     ]
 
-            for param_num in range(param_info['min_param'], 
-                                   param_info['max_param']+1):
-                fitopt_mrs_setup_tasks = trial.add_task_cycles(
-                    tasks.TaskMRSFitOptimizedExoSetup,
-                    'fitopt_hermite_%s_%s_fixed' % (str(param_num), mod_name),
-                    param_num,
-                    mrsflags,
-                    setup_tasks=fitopt_setup_tasks,
-                    )
-                trial.add_task_cycles(tasks.TaskMRSFitOptimizedExo,
-                    setup_tasks=fitopt_mrs_setup_tasks)
-                trial.add_task_cycles(tasks.TaskMRSFitOptimizedExoPost,
-                     setup_tasks=fitopt_mrs_setup_tasks)
+            # for param_num in range(param_info['min_param'], 
+            #                        param_info['max_param']+1):
+            #     fitopt_mrs_setup_tasks = trial.add_task_cycles(
+            #         tasks.TaskMRSFitOptimizedExoSetup,
+            #         'fitopt_hermite_%s_%s_fixed' % (str(param_num), mod_name),
+            #         param_num,
+            #         mrsflags,
+            #         setup_tasks=fitopt_setup_tasks,
+            #         )
+            #     trial.add_task_cycles(tasks.TaskMRSFitOptimizedExo,
+            #         setup_tasks=fitopt_mrs_setup_tasks)
+            #     trial.add_task_cycles(tasks.TaskMRSFitOptimizedExoPost,
+            #          setup_tasks=fitopt_mrs_setup_tasks)
 
             # Tasks to fit the parameterize curve from Zhang et al. 2017 to
             # optimized exoskeleton torque profiles
@@ -437,63 +437,63 @@ def generate_exotopology_tasks(trial, mrs_setup_tasks):
             trial.add_task_cycles(tasks.TaskFitOptimizedExo,
                 setup_tasks=fitopt_setup_tasks)
 
-            mrsflags = [
-                "study='SoftExosuitDesign/Topology'",
-                "activeDOFs={%s}" % activeDOFs,
-                "passiveDOFs={%s}" % passiveDOFs,
-                "subcase='%s'" % 'FitOpt',
-                "fixMomentArms=1.0",
-                ]
+            # mrsflags = [
+            #     "study='SoftExosuitDesign/Topology'",
+            #     "activeDOFs={%s}" % activeDOFs,
+            #     "passiveDOFs={%s}" % passiveDOFs,
+            #     "subcase='%s'" % 'FitOpt',
+            #     "fixMomentArms=1.0",
+            #     ]
 
-            for param_num in range(param_info['min_param'], 
-                                   param_info['max_param']+1):
-                fitopt_mrs_setup_tasks = trial.add_task_cycles(
-                    tasks.TaskMRSFitOptimizedExoSetup,
-                    'fitopt_zhang2017_%s_%s_fixed' % (str(param_num), mod_name),
-                    param_num,
-                    mrsflags,
-                    setup_tasks=fitopt_setup_tasks,
-                    )
-                trial.add_task_cycles(tasks.TaskMRSFitOptimizedExo,
-                    setup_tasks=fitopt_mrs_setup_tasks)
-                trial.add_task_cycles(tasks.TaskMRSFitOptimizedExoPost,
-                     setup_tasks=fitopt_mrs_setup_tasks)
+            # for param_num in range(param_info['min_param'], 
+            #                        param_info['max_param']+1):
+            #     fitopt_mrs_setup_tasks = trial.add_task_cycles(
+            #         tasks.TaskMRSFitOptimizedExoSetup,
+            #         'fitopt_zhang2017_%s_%s_fixed' % (str(param_num), mod_name),
+            #         param_num,
+            #         mrsflags,
+            #         setup_tasks=fitopt_setup_tasks,
+            #         )
+            #     trial.add_task_cycles(tasks.TaskMRSFitOptimizedExo,
+            #         setup_tasks=fitopt_mrs_setup_tasks)
+            #     trial.add_task_cycles(tasks.TaskMRSFitOptimizedExoPost,
+            #          setup_tasks=fitopt_mrs_setup_tasks)
 
-            # Tasks to fit Legendre polynomial parameterized curves to optimized 
-            # exoskeleton torque profiles
-            param_info = dict()
-            param_info['min_param'] = 4
-            param_info['max_param'] = 10
-            fitopt_setup_tasks = trial.add_task_cycles(
-                tasks.TaskFitOptimizedExoSetup,
-                param_info,
-                'legendre', 
-                setup_tasks=mrsmod_fixed_opt_tasks,
-                )
-            trial.add_task_cycles(tasks.TaskFitOptimizedExo,
-                setup_tasks=fitopt_setup_tasks)
+            # # Tasks to fit Legendre polynomial parameterized curves to optimized 
+            # # exoskeleton torque profiles
+            # param_info = dict()
+            # param_info['min_param'] = 4
+            # param_info['max_param'] = 10
+            # fitopt_setup_tasks = trial.add_task_cycles(
+            #     tasks.TaskFitOptimizedExoSetup,
+            #     param_info,
+            #     'legendre', 
+            #     setup_tasks=mrsmod_fixed_opt_tasks,
+            #     )
+            # trial.add_task_cycles(tasks.TaskFitOptimizedExo,
+            #     setup_tasks=fitopt_setup_tasks)
 
-            mrsflags = [
-                "study='SoftExosuitDesign/Topology'",
-                "activeDOFs={%s}" % activeDOFs,
-                "passiveDOFs={%s}" % passiveDOFs,
-                "subcase='%s'" % 'FitOpt',
-                "fixMomentArms=1.0",
-                ]
+            # mrsflags = [
+            #     "study='SoftExosuitDesign/Topology'",
+            #     "activeDOFs={%s}" % activeDOFs,
+            #     "passiveDOFs={%s}" % passiveDOFs,
+            #     "subcase='%s'" % 'FitOpt',
+            #     "fixMomentArms=1.0",
+            #     ]
 
-            for param_num in range(param_info['min_param'], 
-                                   param_info['max_param']+1):
-                fitopt_mrs_setup_tasks = trial.add_task_cycles(
-                    tasks.TaskMRSFitOptimizedExoSetup,
-                    'fitopt_legendre_%s_%s_fixed' % (str(param_num), mod_name),
-                    param_num,
-                    mrsflags,
-                    setup_tasks=fitopt_setup_tasks,
-                    )
-                trial.add_task_cycles(tasks.TaskMRSFitOptimizedExo,
-                    setup_tasks=fitopt_mrs_setup_tasks)
-                trial.add_task_cycles(tasks.TaskMRSFitOptimizedExoPost,
-                     setup_tasks=fitopt_mrs_setup_tasks)
+            # for param_num in range(param_info['min_param'], 
+            #                        param_info['max_param']+1):
+            #     fitopt_mrs_setup_tasks = trial.add_task_cycles(
+            #         tasks.TaskMRSFitOptimizedExoSetup,
+            #         'fitopt_legendre_%s_%s_fixed' % (str(param_num), mod_name),
+            #         param_num,
+            #         mrsflags,
+            #         setup_tasks=fitopt_setup_tasks,
+            #         )
+            #     trial.add_task_cycles(tasks.TaskMRSFitOptimizedExo,
+            #         setup_tasks=fitopt_mrs_setup_tasks)
+            #     trial.add_task_cycles(tasks.TaskMRSFitOptimizedExoPost,
+            #          setup_tasks=fitopt_mrs_setup_tasks)
 
             # Experimental torque control profile
             mrsflags = [
@@ -557,27 +557,13 @@ def generate_mult_controls_tasks(trial, mrs_setup_tasks):
         mrsmod_post_tasks = trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
             setup_tasks=mrsmod_tasks)
 
-# def generate_fitopt_tasks(trial, mrsmod_fixed_opt_tasks):
-
-#     num_params = 8
-
-#     # Tasks to fit Hermite-Simpson parameterized curves to optimized 
-#     # exoskeleton torque profiles
-#     fitopt_setup_tasks = trial.add_task_cycles(
-#         tasks.TaskFitOptimizedExoSetup, 
-#         setup_tasks=mrsmod_fixed_opt_tasks,
-#         fit='hermite',
-#         num_params=num_params)
-#     trial.add_task_cycles(tasks.TaskFitOptimizedExo,
-#         setup_tasks=fitopt_setup_tasks)
-
 def generate_param_controls_tasks(trial, mrs_setup_tasks):
 
     device_dofs = get_device_info(trial.study)[0]
     mod_names, activeDOFs_list, passiveDOFs_list, subcases = \
         get_exotopology_flags(trial.study)
 
-    param_mods = ['actHfAp', 'actHeKe', 'actKfAp']
+    param_mods = ['actHfAp', 'actHeKe', 'actKfAp', 'actAp']
 
     for mod_name, activeDOFs, passiveDOFs, subcase in  \
         itertools.izip(mod_names, 
@@ -585,20 +571,18 @@ def generate_param_controls_tasks(trial, mrs_setup_tasks):
 
         if not (mod_name in param_mods): continue
 
-        if subcase == 'Act':
-            subcase = 'ActParam'
+        if subcase == 'Act': subcase = 'ActParam'
 
         mrsflags = [
             "study='SoftExosuitDesign/Topology'",
             "activeDOFs={%s}" % activeDOFs,
             "passiveDOFs={}",
             "subcase='%s'" % subcase,
-            "fixMomentArms=[]",
             ]
 
         mrsmod_tasks = trial.add_task_cycles(
             tasks.TaskMRSDeGrooteMod,
-            '%s_paramControls' % mod_name,
+            'mrsmod_%s_paramControls' % mod_name,
             'ExoTopology: multiarticular device optimization',
             mrsflags,
             setup_tasks=mrs_setup_tasks
@@ -606,3 +590,27 @@ def generate_param_controls_tasks(trial, mrs_setup_tasks):
 
         mrsmod_post_tasks = trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
             setup_tasks=mrsmod_tasks)
+
+        # mrsflags = [
+        #     "study='SoftExosuitDesign/Topology'",
+        #     "activeDOFs={%s}" % activeDOFs,
+        #     "passiveDOFs={}",
+        #     "subcase='%s'" % subcase,
+        #     ]
+
+        # power_matches = ['avg_pos', 'avg_net']
+        # for match in power_matches:
+        #     pmatch_mrs_setup_tasks = trial.add_task_cycles(
+        #         tasks.TaskMRSDevicePowerMatchSetup,
+        #         'pmatch_%s_%s_paramControls' % (match, mod_name),
+        #         match,
+        #         mrsflags,
+        #         setup_tasks=mrs_setup_tasks
+        #         )
+        #     trial.add_task_cycles(tasks.TaskMRSDevicePowerMatch,
+        #         setup_tasks=pmatch_mrs_setup_tasks)
+        #     trial.add_task_cycles(tasks.TaskMRSDevicePowerMatchPost,
+        #         setup_tasks=pmatch_mrs_setup_tasks)
+
+
+

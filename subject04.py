@@ -172,11 +172,16 @@ def add_to_study(study):
     #  Set the time in the gait cycle when to start fitting a parameterization
     # of the optimized exoskeleton torque. 
     walk2_trial.get_cycle(3).fit_start_time = 4.885
+    walk2_trial.get_cycle(3).peak_torque = 61.612823211264974 # N-m
+    walk2_trial.get_cycle(3).peak_time = 5.357164617862192 # s
+    walk2_trial.get_cycle(3).rise_time = 0.327875410699352 # s
+    walk2_trial.get_cycle(3).fall_time = 0.279134302106175 # s
 
     # walk2: main study tasks
     mrs_setup_tasks = helpers.generate_main_tasks(walk2_trial)
     helpers.generate_exotopology_tasks(walk2_trial, mrs_setup_tasks)
     helpers.generate_mult_controls_tasks(walk2_trial, mrs_setup_tasks)
+    helpers.generate_param_controls_tasks(walk2_trial, mrs_setup_tasks)
 
     ## walk1 condition
     walk1 = subject.add_condition('walk1', metadata={'walking_speed': 1.00})
