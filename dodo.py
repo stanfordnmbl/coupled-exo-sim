@@ -43,11 +43,11 @@ from tasks import *
 from helpers import *
 
 study = osp.Study('exotopology',
-        'Rajagopal2015_18musc_muscle_names_probed.osim',
+        'Rajagopal2015_18musc_muscle_names_probed_iliacus.osim',
         'Rajagopal2015_reserve_actuators.xml')
 
 # Model markers to compute errors for
-marker_suffix = ['ASI','PSI','TH1','TH2','TH3','TB1','TB2','TB3',
+marker_suffix = ['ASI','PSI','TH1','TH2','TH3','TB1','TB2',
                  'CAL','TOE','MT5','ACR','LEL','MEL','UA1','UA2','UA3',
                  'FAsuperior','FAradius','FAradius']
 error_markers = ['*' + marker for marker in marker_suffix] 
@@ -94,7 +94,11 @@ study.cost_dict['emg'] = cost_muscle_list
 
 # Choose cycles to isolate for aggregate and plot tasks.
 # Set to None to plot all cycles.
-study.cycles_to_plot = ['cycle03']
+study.cycles_to_plot = ['cycle02','cycle03']
+
+study.calibrate_cycles = ['cycle01'] # cycles used to calibrate subject models
+study.test_cycles = ['cycle02','cycle03'] # cycles used to analyses
+study.test_cycles_num = [2, 3]
 
 # Results
 # ----------
@@ -144,7 +148,6 @@ study.add_task(TaskValidateAgainstEMG)
 
 # Analysis
 # --------
-HfAp_agg_tasks = list()
 
 # Experiment results
 study.add_task(TaskAggregateMuscleDataExperiment)
@@ -210,46 +213,61 @@ study.add_task(TaskPlotMoments, study.tasks[-1])
 #     study.add_task(TaskPlotMoments, study.tasks[-1], mod=mod)
 
 ## Device comparisons
-subjects = ['subject01', 'subject02', 'subject04', 'subject18', 'subject19']
+subjects = ['subject01','subject04', 'subject18']
 
 # Hip flexion, ankle plantarflexion
-device_list = ['mrsmod_actHfAp_paramControls',
-               'mrsmod_actHfAp_fixed', 'mrsmod_actHfAp_multControls']
-label_list = ['4 parameters','continuous (coupled)',
-               'continuous (independent)']
-color_list = ['green', 'blue', 'red']
+# device_list = ['mrsmod_actHfAp_multControls', 'mrsmod_actHfKfAp', 
+#                'mrsmod_actHfAp', 'mrsmod_actHfAp_fixed', 
+#                'mrsmod_actHfAp_paramControls', 'mrsmod_actHf', 'mrsmod_actAp']
+# label_list = ['continuous (independent)', 'continuous (coupled, opt. gains)', 
+#               'continuous (coupled)', '4 parameters', 'Hf only', 'Ap only']
+# color_list = ['red', 'cyan', 'teal', 'blue', 'green', 'deeppink', 'gold']
+
+# device_list = ['mrsmod_actHfAp_multControls','mrsmod_actHfAp_fixed',
+#                'mrsmod_actHfAp_paramControls']
+# label_list = ['continuous (independent)', 'continuous (coupled)', 
+#               '4 parameters']
+# color_list = ['red', 'blue', 'green']
+
+device_list = ['mrsmod_actHfAp_multControls','mrsmod_actHfAp', 
+               'mrsmod_actHfAp_shift', 'mrsmod_actHf_fixed', 
+               'mrsmod_actAp_fixed']
+label_list = ['continuous (independent)', 'continuous (coupled)', 
+              'continuous (coupled, shifted)','hip only', 'ankle only']
+color_list = ['red', 'blue', 'teal', 'green', 'gold']
+
+# device_list = ['mrsmod_actHfAp_multControls']
 
 plot_lists = dict()
-plot_lists['device_list'] = device_list[::-1]
-plot_lists['label_list'] = label_list[::-1]
-plot_lists['color_list'] = color_list[::-1]
-folder = 'mrsmod_actHfAp'
+plot_lists['device_list'] = device_list
+plot_lists['label_list'] = label_list
+plot_lists['color_list'] = color_list
+folder = 'HfAp'
 for mod in device_list:
     study.add_task(TaskAggregateMomentsMod, mod)
-    study.add_task(TaskPlotMoments, study.tasks[-1], mod=mod)
-study.add_task(TaskAggregateMuscleDataMod, device_list, suffix=folder)
-study.add_task(TaskPlotMuscleData, study.tasks[-1], suffix=folder)
+    study.add_task(TaskPlotMoments, study.tasks[-1])
+    study.add_task(TaskAggregateMuscleDataMod, mod)
+    study.add_task(TaskPlotMuscleData, study.tasks[-1])
 study.add_task(TaskAggregateDevicePower, device_list, suffix=folder)
 study.add_task(TaskAggregateMetabolicRate, device_list, suffix=folder)
 study.add_task(TaskPlotDeviceComparison, plot_lists, folder, subjects=subjects)
 
 # hip flexion, ankle plantarflexion parameter box-and-whisker plots
-study.add_task(TaskAggregateTorqueParameters, 'mrsmod_expHfAp_fixed')
-study.add_task(TaskPlotTorqueParameters, 'mrsmod_expHfAp_fixed')
+# study.add_task(TaskAggregateTorqueParameters, 'mrsmod_expHfAp_fixed')
+# study.add_task(TaskPlotTorqueParameters, 'mrsmod_expHfAp_fixed')
 
-study.add_task(TaskAggregateTorqueParameters, 'mrsmod_actHfAp_paramControls')
-study.add_task(TaskPlotTorqueParameters, 'mrsmod_actHfAp_paramControls')
+# study.add_task(TaskAggregateTorqueParameters, 'mrsmod_actHfAp_paramControls')
+# study.add_task(TaskPlotTorqueParameters, 'mrsmod_actHfAp_paramControls')
 
-study.add_task(TaskAggregateTorqueParameters, 
-  'fitopt_zhang2017_actHfAp_fixed/params_4')
-study.add_task(TaskPlotTorqueParameters, 
-  'fitopt_zhang2017_actHfAp_fixed/params_4')
+# study.add_task(TaskAggregateTorqueParameters, 
+#   'fitopt_zhang2017_actHfAp_fixed/params_4')
+# study.add_task(TaskPlotTorqueParameters, 
+#   'fitopt_zhang2017_actHfAp_fixed/params_4')
 
-study.add_task(TaskAggregateMomentsMod, 'mrsmod_actAp_paramControls')
-study.add_task(TaskPlotMoments, study.tasks[-1], 
-  mod='mrsmod_actAp_paramControls')
-study.add_task(TaskAggregateTorqueParameters, 'mrsmod_actAp_paramControls')
-study.add_task(TaskPlotTorqueParameters, 'mrsmod_actAp_paramControls')
+# study.add_task(TaskAggregateMomentsMod, 'mrsmod_actAp_paramControls')
+# study.add_task(TaskPlotMoments, study.tasks[-1])
+# study.add_task(TaskAggregateTorqueParameters, 'mrsmod_actAp_paramControls')
+# study.add_task(TaskPlotTorqueParameters, 'mrsmod_actAp_paramControls')
 
 
 # FitOpt: hermite-simpson / hip flexion, ankle plantarflexion
@@ -274,9 +292,9 @@ plot_lists['color_list'] = color_list
 folder = 'fitopt_hermite_actHfAp_fixed'
 # for mod in device_list:
 #     study.add_task(TaskAggregateMomentsMod, mod)
-#     study.add_task(TaskPlotMoments, study.tasks[-1], mod=mod)
-# study.add_task(TaskAggregateMuscleDataMod, device_list, suffix=folder)
-# study.add_task(TaskPlotMuscleData, study.tasks[-1], suffix=folder)
+#     study.add_task(TaskPlotMoments, study.tasks[-1])
+#     study.add_task(TaskAggregateMuscleDataMod, mod)
+#     study.add_task(TaskPlotMuscleData, study.tasks[-1])
 # study.add_task(TaskAggregateDevicePower, device_list, suffix=folder)
 # study.add_task(TaskAggregateMetabolicRate, device_list, suffix=folder)
 # study.add_task(TaskPlotDeviceComparison, plot_lists, folder, subjects=subjects)
@@ -300,33 +318,35 @@ plot_lists['color_list'] = color_list
 folder = 'fitopt_legendre_actHfAp_fixed'
 # for mod in device_list:
 #     study.add_task(TaskAggregateMomentsMod, mod)
-#     study.add_task(TaskPlotMoments, study.tasks[-1], mod=mod)
-# study.add_task(TaskAggregateMuscleDataMod, device_list, suffix=folder)
-# study.add_task(TaskPlotMuscleData, study.tasks[-1], suffix=folder)
+#     study.add_task(TaskPlotMoments, study.tasks[-1])
+#     study.add_task(TaskAggregateMuscleDataMod, mod)
+#     study.add_task(TaskPlotMuscleData, study.tasks[-1])
 # study.add_task(TaskAggregateDevicePower, device_list, suffix=folder)
 # study.add_task(TaskAggregateMetabolicRate, device_list, suffix=folder)
 # study.add_task(TaskPlotDeviceComparison, plot_lists, folder, subjects=subjects)
 
 # Hip extension, knee extension
 device_list = ['mrsmod_actHeKe_multControls', 'mrsmod_actHeKe', 
-               'mrsmod_actHeKe_fixed', 'mrsmod_expHeKe_fixed']
-label_list = ['DOF controls', 'underactuated \n opt. moment arms', 
-              'underactuated', 'experiment']
-color_list = ['red', 'blue', 'green', 'purple']
+               'mrsmod_actHe', 'mrsmod_actKe']
+label_list = ['continuous (independent)', 
+              'continuous (coupled)', 'He only', 'Ke only']
+color_list = ['red', 'blue', 'green', 'gold']
+
+# device_list = ['mrsmod_actHeKe']
 
 plot_lists = dict()
 plot_lists['device_list'] = device_list
 plot_lists['label_list'] = label_list
 plot_lists['color_list'] = color_list
-folder = 'mrsmod_actHeKe'
-# for mod in device_list:
-#     study.add_task(TaskAggregateMomentsMod, mod)
-#     study.add_task(TaskPlotMoments, study.tasks[-1], mod=mod)
-# study.add_task(TaskAggregateMuscleDataMod, device_list, suffix=folder)
-# study.add_task(TaskPlotMuscleData, study.tasks[-1], suffix=folder)
-# study.add_task(TaskAggregateDevicePower, device_list, suffix=folder)
-# study.add_task(TaskAggregateMetabolicRate, mods=device_list, suffix=folder)
-# study.add_task(TaskPlotDeviceComparison, plot_lists, folder, subjects=subjects)
+folder = 'HeKe'
+for mod in device_list:
+    study.add_task(TaskAggregateMomentsMod, mod)
+    study.add_task(TaskPlotMoments, study.tasks[-1])
+    study.add_task(TaskAggregateMuscleDataMod, mod)
+    study.add_task(TaskPlotMuscleData, study.tasks[-1])
+study.add_task(TaskAggregateDevicePower, device_list, suffix=folder)
+study.add_task(TaskAggregateMetabolicRate, device_list, suffix=folder)
+study.add_task(TaskPlotDeviceComparison, plot_lists, folder, subjects=subjects)
 
 # Knee flexion, ankle plantarflexion 
 # device_list = ['actKfAp_multControls', 'actKfAp', 'actKfAp_fixed']
@@ -338,10 +358,13 @@ folder = 'mrsmod_actHeKe'
 # plot_lists['label_list'] = label_list
 # plot_lists['color_list'] = color_list
 # folder = 'actKfAp'
-# study.add_task(TaskAggregateMuscleDataMod, device_list, 
-#         suffix=folder)
-# study.add_task(TaskAggregateMetabolicRate, mods=device_list, 
-#         suffix=folder)
+# for mod in device_list:
+#     study.add_task(TaskAggregateMomentsMod, mod)
+#     study.add_task(TaskPlotMoments, study.tasks[-1])
+#     study.add_task(TaskAggregateMuscleDataMod, mod)
+#     study.add_task(TaskPlotMuscleData, study.tasks[-1])
+# study.add_task(TaskAggregateDevicePower, device_list, suffix=folder)
+# study.add_task(TaskAggregateMetabolicRate, device_list, suffix=folder)
 # study.add_task(TaskPlotDeviceComparison, plot_lists, folder, subjects=subjects)
 
 

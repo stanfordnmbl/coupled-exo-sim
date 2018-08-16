@@ -72,27 +72,27 @@
 
             <!-- Lower-body tracking markers. -->
             <IKMarkerTask name="LTH1">
-                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+                <apply>true</apply> <weight>2</weight> </IKMarkerTask>
             <IKMarkerTask name="RTH1">
                 <apply>true</apply> <weight>1</weight> </IKMarkerTask>
             <IKMarkerTask name="LTH2">
-                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+                <apply>true</apply> <weight>2</weight> </IKMarkerTask>
             <IKMarkerTask name="RTH2">
                 <apply>true</apply> <weight>1</weight> </IKMarkerTask>
             <IKMarkerTask name="LTH3">
-                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+                <apply>true</apply> <weight>2</weight> </IKMarkerTask>
             <IKMarkerTask name="RTH3">
                 <apply>true</apply> <weight>1</weight> </IKMarkerTask>
             <IKMarkerTask name="LTB1">
-                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+                <apply>true</apply> <weight>2</weight> </IKMarkerTask>
             <IKMarkerTask name="RTB1">
                 <apply>true</apply> <weight>1</weight> </IKMarkerTask>
             <IKMarkerTask name="LTB2">
-                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+                <apply>true</apply> <weight>2</weight> </IKMarkerTask>
             <IKMarkerTask name="RTB2">
                 <apply>true</apply> <weight>1</weight> </IKMarkerTask>
             <IKMarkerTask name="LTB3">
-                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+                <apply>true</apply> <weight>2</weight> </IKMarkerTask>
             <IKMarkerTask name="RTB3">
                 <apply>true</apply> <weight>1</weight> </IKMarkerTask>
         </objects>

@@ -344,25 +344,46 @@ def generate_exotopology_tasks(trial, mrs_setup_tasks):
         trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
             setup_tasks=mrsmod_opt_tasks)
 
-        # Experimental torque control profile
+        # Optimized torque control profiles, shifted based on net joint moments
         mrsflags = [
             "study='SoftExosuitDesign/Topology'",
             "activeDOFs={%s}" % activeDOFs,
             "passiveDOFs={%s}" % passiveDOFs,
-            "subcase='%s'" % 'Exp',
-            "fixMomentArms=[]" ,
+            "subcase='%s'" % subcase,
+            "fixMomentArms=[]",
+            "shift_exo_peaks=true"
             ]
 
-        mrsmod_exp_tasks = trial.add_task_cycles(
+        mrsmod_opt_tasks = trial.add_task_cycles(
             tasks.TaskMRSDeGrooteMod,
-            'mrsmod_%s' % mod_name.replace('act','exp'),
+            'mrsmod_%s_shift' % mod_name,
             'ExoTopology: multiarticular device optimization',
             mrsflags,
             setup_tasks=mrs_setup_tasks
             )
 
         trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
-            setup_tasks=mrsmod_exp_tasks)
+            setup_tasks=mrsmod_opt_tasks)
+
+        # Experimental torque control profile
+        # mrsflags = [
+        #     "study='SoftExosuitDesign/Topology'",
+        #     "activeDOFs={%s}" % activeDOFs,
+        #     "passiveDOFs={%s}" % passiveDOFs,
+        #     "subcase='%s'" % 'Exp',
+        #     "fixMomentArms=[]" ,
+        #     ]
+
+        # mrsmod_exp_tasks = trial.add_task_cycles(
+        #     tasks.TaskMRSDeGrooteMod,
+        #     'mrsmod_%s' % mod_name.replace('act','exp'),
+        #     'ExoTopology: multiarticular device optimization',
+        #     mrsflags,
+        #     setup_tasks=mrs_setup_tasks
+        #     )
+
+        # trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
+        #     setup_tasks=mrsmod_exp_tasks)
 
         if trial.study.fixMomentArms:
 
@@ -425,17 +446,17 @@ def generate_exotopology_tasks(trial, mrs_setup_tasks):
 
             # Tasks to fit the parameterize curve from Zhang et al. 2017 to
             # optimized exoskeleton torque profiles
-            param_info = dict()
-            param_info['min_param'] = 4
-            param_info['max_param'] = 4
-            fitopt_setup_tasks = trial.add_task_cycles(
-                tasks.TaskFitOptimizedExoSetup,
-                param_info,
-                'zhang2017', 
-                setup_tasks=mrsmod_fixed_opt_tasks,
-                )
-            trial.add_task_cycles(tasks.TaskFitOptimizedExo,
-                setup_tasks=fitopt_setup_tasks)
+            # param_info = dict()
+            # param_info['min_param'] = 4
+            # param_info['max_param'] = 4
+            # fitopt_setup_tasks = trial.add_task_cycles(
+            #     tasks.TaskFitOptimizedExoSetup,
+            #     param_info,
+            #     'zhang2017', 
+            #     setup_tasks=mrsmod_fixed_opt_tasks,
+            #     )
+            # trial.add_task_cycles(tasks.TaskFitOptimizedExo,
+            #     setup_tasks=fitopt_setup_tasks)
 
             # mrsflags = [
             #     "study='SoftExosuitDesign/Topology'",
@@ -496,24 +517,24 @@ def generate_exotopology_tasks(trial, mrs_setup_tasks):
             #          setup_tasks=fitopt_mrs_setup_tasks)
 
             # Experimental torque control profile
-            mrsflags = [
-                "study='SoftExosuitDesign/Topology'",
-                "activeDOFs={%s}" % activeDOFs,
-                "passiveDOFs={%s}" % passiveDOFs,
-                "subcase='%s'" % 'Exp',
-                "fixMomentArms=1.0" ,
-                ]
+            # mrsflags = [
+            #     "study='SoftExosuitDesign/Topology'",
+            #     "activeDOFs={%s}" % activeDOFs,
+            #     "passiveDOFs={%s}" % passiveDOFs,
+            #     "subcase='%s'" % 'Exp',
+            #     "fixMomentArms=1.0" ,
+            #     ]
 
-            mrsmod_fixed_exp_tasks = trial.add_task_cycles(
-                tasks.TaskMRSDeGrooteMod,
-                'mrsmod_%s_fixed' % mod_name.replace('act','exp'),
-                'ExoTopology: multiarticular device optimization',
-                mrsflags,
-                setup_tasks=mrs_setup_tasks
-                )
+            # mrsmod_fixed_exp_tasks = trial.add_task_cycles(
+            #     tasks.TaskMRSDeGrooteMod,
+            #     'mrsmod_%s_fixed' % mod_name.replace('act','exp'),
+            #     'ExoTopology: multiarticular device optimization',
+            #     mrsflags,
+            #     setup_tasks=mrs_setup_tasks
+            #     )
 
-            trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
-                setup_tasks=mrsmod_fixed_exp_tasks)
+            # trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
+            #     setup_tasks=mrsmod_fixed_exp_tasks)
 
 def get_mult_controls_mod_names(study):
 
@@ -548,7 +569,7 @@ def generate_mult_controls_tasks(trial, mrs_setup_tasks):
 
         mrsmod_tasks = trial.add_task_cycles(
             tasks.TaskMRSDeGrooteMod,
-            '%s_multControls' % mod_name,
+            'mrsmod_%s_multControls' % mod_name,
             'ExoTopology: multiarticular device optimization',
             mrsflags,
             setup_tasks=mrs_setup_tasks

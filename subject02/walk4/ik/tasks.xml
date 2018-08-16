@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <OpenSimDocument Version="30000">
-    <IKTaskSet name="exotopology_subject04_walk3">
+    <IKTaskSet name="exotopology_subject02_walk4">
         <objects>
             
             <!-- Upper-body markers (anatomical and tracking). -->
@@ -54,9 +54,9 @@
             <IKMarkerTask name="RASI">
                 <apply>true</apply> <weight>5</weight> </IKMarkerTask>
             <IKMarkerTask name="LPSI">
-                <apply>true</apply> <weight>15</weight> </IKMarkerTask>
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
             <IKMarkerTask name="RPSI">
-                <apply>true</apply> <weight>15</weight> </IKMarkerTask>
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
             <IKMarkerTask name="LCAL">
                 <apply>true</apply> <weight>5</weight> </IKMarkerTask>
             <IKMarkerTask name="RCAL">

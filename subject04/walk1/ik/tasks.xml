@@ -54,9 +54,9 @@
             <IKMarkerTask name="RASI">
                 <apply>true</apply> <weight>5</weight> </IKMarkerTask>
             <IKMarkerTask name="LPSI">
-                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
+                <apply>true</apply> <weight>15</weight> </IKMarkerTask>
             <IKMarkerTask name="RPSI">
-                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
+                <apply>true</apply> <weight>15</weight> </IKMarkerTask>
             <IKMarkerTask name="LCAL">
                 <apply>true</apply> <weight>5</weight> </IKMarkerTask>
             <IKMarkerTask name="RCAL">

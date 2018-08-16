@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <OpenSimDocument Version="30000">
-    <IKTaskSet name="exotopology_subject04_walk3">
+    <IKTaskSet name="exotopology_subject04_walk4">
         <objects>
             
             <!-- Upper-body markers (anatomical and tracking). -->

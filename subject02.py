@@ -149,6 +149,30 @@ def add_to_study(study):
     subject.scaled_model_fpath = os.path.join(subject.results_exp_path,
         '%s_scaled_Fmax.osim' % subject.name)
 
+    ## walk1 condition
+    walk1 = subject.add_condition('walk1', metadata={'walking_speed': 1.00})
+
+    # GRF gait landmarks
+    # walk1_trial_temp = walk1.add_trial(99, omit_trial_dir=True)
+    # walk1_trial_temp.add_task(osp.TaskGRFGaitLandmarks)
+    # walk1_trial_temp.add_task(tasks.TaskUpdateGroundReactionColumnLabels)
+    
+    gait_events = dict()
+    gait_events['right_strikes'] = [1.001, 2.268, 3.479, 4.766]
+    gait_events['left_toeoffs'] = [1.219, 2.497, 3.750] 
+    gait_events['left_strikes'] = [1.625, 2.895, 4.116] 
+    gait_events['right_toeoffs'] = [1.864, 3.118, 4.364] 
+
+    walk1_trial = walk1.add_trial(1,
+            gait_events=gait_events,
+            omit_trial_dir=True,
+            )
+
+    # walk1: main study tasks
+    mrs_setup_tasks = helpers.generate_main_tasks(walk1_trial)
+    helpers.generate_exotopology_tasks(walk1_trial, mrs_setup_tasks)
+    helpers.generate_mult_controls_tasks(walk1_trial, mrs_setup_tasks)
+
     ## walk2 condition
     walk2 = subject.add_condition('walk2', metadata={'walking_speed': 1.25})
     
@@ -171,38 +195,17 @@ def add_to_study(study):
 
     # Set the time in the gait cycle when to start fitting a parameterization
     # of the optimized exoskeleton torque. 
-    walk2_trial.get_cycle(3).fit_start_time = 3.46
-    walk2_trial.get_cycle(3).peak_torque = 45.749503287345590 # N-m
-    walk2_trial.get_cycle(3).peak_time = 3.770801870141614 # s
-    walk2_trial.get_cycle(3).rise_time = 0.367949905100557 # s
-    walk2_trial.get_cycle(3).fall_time = 0.217250193376961 # s
+    # walk2_trial.get_cycle(3).fit_start_time = 3.46
+    # walk2_trial.get_cycle(3).peak_torque = 45.749503287345590 # N-m
+    # walk2_trial.get_cycle(3).peak_time = 3.770801870141614 # s
+    # walk2_trial.get_cycle(3).rise_time = 0.367949905100557 # s
+    # walk2_trial.get_cycle(3).fall_time = 0.217250193376961 # s
     
     # walk2: main study tasks
     mrs_setup_tasks = helpers.generate_main_tasks(walk2_trial)
     helpers.generate_exotopology_tasks(walk2_trial, mrs_setup_tasks)
     helpers.generate_mult_controls_tasks(walk2_trial, mrs_setup_tasks)
     helpers.generate_param_controls_tasks(walk2_trial, mrs_setup_tasks)
-
-    ## walk1 condition
-    walk1 = subject.add_condition('walk1', metadata={'walking_speed': 1.00})
-
-    # GRF gait landmarks
-    # walk1_trial_temp = walk1.add_trial(99, omit_trial_dir=True)
-    # walk1_trial_temp.add_task(osp.TaskGRFGaitLandmarks)
-    # walk1_trial_temp.add_task(tasks.TaskUpdateGroundReactionColumnLabels)
-    
-    gait_events = dict()
-    gait_events['right_strikes'] = [1.001, 2.268, 3.479, 4.766]
-
-    walk1_trial = walk1.add_trial(1,
-            gait_events=gait_events,
-            omit_trial_dir=True,
-            )
-
-    # walk1: main study tasks
-    mrs_setup_tasks = helpers.generate_main_tasks(walk1_trial)
-    helpers.generate_exotopology_tasks(walk1_trial, mrs_setup_tasks)
-    helpers.generate_mult_controls_tasks(walk1_trial, mrs_setup_tasks)
 
     ## walk3 condition
     walk3 = subject.add_condition('walk3', metadata={'walking_speed': 1.50})
@@ -214,6 +217,9 @@ def add_to_study(study):
     
     gait_events = dict()
     gait_events['right_strikes'] = [0.724, 1.789, 2.823, 3.906]
+    gait_events['left_toeoffs'] = [0.915, 1.956, 3.000] 
+    gait_events['left_strikes'] = [1.245, 2.303, 3.375] 
+    gait_events['right_toeoffs'] = [1.431, 2.479, 3.552] 
 
     walk3_trial = walk3.add_trial(1,
             gait_events=gait_events,
@@ -225,10 +231,34 @@ def add_to_study(study):
     helpers.generate_exotopology_tasks(walk3_trial, mrs_setup_tasks)
     helpers.generate_mult_controls_tasks(walk3_trial, mrs_setup_tasks)
 
+    ## walk4 condition
+    walk4 = subject.add_condition('walk4', metadata={'walking_speed': 1.75})
+
+    # GRF gait landmarks
+    # walk4_trial_temp = walk4.add_trial(99, omit_trial_dir=True)
+    # walk4_trial_temp.add_task(osp.TaskGRFGaitLandmarks, threshold=10)
+    # walk4_trial_temp.add_task(tasks.TaskUpdateGroundReactionColumnLabels)
+    
+    gait_events = dict()
+    gait_events['right_strikes'] = [0.829, 1.847, 2.857, 3.824] 
+    gait_events['left_toeoffs'] = [0.917, 1.983, 2.997] 
+    gait_events['left_strikes'] = [1.337, 2.340, 3.337] 
+    gait_events['right_toeoffs'] = [1.484, 2.480, 3.472] 
+
+    walk4_trial = walk4.add_trial(1,
+            gait_events=gait_events,
+            omit_trial_dir=True,
+            )
+
+    # walk4: main study tasks
+    mrs_setup_tasks = helpers.generate_main_tasks(walk4_trial)
+    helpers.generate_exotopology_tasks(walk4_trial, mrs_setup_tasks)
+    helpers.generate_mult_controls_tasks(walk4_trial, mrs_setup_tasks)
+
     # aggregate muscle parameters
     agg_task = subject.add_task(tasks.TaskAggregateMuscleParameters,
         study.param_dict, 
-        conditions=['walk1','walk2','walk3'], 
+        conditions=['walk1','walk2','walk3','walk4'], 
         cycles_to_exclude=['cycle03'])
     subject.add_task(tasks.TaskPlotMuscleParameters, agg_task, 
         cycles_to_exclude=['cycle03'])
@@ -236,8 +266,8 @@ def add_to_study(study):
     # multi-phase parameter calibration (trial does not matter)
     calibrate_setup_task = walk3_trial.add_task(
         tasks.TaskCalibrateParametersMultiPhaseSetup,
-        ['walk1','walk2','walk3'],
-        ['cycle01','cycle02'],
+        ['walk1','walk2','walk3','walk4'],
+        ['cycle01'],
         study.param_dict,
         study.cost_dict,
         passive_precalibrate=True)

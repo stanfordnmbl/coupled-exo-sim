@@ -54,9 +54,9 @@
             <IKMarkerTask name="RASI">
                 <apply>true</apply> <weight>5</weight> </IKMarkerTask>
             <IKMarkerTask name="LPSI">
-                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
+                <apply>true</apply> <weight>15</weight> </IKMarkerTask>
             <IKMarkerTask name="RPSI">
-                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
+                <apply>true</apply> <weight>15</weight> </IKMarkerTask>
             <IKMarkerTask name="LCAL">
                 <apply>true</apply> <weight>5</weight> </IKMarkerTask>
             <IKMarkerTask name="RCAL">
@@ -72,29 +72,29 @@
 
             <!-- Lower-body tracking markers. -->
             <IKMarkerTask name="LTH1">
-                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
             <IKMarkerTask name="RTH1">
-                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
             <IKMarkerTask name="LTH2">
-                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
             <IKMarkerTask name="RTH2">
-                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
             <IKMarkerTask name="LTH3">
-                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
             <IKMarkerTask name="RTH3">
-                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
             <IKMarkerTask name="LTB1">
-                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
             <IKMarkerTask name="RTB1">
-                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
             <IKMarkerTask name="LTB2">
-                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
             <IKMarkerTask name="RTB2">
-                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
             <IKMarkerTask name="LTB3">
-                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
             <IKMarkerTask name="RTB3">
-                <apply>true</apply> <weight>1</weight> </IKMarkerTask>
+                <apply>true</apply> <weight>5</weight> </IKMarkerTask>
         </objects>
         <groups />
     </IKTaskSet>

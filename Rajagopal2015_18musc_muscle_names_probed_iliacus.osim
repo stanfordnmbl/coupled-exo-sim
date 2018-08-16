@@ -5502,20 +5502,20 @@
 						<!--The set of points defining the path-->
 						<PathPointSet>
 							<objects>
-								<PathPoint name="psoas_r-P1">
-									<location> -0.0606 0.062 0.039</location>
+								<PathPoint name="iliacus_r-P1">
+									<location> -0.0605 0.0309 0.0843</location>
 									<body>pelvis</body>
 								</PathPoint>
-								<PathPoint name="psoas_r-P2">
-									<location> -0.0205 -0.0654 0.0656</location>
+								<PathPoint name="iliacus_r-P2">
+									<location> -0.0135 -0.0557 0.0756</location>
 									<body>pelvis</body>
 								</PathPoint>
-								<PathPoint name="psoas_r-P3">
-									<location> -0.0132 -0.0467 0.0046</location>
+								<PathPoint name="iliacus_r-P3">
+									<location> -0.0023 -0.0565 0.0139</location>
 									<body>femur_r</body>
 								</PathPoint>
-								<PathPoint name="psoas_r-P4">
-									<location> -0.0235 -0.0524 0.0088</location>
+								<PathPoint name="iliacus_r-P4">
+									<location> -0.0122 -0.0637 0.0196</location>
 									<body>femur_r</body>
 								</PathPoint>
 							</objects>
@@ -5525,7 +5525,7 @@
 						<PathWrapSet>
 							<objects>
 								<PathWrap>
-									<wrap_object>PS_at_brim_r</wrap_object>
+									<wrap_object>IL_at_brim_r</wrap_object>
 									<method>hybrid</method>
 									<range> 2 3</range>
 								</PathWrap>
@@ -5550,13 +5550,13 @@
 						</VisibleObject>
 					</GeometryPath>
 					<!--Maximum isometric force that the fibers can generate-->
-					<max_isometric_force>2697.344262</max_isometric_force>
+					<max_isometric_force>4500</max_isometric_force>
 					<!--Optimal length of the muscle fibers-->
-					<optimal_fiber_length>0.1169</optimal_fiber_length>
+					<optimal_fiber_length>0.1126</optimal_fiber_length>
 					<!--Resting length of the tendon-->
-					<tendon_slack_length>0.0995431658555083</tendon_slack_length>
+					<tendon_slack_length>0.0961207083983258</tendon_slack_length>
 					<!--Angle between tendon and fibers at optimal fiber length expressed in radians-->
-					<pennation_angle_at_optimal>0.21552513</pennation_angle_at_optimal>
+					<pennation_angle_at_optimal>0.27991397</pennation_angle_at_optimal>
 					<!--Compute muscle dynamics ignoring tendon compliance. Tendon is assumed to be rigid.-->
 					<ignore_tendon_compliance>true</ignore_tendon_compliance>
 					<!--The linear damping of the fiber.-->
@@ -6443,20 +6443,20 @@
 						<!--The set of points defining the path-->
 						<PathPointSet>
 							<objects>
-								<PathPoint name="psoas_l-P1">
-									<location> -0.0606 0.062 -0.039</location>
+								<PathPoint name="iliacus_l-P1">
+									<location> -0.0605 0.0309 -0.0843</location>
 									<body>pelvis</body>
 								</PathPoint>
-								<PathPoint name="psoas_l-P2">
-									<location> -0.0205 -0.0654 -0.0656</location>
+								<PathPoint name="iliacus_l-P2">
+									<location> -0.0135 -0.0557 -0.0756</location>
 									<body>pelvis</body>
 								</PathPoint>
-								<PathPoint name="psoas_l-P3">
-									<location> -0.0132 -0.0467 -0.0046</location>
+								<PathPoint name="iliacus_l-P3">
+									<location> -0.0023 -0.0565 -0.0139</location>
 									<body>femur_l</body>
 								</PathPoint>
-								<PathPoint name="psoas_l-P4">
-									<location> -0.0235 -0.0524 -0.0088</location>
+								<PathPoint name="iliacus_l-P4">
+									<location> -0.0122 -0.0637 -0.0196</location>
 									<body>femur_l</body>
 								</PathPoint>
 							</objects>
@@ -6466,7 +6466,7 @@
 						<PathWrapSet>
 							<objects>
 								<PathWrap>
-									<wrap_object>PS_at_brim_l</wrap_object>
+									<wrap_object>IL_at_brim_l</wrap_object>
 									<method>hybrid</method>
 									<range> 2 3</range>
 								</PathWrap>
@@ -6491,13 +6491,13 @@
 						</VisibleObject>
 					</GeometryPath>
 					<!--Maximum isometric force that the fibers can generate-->
-					<max_isometric_force>2697.344262</max_isometric_force>
+					<max_isometric_force>4500</max_isometric_force>
 					<!--Optimal length of the muscle fibers-->
-					<optimal_fiber_length>0.1169</optimal_fiber_length>
+					<optimal_fiber_length>0.1126</optimal_fiber_length>
 					<!--Resting length of the tendon-->
-					<tendon_slack_length>0.0995431658555083</tendon_slack_length>
+					<tendon_slack_length>0.0961207083983258</tendon_slack_length>
 					<!--Angle between tendon and fibers at optimal fiber length expressed in radians-->
-					<pennation_angle_at_optimal>0.21552513</pennation_angle_at_optimal>
+					<pennation_angle_at_optimal>0.27991397</pennation_angle_at_optimal>
 					<!--Compute muscle dynamics ignoring tendon compliance. Tendon is assumed to be rigid.-->
 					<ignore_tendon_compliance>true</ignore_tendon_compliance>
 					<!--The linear damping of the fiber.-->
