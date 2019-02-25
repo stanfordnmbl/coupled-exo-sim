@@ -200,14 +200,6 @@ def add_to_study(study):
             )
     walk2_trial.add_task(tasks.TaskUpdateGroundReactionColumnLabels)
 
-    # Set the time in the gait cycle when to start fitting a parameterization
-    # of the optimized exoskeleton torque. 
-    # walk2_trial.get_cycle(3).fit_start_time = 2.735
-    # walk2_trial.get_cycle(3).peak_torque = 44.075718134947710 # N-m
-    # walk2_trial.get_cycle(3).peak_time = 3.068910845977615 # s
-    # walk2_trial.get_cycle(3).rise_time = 0.279861933586297 # s
-    # walk2_trial.get_cycle(3).fall_time = 0.210374987633289 # s
-
     # walk2: main study tasks
     mrs_setup_tasks = helpers.generate_main_tasks(walk2_trial)
     helpers.generate_exotopology_tasks(walk2_trial, mrs_setup_tasks)
@@ -247,11 +239,11 @@ def add_to_study(study):
     # walk4_trial_temp.add_task(tasks.TaskUpdateGroundReactionColumnLabels)
     
     gait_events = dict()
-    gait_events['right_strikes'] = [0.301, 1.270, 2.246, 3.209]
-    gait_events['left_toeoffs'] = [0.436, 1.410, 2.377]
-    gait_events['left_strikes'] = [0.787, 1.755, 2.729]
-    gait_events['right_toeoffs'] = [0.934, 1.914, 2.870]
-
+    gait_events['right_strikes'] = [0.301, 2.246, 3.209, 4.167]
+    gait_events['left_toeoffs'] = [0.436, 2.377, 3.346]
+    gait_events['left_strikes'] = [0.787, 2.729, 3.686]
+    gait_events['right_toeoffs'] = [0.934, 2.870, 3.381]
+    gait_events['stride_times'] = [1.270-0.301, 3.209-2.246, 4.167-3.209]
     walk4_trial = walk4.add_trial(1,
             gait_events=gait_events,
             omit_trial_dir=True,

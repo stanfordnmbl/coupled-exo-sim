@@ -1,6 +1,8 @@
 import itertools
 import osimpipeline as osp
 import tasks
+import pandas as pd
+import os
 
 def get_device_info(study):
 
@@ -272,18 +274,36 @@ def get_exotopology_flags(study, act_combo=None, pass_combo=None):
 
 def generate_main_tasks(trial):
 
-    # walk2: inverse kinematics
+    # inverse kinematics
     ik_setup_task = trial.add_task(osp.TaskIKSetup)
     trial.add_task(osp.TaskIK, ik_setup_task)
     trial.add_task(osp.TaskIKPost, ik_setup_task, 
         error_markers=trial.study.error_markers)
 
-    # walk2: inverse dynamics
+    # inverse dynamics
     id_setup_task = trial.add_task(osp.TaskIDSetup, ik_setup_task)
     trial.add_task(osp.TaskID, id_setup_task)
-    trial.add_task(osp.TaskIDPost, id_setup_task)
 
-    # walk2: muscle redundancy solver w/ generic MT parameters
+    if (trial.subject.name == 'subject04') and (trial.condition.name == 'walk1'):
+        # Create Butterworth filter to process net joint moments from ID
+        from scipy.signal import butter
+        import math     
+        grf_sample_freq = 2160 # Hz
+        cutoff = 65 # Hz
+        nyq = 0.5 * grf_sample_freq
+        norm_cutoff = cutoff / nyq
+        b, a = butter(6, norm_cutoff, btype='low', analog=False)
+        butter_polys = (b, a)
+
+        trial.add_task(osp.TaskIDPost, id_setup_task, 
+            butter_polys=butter_polys)
+
+        use_filtered_id_results = True
+    else:
+        trial.add_task(osp.TaskIDPost, id_setup_task)
+        use_filtered_id_results = False
+
+    # muscle redundancy solver w/ generic MT parameters
     # mrs_genericMT_setup_tasks = trial.add_task_cycles(
     #     tasks.TaskMRSDeGrooteGenericMTParamsSetup,
     #     cost=trial.study.costFunction)
@@ -292,7 +312,7 @@ def generate_main_tasks(trial):
     # trial.add_task_cycles(osp.TaskMRSDeGrootePost,
     #     setup_tasks=mrs_genericMT_setup_tasks)
 
-    # walk2: parameter calibration
+    # parameter calibration
     calibrate_setup_tasks = trial.add_task_cycles(
         tasks.TaskCalibrateParametersSetup, 
         trial.study.param_dict, 
@@ -303,10 +323,11 @@ def generate_main_tasks(trial):
     trial.add_task_cycles(tasks.TaskCalibrateParametersPost,
         setup_tasks=calibrate_setup_tasks)
 
-    # walk2: muscle redundancy solver
+    # muscle redundancy solver
     mrs_setup_tasks = trial.add_task_cycles(tasks.TaskMRSDeGrooteSetup,
         trial.study.param_dict,
-        cost=trial.study.costFunction)
+        cost=trial.study.costFunction,
+        use_filtered_id_results=use_filtered_id_results)
     trial.add_task_cycles(osp.TaskMRSDeGroote, 
         setup_tasks=mrs_setup_tasks)
     trial.add_task_cycles(osp.TaskMRSDeGrootePost,
@@ -344,26 +365,154 @@ def generate_exotopology_tasks(trial, mrs_setup_tasks):
         trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
             setup_tasks=mrsmod_opt_tasks)
 
-        # Optimized torque control profiles, shifted based on net joint moments
+        # Tasks to fit the parameterize curve from Zhang et al. 2017 to
+        # optimized exoskeleton torque profiles
+        param_info = dict()
+        param_info['min_param'] = 4
+        param_info['max_param'] = 4
+        fitopt_setup_tasks = trial.add_task_cycles(
+            tasks.TaskFitOptimizedExoSetup,
+            param_info,
+            'zhang2017', 
+            setup_tasks=mrsmod_opt_tasks,
+            )
+        trial.add_task_cycles(tasks.TaskFitOptimizedExo,
+            setup_tasks=fitopt_setup_tasks)
+
+        # Re-optimize fitted, parameterized torques.
+        fitreopt_mod_name = 'fitreopt_zhang2017_%s' % mod_name
         mrsflags = [
             "study='SoftExosuitDesign/Topology'",
             "activeDOFs={%s}" % activeDOFs,
-            "passiveDOFs={%s}" % passiveDOFs,
-            "subcase='%s'" % subcase,
-            "fixMomentArms=[]",
-            "shift_exo_peaks=true"
+            "passiveDOFs={}",
+            "subcase='%s'" % 'ActParam',
+            "fixMomentArms=1.0",
             ]
 
-        mrsmod_opt_tasks = trial.add_task_cycles(
+        mrsmod_tasks = trial.add_task_cycles(
             tasks.TaskMRSDeGrooteMod,
-            'mrsmod_%s_shift' % mod_name,
+            fitreopt_mod_name,
             'ExoTopology: multiarticular device optimization',
             mrsflags,
             setup_tasks=mrs_setup_tasks
             )
 
-        trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
-            setup_tasks=mrsmod_opt_tasks)
+        mrsmod_post_tasks = trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
+            setup_tasks=mrsmod_tasks)
+
+        # Re-optimize fitted, parameterized torque, while holding some
+        # parameters constant
+        analysis_path = trial.study.config['analysis_path']
+        param_mean_fpath = os.path.join(analysis_path,
+            'fitreopt_all', 'fitreopt_all_torque_parameter_mean.csv')
+
+        
+        if os.path.exists(param_mean_fpath):
+            df_mean_params = pd.read_csv(param_mean_fpath, index_col=0, 
+                skiprows=1)
+        
+            if fitreopt_mod_name in df_mean_params.columns:
+                mod_params = df_mean_params[fitreopt_mod_name]
+                from numpy import isnan
+
+                # Fix individual parameters
+                for param in mod_params.index:
+                    if not isnan(mod_params[param]): 
+                        mrsflags = [
+                            "study='SoftExosuitDesign/Topology'",
+                            "activeDOFs={%s}" % activeDOFs,
+                            "passiveDOFs={}",
+                            "subcase='%s'" % 'ActParam',
+                            "fixMomentArms=1.0",
+                            "fixParams.%s=%s" % (param.replace(' ','_'), 
+                                mod_params[param]),
+                           ]
+
+                        mrsmod_tasks = trial.add_task_cycles(
+                            tasks.TaskMRSDeGrooteMod,
+                            fitreopt_mod_name + '/fix_%s' % 
+                                param.replace(' ', '_'),
+                            'ExoTopology: multiarticular device optimization',
+                            mrsflags,
+                            setup_tasks=mrs_setup_tasks
+                            )
+
+                        mrsmod_post_tasks = trial.add_task_cycles(
+                            tasks.TaskMRSDeGrooteModPost,
+                            setup_tasks=mrsmod_tasks)
+
+                # Fix all torque and scale parameters
+                mrsflags = [
+                    "study='SoftExosuitDesign/Topology'",
+                    "activeDOFs={%s}" % activeDOFs,
+                    "passiveDOFs={}",
+                    "subcase='%s'" % 'ActParam',
+                    "fixMomentArms=1.0",
+                   ]
+
+                for param in mod_params.index:
+                    if ('torque' in param) and not isnan(mod_params[param]):
+                        mrsflags.append("fixParams.%s=%s" % 
+                            (param.replace(' ','_'), mod_params[param]))
+
+                mrsmod_tasks = trial.add_task_cycles(
+                    tasks.TaskMRSDeGrooteMod,
+                    fitreopt_mod_name + '/fix_all_torques',
+                    'ExoTopology: multiarticular device optimization',
+                    mrsflags,
+                    setup_tasks=mrs_setup_tasks
+                    )
+
+                mrsmod_post_tasks = trial.add_task_cycles(
+                    tasks.TaskMRSDeGrooteModPost,
+                    setup_tasks=mrsmod_tasks)
+
+                # Fix all time parameters
+                mrsflags = [
+                    "study='SoftExosuitDesign/Topology'",
+                    "activeDOFs={%s}" % activeDOFs,
+                    "passiveDOFs={}",
+                    "subcase='%s'" % 'ActParam',
+                    "fixMomentArms=1.0",
+                   ]
+
+                for param in mod_params.index:
+                    if ('time' in param) and not isnan(mod_params[param]):
+                        mrsflags.append("fixParams.%s=%s" % 
+                            (param.replace(' ','_'), mod_params[param]))
+
+                mrsmod_tasks = trial.add_task_cycles(
+                    tasks.TaskMRSDeGrooteMod,
+                    fitreopt_mod_name + '/fix_all_times',
+                    'ExoTopology: multiarticular device optimization',
+                    mrsflags,
+                    setup_tasks=mrs_setup_tasks
+                    )
+
+                mrsmod_post_tasks = trial.add_task_cycles(
+                    tasks.TaskMRSDeGrooteModPost,
+                    setup_tasks=mrsmod_tasks)
+
+        # Optimized torque control profiles, shifted based on net joint moments
+        # mrsflags = [
+        #     "study='SoftExosuitDesign/Topology'",
+        #     "activeDOFs={%s}" % activeDOFs,
+        #     "passiveDOFs={%s}" % passiveDOFs,
+        #     "subcase='%s'" % subcase,
+        #     "fixMomentArms=[]",
+        #     "shift_exo_peaks=true"
+        #     ]
+
+        # mrsmod_shift_opt_tasks = trial.add_task_cycles(
+        #     tasks.TaskMRSDeGrooteMod,
+        #     'mrsmod_%s_shift' % mod_name,
+        #     'ExoTopology: multiarticular device optimization',
+        #     mrsflags,
+        #     setup_tasks=mrs_setup_tasks
+        #     )
+
+        # trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
+        #     setup_tasks=mrsmod_shift_opt_tasks)
 
         # Experimental torque control profile
         # mrsflags = [
@@ -407,6 +556,124 @@ def generate_exotopology_tasks(trial, mrs_setup_tasks):
             trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
                 setup_tasks=mrsmod_fixed_opt_tasks)
 
+            # Tasks to fit the parameterize curve from Zhang et al. 2017 to
+            # optimized exoskeleton torque profiles
+            param_info = dict()
+            param_info['min_param'] = 4
+            param_info['max_param'] = 4
+            fitopt_setup_tasks = trial.add_task_cycles(
+                tasks.TaskFitOptimizedExoSetup,
+                param_info,
+                'zhang2017', 
+                setup_tasks=mrsmod_fixed_opt_tasks,
+                )
+            trial.add_task_cycles(tasks.TaskFitOptimizedExo,
+                setup_tasks=fitopt_setup_tasks)
+
+            # Re-optimize fitted, parametered torques.
+            fitreopt_fixed_mod_name = 'fitreopt_zhang2017_%s_fixed' % mod_name
+            mrsflags = [
+                "study='SoftExosuitDesign/Topology'",
+                "activeDOFs={%s}" % activeDOFs,
+                "passiveDOFs={}",
+                "subcase='%s'" % 'ActParam',
+                "fixMomentArms=1.0",
+                ]
+
+            mrsmod_tasks = trial.add_task_cycles(
+                tasks.TaskMRSDeGrooteMod,
+                fitreopt_fixed_mod_name,
+                'ExoTopology: multiarticular device optimization',
+                mrsflags,
+                setup_tasks=mrs_setup_tasks
+                )
+
+            mrsmod_post_tasks = trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
+                setup_tasks=mrsmod_tasks)
+
+            if os.path.exists(param_mean_fpath):
+                if fitreopt_fixed_mod_name in df_mean_params.columns:
+                    mod_params = df_mean_params[fitreopt_fixed_mod_name]
+                    from numpy import isnan
+
+                    # Fix individual parameters
+                    for param in mod_params.index:
+                        if not isnan(mod_params[param]): 
+                            mrsflags = [
+                                "study='SoftExosuitDesign/Topology'",
+                                "activeDOFs={%s}" % activeDOFs,
+                                "passiveDOFs={}",
+                                "subcase='%s'" % 'ActParam',
+                                "fixMomentArms=1.0",
+                                "fixParams.%s=%s" % (param.replace(' ', '_'), 
+                                    mod_params[param]),
+                               ]
+
+                            mrsmod_tasks = trial.add_task_cycles(
+                                tasks.TaskMRSDeGrooteMod,
+                                fitreopt_fixed_mod_name + '/fix_%s' %
+                                     param.replace(' ', '_'),
+                                'ExoTopology: multiarticular device optimization',
+                                mrsflags,
+                                setup_tasks=mrs_setup_tasks
+                                )
+
+                            mrsmod_post_tasks = trial.add_task_cycles(
+                                tasks.TaskMRSDeGrooteModPost,
+                                setup_tasks=mrsmod_tasks)
+
+                    # Fix all torque and scale parameters
+                    mrsflags = [
+                        "study='SoftExosuitDesign/Topology'",
+                        "activeDOFs={%s}" % activeDOFs,
+                        "passiveDOFs={}",
+                        "subcase='%s'" % 'ActParam',
+                        "fixMomentArms=1.0",
+                       ]
+
+                    for param in mod_params.index:
+                        if ('torque' in param) and not isnan(mod_params[param]):
+                            mrsflags.append("fixParams.%s=%s" % 
+                                (param.replace(' ','_'), mod_params[param]))
+
+                    mrsmod_tasks = trial.add_task_cycles(
+                        tasks.TaskMRSDeGrooteMod,
+                        fitreopt_fixed_mod_name + '/fix_all_torques',
+                        'ExoTopology: multiarticular device optimization',
+                        mrsflags,
+                        setup_tasks=mrs_setup_tasks
+                        )
+
+                    mrsmod_post_tasks = trial.add_task_cycles(
+                        tasks.TaskMRSDeGrooteModPost,
+                        setup_tasks=mrsmod_tasks)
+
+                    # Fix all time parameters
+                    mrsflags = [
+                        "study='SoftExosuitDesign/Topology'",
+                        "activeDOFs={%s}" % activeDOFs,
+                        "passiveDOFs={}",
+                        "subcase='%s'" % 'ActParam',
+                        "fixMomentArms=1.0",
+                       ]
+
+                    for param in mod_params.index:
+                        if ('time' in param) and not isnan(mod_params[param]):
+                            mrsflags.append("fixParams.%s=%s" % 
+                                (param.replace(' ','_'), mod_params[param]))
+
+                    mrsmod_tasks = trial.add_task_cycles(
+                        tasks.TaskMRSDeGrooteMod,
+                        fitreopt_fixed_mod_name + '/fix_all_times',
+                        'ExoTopology: multiarticular device optimization',
+                        mrsflags,
+                        setup_tasks=mrs_setup_tasks
+                        )
+
+                    mrsmod_post_tasks = trial.add_task_cycles(
+                        tasks.TaskMRSDeGrooteModPost,
+                        setup_tasks=mrsmod_tasks)
+
             # # Tasks to fit Hermite-Simpson parameterized curves to optimized 
             # # exoskeleton torque profiles
             # param_info = dict()
@@ -444,20 +711,7 @@ def generate_exotopology_tasks(trial, mrs_setup_tasks):
             #     trial.add_task_cycles(tasks.TaskMRSFitOptimizedExoPost,
             #          setup_tasks=fitopt_mrs_setup_tasks)
 
-            # Tasks to fit the parameterize curve from Zhang et al. 2017 to
-            # optimized exoskeleton torque profiles
-            # param_info = dict()
-            # param_info['min_param'] = 4
-            # param_info['max_param'] = 4
-            # fitopt_setup_tasks = trial.add_task_cycles(
-            #     tasks.TaskFitOptimizedExoSetup,
-            #     param_info,
-            #     'zhang2017', 
-            #     setup_tasks=mrsmod_fixed_opt_tasks,
-            #     )
-            # trial.add_task_cycles(tasks.TaskFitOptimizedExo,
-            #     setup_tasks=fitopt_setup_tasks)
-
+            
             # mrsflags = [
             #     "study='SoftExosuitDesign/Topology'",
             #     "activeDOFs={%s}" % activeDOFs,
@@ -563,13 +817,47 @@ def generate_mult_controls_tasks(trial, mrs_setup_tasks):
             "activeDOFs={%s}" % activeDOFs,
             "passiveDOFs={}",
             "subcase='%s'" % subcase,
-            "fixMomentArms=[]",
+            "fixMomentArms=1.0",
             "mult_controls=true",
             ]
 
         mrsmod_tasks = trial.add_task_cycles(
             tasks.TaskMRSDeGrooteMod,
             'mrsmod_%s_multControls' % mod_name,
+            'ExoTopology: multiarticular device optimization',
+            mrsflags,
+            setup_tasks=mrs_setup_tasks
+            )
+
+        mrsmod_post_tasks = trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
+            setup_tasks=mrsmod_tasks)
+
+        # Tasks to fit the parameterize curve from Zhang et al. 2017 to
+        # optimized exoskeleton torque profiles
+        param_info = dict()
+        param_info['min_param'] = 4
+        param_info['max_param'] = 4
+        fitopt_setup_tasks = trial.add_task_cycles(
+            tasks.TaskFitOptimizedExoSetup,
+            param_info,
+            'zhang2017', 
+            setup_tasks=mrsmod_tasks,
+            )
+        trial.add_task_cycles(tasks.TaskFitOptimizedExo,
+            setup_tasks=fitopt_setup_tasks)
+
+        # Re-optimize fitted, parametered torques.
+        mrsflags = [
+            "study='SoftExosuitDesign/Topology'",
+            "activeDOFs={%s}" % activeDOFs,
+            "passiveDOFs={}",
+            "subcase='%s'" % 'ActParam',
+            "fixMomentArms=1.0",
+            ]
+
+        mrsmod_tasks = trial.add_task_cycles(
+            tasks.TaskMRSDeGrooteMod,
+            'fitreopt_zhang2017_%s_multControls' % mod_name,
             'ExoTopology: multiarticular device optimization',
             mrsflags,
             setup_tasks=mrs_setup_tasks

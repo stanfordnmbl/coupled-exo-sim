@@ -5550,9 +5550,9 @@
 						</VisibleObject>
 					</GeometryPath>
 					<!--Maximum isometric force that the fibers can generate-->
-					<max_isometric_force>4500</max_isometric_force>
+					<max_isometric_force>2697.344262</max_isometric_force>
 					<!--Optimal length of the muscle fibers-->
-					<optimal_fiber_length>0.1126</optimal_fiber_length>
+					<optimal_fiber_length>0.1169</optimal_fiber_length>
 					<!--Resting length of the tendon-->
 					<tendon_slack_length>0.0961207083983258</tendon_slack_length>
 					<!--Angle between tendon and fibers at optimal fiber length expressed in radians-->
@@ -6491,9 +6491,9 @@
 						</VisibleObject>
 					</GeometryPath>
 					<!--Maximum isometric force that the fibers can generate-->
-					<max_isometric_force>4500</max_isometric_force>
+					<max_isometric_force>2697.344262</max_isometric_force>
 					<!--Optimal length of the muscle fibers-->
-					<optimal_fiber_length>0.1126</optimal_fiber_length>
+					<optimal_fiber_length>0.1169</optimal_fiber_length>
 					<!--Resting length of the tendon-->
 					<tendon_slack_length>0.0961207083983258</tendon_slack_length>
 					<!--Angle between tendon and fibers at optimal fiber length expressed in radians-->

@@ -1,2 +1,31 @@
- doit -n 2 subject*_walk*_mrsmod_actHfAp_shift_post_cycle02_Met
- doit -n 2 subject*_walk*_mrsmod_actHfAp_shift_post_cycle03_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actHeKe_fix_all_torques_post_cycle02_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actHeKe_fix_all_torques_post_cycle03_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actHfAp_fix_all_torques_post_cycle02_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actHfAp_fix_all_torques_post_cycle03_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actHfKf_fix_all_torques_post_cycle02_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actHfKf_fix_all_torques_post_cycle03_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actHfKfAp_fix_all_torques_post_cycle02_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actHfKfAp_fix_all_torques_post_cycle03_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actKfAp_fix_all_torques_post_cycle02_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actKfAp_fix_all_torques_post_cycle03_Met
+
+doit -n 2 subject*walk*fitreopt_zhang2017_actAp_fixed_fix_all_times_post_cycle02_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actAp_fixed_fix_all_times_post_cycle03_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actHe_fixed_fix_all_times_post_cycle02_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actHe_fixed_fix_all_times_post_cycle03_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actHeKe_fix_all_times_post_cycle02_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actHeKe_fix_all_times_post_cycle03_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actHf_fixed_fix_all_times_post_cycle02_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actHf_fixed_fix_all_times_post_cycle03_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actHfAp_fix_all_times_post_cycle02_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actHfAp_fix_all_times_post_cycle03_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actHfKf_fix_all_times_post_cycle02_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actHfKf_fix_all_times_post_cycle03_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actHfKfAp_fix_all_times_post_cycle02_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actHfKfAp_fix_all_times_post_cycle03_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actKe_fixed_fix_all_times_post_cycle02_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actKe_fixed_fix_all_times_post_cycle03_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actKf_fixed_fix_all_times_post_cycle02_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actKf_fixed_fix_all_times_post_cycle03_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actKfAp_fix_all_times_post_cycle02_Met
+doit -n 2 subject*walk*fitreopt_zhang2017_actKfAp_fix_all_times_post_cycle03_Met
