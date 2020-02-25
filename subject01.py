@@ -190,7 +190,7 @@ def add_to_study(study):
     
     gait_events = dict()
     gait_events['right_strikes'] = [0.911, 1.934, 3.978, 5.008]
-    gait_events['left_toeooffs'] = [1.081, 2.089, 4.146]
+    gait_events['left_toeoffs'] = [1.081, 2.089, 4.146]
     gait_events['left_strikes'] = [1.428, 2.440, 4.495]
     gait_events['right_toeoffs'] = [1.598, 2.614, 4.661]
     gait_events['stride_times'] = [1.934-0.911, 3.978-2.934, 5.008-3.978]

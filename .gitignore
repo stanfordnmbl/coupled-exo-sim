@@ -17,3 +17,6 @@ out.log
 
 # MATLAB
 *.asv
+
+# LaTeX equations
+/equations/*

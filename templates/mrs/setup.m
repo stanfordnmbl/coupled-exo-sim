@@ -27,6 +27,8 @@ Misc.MuscleNames_Input = {};
 %    'tib_ant_r' ...
 %    };
 % Misc.Mesh_Frequency = 20;
+Misc.speed = @SPEED@;
+Misc.actdyn = '@ACTDYN@';
 Misc.costfun = '@COST@';
 Misc.tendonStiffnessCoeff = 35;
 if exist('optimal_fiber_length', 'var') && optimal_fiber_length
