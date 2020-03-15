@@ -334,7 +334,16 @@ class TaskValidateKinetics(osp.StudyTask):
     def __init__(self, study, cond_names=['walk1','walk2','walk3','walk4'],
             gen_forces=['hip_flexion_r_moment', 
                         'knee_angle_r_moment',
-                        'ankle_angle_r_moment']):
+                        'ankle_angle_r_moment'],
+            residual_moments=['pelvis_tilt_moment', 
+                              'pelvis_list_moment',
+                              'pelvis_rotation_moment'],
+            residual_forces=['pelvis_tx_force',
+                             'pelvis_ty_force',
+                             'pelvis_tz_force'],
+            grfs=['ground_force_r_vx',
+                  'ground_force_r_vy', 
+                  'ground_force_r_vz']):
         super(TaskValidateKinetics, self).__init__(study)
         suffix = ''
         self.costdir = ''
@@ -349,21 +358,37 @@ class TaskValidateKinetics(osp.StudyTask):
         self.cond_names = cond_names
         self.subjects = study.subjects
         self.gen_forces = gen_forces
+        if not len(residual_moments) == 3:
+            raise Exception('There must be 3 residual moment components.')
+        self.residual_moments = residual_moments
+        if not len(residual_forces) == 3:
+            raise Exception('There must be 3 residual force components.')
+        self.residual_forces = residual_forces
+        if not len(grfs) == 3:
+            raise Exception('There must be 3 ground reaction force components.')
+        self.grfs = grfs
 
         colors = plt.cm.jet(np.linspace(0, 1, len(study.subjects)))
         masses = list()
         for subject in study.subjects:
             masses.append(subject.mass)
 
+        moments_fpaths_all = list()
+        gait_events_all = list()
+        isubjs_all = list()
+        grf_fpaths_all = list()
         for cond_name in cond_names:
             moments_fpaths = list()
             gait_events = list()
             isubjs = list()
             for isubj, subject in enumerate(study.subjects):
-                moments_fpaths.append(os.path.join(self.results_path, 
-                    'experiments', subject.name, cond_name, 'id', 'results', 
+                fpath = os.path.join(self.results_path, 'experiments', 
+                    subject.name, cond_name, 'id', 'results', 
                     '%s_%s_%s_id_solution.sto' % (study.name, subject.name, 
-                        cond_name)))
+                        cond_name))
+                moments_fpaths.append(fpath)
+                moments_fpaths_all.append(fpath)
+
                 condition = subject.get_condition(cond_name)
                 trial = condition.get_trial(1)
                 cycles = trial.get_cycles()
@@ -371,13 +396,23 @@ class TaskValidateKinetics(osp.StudyTask):
                 for cycle in cycles:
                     gait_events_this_cond.append((cycle.start, cycle.end))
                 gait_events.append(gait_events_this_cond)
+                gait_events_all.append(gait_events_this_cond)
                 isubjs.append(isubj)
+                isubjs_all.append(isubj)
+
+                grf_fpath = os.path.join(self.results_path, 'experiments', 
+                    subject.name, cond_name, 'expdata', 'ground_reaction.mot')
+                grf_fpaths_all.append(grf_fpath)
 
             joint_moments_fname = os.path.join(self.validate_path, 
                     'joint_moments_%s.pdf' % cond_name)
             self.add_action(moments_fpaths, [joint_moments_fname], 
                             self.validate_joint_moments, gait_events, isubjs, 
                             colors, masses)
+
+        residuals_fname = os.path.join(self.validate_path, 'residuals.txt')
+        self.add_action(moments_fpaths_all, [residuals_fname],
+                        self.validate_residuals, gait_events_all, grf_fpaths_all)
 
     def validate_joint_moments(self, file_dep, target, gait_events, isubjs,
             colors, masses):
@@ -399,14 +434,14 @@ class TaskValidateKinetics(osp.StudyTask):
             for gait_event in gait_events_cond:
                 start = np.argmin(abs(time-gait_event[0]))
                 end = np.argmin(abs(time-gait_event[1]))
+                new_time = np.linspace(time[start], time[end], 101)
+                pgc = np.linspace(0, 100, 101)
                 for iforce, gen_force in enumerate(self.gen_forces):
-                    force = id[gen_force][start:end] / masses[isubj]
-                    new_time = np.linspace(time[start], time[end], 101)
+                    force = id[gen_force][start:end] / masses[isubj]                    
                     force_interp = np.interp(new_time, time[start:end], force)
                     dfs[iforce] = pd.concat([dfs[iforce], 
                             pd.DataFrame(force_interp)], axis=1)
 
-                    pgc = np.linspace(0, 100, 101)
                     ind_axes[iforce].plot(pgc, force_interp, color=colors[isubj])
                     ind_axes[iforce].set_ylabel('%s (N-m/kg)' % gen_force)
 
@@ -424,6 +459,83 @@ class TaskValidateKinetics(osp.StudyTask):
         fig.savefig(target[0])
         pl.close(fig)
 
+    def validate_residuals(self, file_dep, target, gait_events, grf_fpaths):
+        if not os.path.isdir(self.validate_path): os.mkdir(self.validate_path)
+
+        df_moments = pd.DataFrame()
+        df_forces = pd.DataFrame()
+        df_grfs = pd.DataFrame()
+        for file, gait_events_cond, grf_fpath in zip(file_dep, gait_events, 
+                grf_fpaths):
+            id = pp.storage2numpy(file)
+            time = id['time']
+            grfs = pp.storage2numpy(grf_fpath)
+            grf_time = grfs['time']
+            for gait_event in gait_events_cond:
+                start = np.argmin(abs(time-gait_event[0]))
+                end = np.argmin(abs(time-gait_event[1]))
+                new_time = np.linspace(time[start], time[end], 101)
+                for residual_moment in self.residual_moments:
+                    # TODO include COM height in normalization
+                    moment = id[residual_moment][start:end] 
+                    moment_interp = np.interp(new_time, time[start:end], moment)
+                    df_moments = pd.concat([df_moments, 
+                        pd.DataFrame(moment_interp)], axis=1)
+
+                for residual_force in self.residual_forces:
+                    force = id[residual_force][start:end]
+                    force_interp = np.interp(new_time, time[start:end], force)
+                    df_forces = pd.concat([df_forces, 
+                        pd.DataFrame(force_interp)], axis=1)
+
+                grf_start = np.argmin(abs(grf_time-gait_event[0]))
+                grf_end = np.argmin(abs(grf_time-gait_event[1]))
+                new_grf_time = np.linspace(grf_time[grf_start], 
+                        grf_time[grf_end], 101)
+                for grf in self.grfs:
+                    reaction = grfs[grf][grf_start:grf_end]
+                    reaction_interp = np.interp(new_grf_time, 
+                        grf_time[grf_start:grf_end], reaction)
+                    df_grfs = pd.concat([df_grfs, pd.DataFrame(reaction_interp)], 
+                        axis=1)
+
+        df_moments = pd.DataFrame(np.vstack(np.split(df_moments, 3*len(file_dep), 
+            axis=1)))
+        df_forces = pd.DataFrame(np.vstack(np.split(df_forces, 3*len(file_dep), 
+            axis=1)))
+        df_grfs = pd.DataFrame(np.vstack(np.split(df_grfs, 3*len(file_dep), 
+            axis=1)))
+
+        mag_moments = np.linalg.norm(df_moments, axis=1)
+        mag_forces = np.linalg.norm(df_forces, axis=1)
+        mag_grfs = np.linalg.norm(df_grfs, axis=1)
+        peak_grfs = mag_grfs.max()
+
+        peak_moments = 100*mag_moments.max() / peak_grfs
+        rms_moments = 100*np.sqrt(np.mean(np.square(mag_moments))) / peak_grfs
+        peak_forces = 100*mag_forces.max() / peak_grfs
+        rms_forces = 100*np.sqrt(np.mean(np.square(mag_forces))) / peak_grfs
+
+        with open(target[0],"w") as f:
+            f.write('subjects: ')
+            for isubj, subject in enumerate(self.subjects):
+                if isubj:
+                    f.write(', %s' % subject.name)
+                else:
+                    f.write('%s' % subject.name)
+            f.write('\n')
+            f.write('conditions: ')
+            for icond, cond_name in enumerate(self.cond_names):
+                if icond:
+                    f.write(', %s' % subject)
+                else:
+                    f.write('%s' % cond_name)
+            f.write('\n')
+            f.write('Peak residual moments (%% GRF): %1.3f \n' % peak_moments) 
+            f.write('RMS residual moments (%% GRF): %1.3f \n' % rms_moments)
+            f.write('Peak residual forces (%% GRF): %1.3f \n' % peak_forces) 
+            f.write('RMS residual forces (%% GRF): %1.3f \n' % rms_forces)
+      
 def get_muscle_parameters_as_list(fpath):
 
     import h5py
@@ -2272,6 +2384,154 @@ class TaskPlotMoments(osp.StudyTask):
         fig.savefig(agg_target.replace('.csv', '.png'), dpi=600)
         pl.close(fig)
 
+def aggregate_reserves(file_dep, target, cond_name, cycles):
+
+    num_time_points = 400
+    pgc = np.linspace(0, 100, num_time_points)
+
+    muscle_names = None
+
+    subject_array = list()
+    cycle_array = list()
+    muscle_array = list()
+    all_exc = list()
+    for icycle, fpath in enumerate(file_dep):
+        cycle = cycles[cond_name][icycle]
+
+        muscle_names = util.hdf2list(fpath, 'MuscleNames', type=str)
+        exc_df = util.hdf2pandas(fpath, 'MExcitation', labels=muscle_names)
+
+        exc_index = np.linspace(0, 100, len(exc_df.index.values))
+
+        for muscle in exc_df.columns:
+            subject_array.append(cycle.subject.name)
+            cycle_array.append(cycle.id)
+            muscle_array.append(muscle)
+
+            exc = np.interp(pgc, exc_index, exc_df[muscle])
+
+            all_exc.append(exc)
+
+
+    all_exc_array = np.array(all_exc).transpose()
+
+    multiindex_arrays = [subject_array, cycle_array, muscle_array]
+    columns = pd.MultiIndex.from_arrays(multiindex_arrays,
+            names=['subject', 'cycle', 'muscle'])
+
+    all_exc_df = pd.DataFrame(all_exc_array, columns=columns, index=pgc)
+    target_dir = os.path.dirname(target[0])
+    if not os.path.exists(target_dir):
+        os.makedirs(target_dir)
+    with file(target[0], 'w') as f:
+        f.write('# all columns are reserve torques.\n')
+        all_exc_df.to_csv(f)
+    # How to read this in: df.read_csv(..., index_col=0, header=[0, 1, 2],
+    #                                  skiprows=1)
+
+class TaskAggregateReservesExperiment(osp.StudyTask):
+    REGISTRY = []
+    def __init__(self, study, subjects=None, 
+            cond_names=['walk1','walk2','walk3','walk4']):
+        super(TaskAggregateReservesExperiment, self).__init__(study)
+        suffix = ''
+        cost = ''
+        self.costdir = ''
+        if not (study.costFunction == 'Default'):
+            suffix += '_%s' % study.costFunction
+            cost = '_' + study.costFunction
+            self.costdir = study.costFunction
+
+        self.name = 'aggregate_reserves_experiment%s' % suffix
+        self.doc = 'Aggregate reserve moments into a data file.'
+
+        if subjects == None:
+            subjects = [s.name for s in study.subjects]
+
+        self.cycles = dict()
+        for cond_name in cond_names:
+            self.cycles[cond_name] = list()
+            deps = []
+            for subject in study.subjects:
+                if not subject.name in subjects: continue
+                cond = subject.get_condition(cond_name)
+                if not cond: continue
+                # We know there is only one overground trial, but perhaps it
+                # has not yet been added for this subject.
+                assert len(cond.trials) <= 1
+                if len(cond.trials) == 1:
+                    trial = cond.trials[0]
+                    for cycle in trial.cycles:
+                        if study.test_cycles:
+                            if not (cycle.name in study.test_cycles): 
+                                continue
+                        self.cycles[cond_name].append(cycle)
+
+                        # Results MAT file paths
+                        fpath = os.path.join(study.config['results_path'], 
+                            'experiments', subject.name, cond.name, 'mrs', 
+                            cycle.name, self.costdir,
+                            '%s_%s_mrs.mat' % (study.name, cycle.id))
+                        deps.append(fpath)
+
+            self.add_action(deps,
+                    [os.path.join(study.config['results_path'], 'experiments',
+                        'experiment_%s_reserves%s.csv' % (cond_name, suffix))],
+                    aggregate_reserves, cond_name, self.cycles)
+
+class TaskAggregateReservesMod(osp.StudyTask):
+    REGISTRY = []
+    def __init__(self, study, mod, subjects=None,
+            cond_names=['walk1','walk2','walk3','walk4']):
+        super(TaskAggregateReservesMod, self).__init__(study)
+        self.mod_name = mod
+        suffix = '_%s' % self.mod_name
+        cost = ''
+        self.costdir = ''
+        if not (study.costFunction == 'Default'):
+            suffix += '_%s' % study.costFunction
+            cost = '_' + study.costFunction
+            self.costdir = study.costFunction
+
+        self.name = 'aggregate_reserves_%s' % suffix
+        self.doc = 'Aggregate reserve moments into a data file.'
+
+        if subjects == None:
+            subjects = [s.name for s in study.subjects]
+
+        self.cycles = dict()
+        for cond_name in cond_names:
+            self.cycles[cond_name] = list()
+            deps = []
+            for subject in study.subjects:
+                if not subject.name in subjects: continue
+                cond = subject.get_condition(cond_name)
+                if not cond: continue
+                # We know there is only one overground trial, but perhaps it
+                # has not yet been added for this subject.
+                assert len(cond.trials) <= 1
+                if len(cond.trials) == 1:
+                    trial = cond.trials[0]
+                    for cycle in trial.cycles:
+                        if study.test_cycles:
+                            if not (cycle.name in study.test_cycles): 
+                                continue
+                        self.cycles[cond_name].append(cycle)
+
+                        # Results MAT file paths
+                        fpath = os.path.join(study.config['results_path'], 
+                            self.mod_dir, subject.name, cond.name, tool, 
+                            cycle.name, self.costdir,
+                            '%s_%s_mrs.mat' % (study.name, cycle.id))
+                        deps.append(fpath)
+
+            self.add_action(deps,
+                    [os.path.join(study.config['results_path'], 
+                        self.mod_dir,'%s%s_%s_excitations%s.csv' % (
+                            self.mod_name, alt_tool_tag, cond_name, cost))
+                    ],
+                    aggregate_reserves, cond_name, self.cycles)
+
 def aggregate_muscle_data(file_dep, target, cond_name, cycles):
 
     num_time_points = 400
@@ -2516,7 +2776,7 @@ class TaskAggregateMuscleDataMod(osp.StudyTask):
         else:
             self.mod_name = mod
 
-        suffix = '_' + self.mod_name
+        suffix = '_%s' % self.mod_name
         cost = ''
         self.costdir = ''
         if not (study.costFunction == 'Default'):
