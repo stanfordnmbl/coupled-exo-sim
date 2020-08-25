@@ -124,7 +124,7 @@ def scale_setup_fcn(pmm, mset, sset, ikts):
     ikts.add_ikmarkertask_bilateral('KJC', False, 0.0)
 
 def add_to_study(study):
-    subject = study.add_subject(18, 61.869999268)
+    subject = study.add_subject(18, 64.09)
 
     cond_args = dict()
     cond_args['walk100'] = (1, '_newCOP3')
@@ -154,8 +154,14 @@ def add_to_study(study):
             )
 
     subject.add_task(tasks.TaskScaleMuscleMaxIsometricForce)
+    marker_adjustments = dict()
+    marker_adjustments['RTOE'] = (1, 0.0012659)
+    marker_adjustments['RMT5'] = (1, -0.004)
+    marker_adjustments['LTOE'] = (1, 0.0012651)
+    marker_adjustments['LMT5'] = (1, -0.004)
+    subject.add_task(tasks.TaskAdjustScaledModelMarkers, marker_adjustments)
     subject.scaled_model_fpath = os.path.join(subject.results_exp_path,
-        '%s_scaled_Fmax.osim' % subject.name)
+        '%s_final.osim' % subject.name)
 
     ## walk1 condition
     walk1 = subject.add_condition('walk1', metadata={'walking_speed': 1.00})
@@ -179,7 +185,7 @@ def add_to_study(study):
     # walk1: main study tasks
     mrs_setup_tasks = helpers.generate_main_tasks(walk1_trial)
     helpers.generate_exotopology_tasks(walk1_trial, mrs_setup_tasks)
-    helpers.generate_mult_controls_tasks(walk1_trial, mrs_setup_tasks)
+    helpers.generate_coupled_controls_tasks(walk1_trial, mrs_setup_tasks)
 
     ## walk2 condition
     walk2 = subject.add_condition('walk2', metadata={'walking_speed': 1.25})
@@ -203,8 +209,7 @@ def add_to_study(study):
     # walk2: main study tasks
     mrs_setup_tasks = helpers.generate_main_tasks(walk2_trial)
     helpers.generate_exotopology_tasks(walk2_trial, mrs_setup_tasks)
-    helpers.generate_mult_controls_tasks(walk2_trial, mrs_setup_tasks)
-    # helpers.generate_param_controls_tasks(walk2_trial, mrs_setup_tasks)
+    helpers.generate_coupled_controls_tasks(walk2_trial, mrs_setup_tasks)
 
     ## walk3 condition
     walk3 = subject.add_condition('walk3', metadata={'walking_speed': 1.50})
@@ -228,7 +233,7 @@ def add_to_study(study):
     # walk3: main study tasks
     mrs_setup_tasks = helpers.generate_main_tasks(walk3_trial)
     helpers.generate_exotopology_tasks(walk3_trial, mrs_setup_tasks)
-    helpers.generate_mult_controls_tasks(walk3_trial, mrs_setup_tasks)
+    helpers.generate_coupled_controls_tasks(walk3_trial, mrs_setup_tasks)
 
     ## walk4 condition
     walk4 = subject.add_condition('walk4', metadata={'walking_speed': 1.75})
@@ -252,7 +257,7 @@ def add_to_study(study):
     # walk4: main study tasks
     mrs_setup_tasks = helpers.generate_main_tasks(walk4_trial)
     helpers.generate_exotopology_tasks(walk4_trial, mrs_setup_tasks)
-    helpers.generate_mult_controls_tasks(walk4_trial, mrs_setup_tasks)
+    helpers.generate_coupled_controls_tasks(walk4_trial, mrs_setup_tasks)
 
     # multi-phase parameter calibration (trial does not matter)
     calibrate_setup_task = walk3_trial.add_task(

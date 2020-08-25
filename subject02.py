@@ -122,7 +122,7 @@ def scale_setup_fcn(pmm, mset, sset, ikts):
     ikts.add_ikmarkertask_bilateral('KJC', False, 0.0)
 
 def add_to_study(study):    
-    subject = study.add_subject(2, 76.4757)
+    subject = study.add_subject(2, 76.48)
 
     cond_args = dict()
     cond_args['walk100'] = (5, '_newCOP3')
@@ -146,8 +146,14 @@ def add_to_study(study):
             )
 
     subject.add_task(tasks.TaskScaleMuscleMaxIsometricForce)
+    marker_adjustments = dict()
+    marker_adjustments['RTOE'] = (1, 0.0159575)
+    marker_adjustments['RMT5'] = (1, 0.0109378)
+    marker_adjustments['LTOE'] = (1, 0.0159567)
+    marker_adjustments['LMT5'] = (1, 0.0109368)
+    subject.add_task(tasks.TaskAdjustScaledModelMarkers, marker_adjustments)
     subject.scaled_model_fpath = os.path.join(subject.results_exp_path,
-        '%s_scaled_Fmax.osim' % subject.name)
+        '%s_final.osim' % subject.name)
 
     ## walk1 condition
     walk1 = subject.add_condition('walk1', metadata={'walking_speed': 1.00})
@@ -171,7 +177,7 @@ def add_to_study(study):
     # walk1: main study tasks
     mrs_setup_tasks = helpers.generate_main_tasks(walk1_trial)
     helpers.generate_exotopology_tasks(walk1_trial, mrs_setup_tasks)
-    helpers.generate_mult_controls_tasks(walk1_trial, mrs_setup_tasks)
+    helpers.generate_coupled_controls_tasks(walk1_trial, mrs_setup_tasks)
 
     ## walk2 condition
     walk2 = subject.add_condition('walk2', metadata={'walking_speed': 1.25})
@@ -192,20 +198,11 @@ def add_to_study(study):
             omit_trial_dir=True,
             )
     walk2_trial.add_task(tasks.TaskUpdateGroundReactionColumnLabels)
-
-    # Set the time in the gait cycle when to start fitting a parameterization
-    # of the optimized exoskeleton torque. 
-    # walk2_trial.get_cycle(3).fit_start_time = 3.46
-    # walk2_trial.get_cycle(3).peak_torque = 45.749503287345590 # N-m
-    # walk2_trial.get_cycle(3).peak_time = 3.770801870141614 # s
-    # walk2_trial.get_cycle(3).rise_time = 0.367949905100557 # s
-    # walk2_trial.get_cycle(3).fall_time = 0.217250193376961 # s
     
     # walk2: main study tasks
     mrs_setup_tasks = helpers.generate_main_tasks(walk2_trial)
     helpers.generate_exotopology_tasks(walk2_trial, mrs_setup_tasks)
-    helpers.generate_mult_controls_tasks(walk2_trial, mrs_setup_tasks)
-    helpers.generate_param_controls_tasks(walk2_trial, mrs_setup_tasks)
+    helpers.generate_coupled_controls_tasks(walk2_trial, mrs_setup_tasks)
 
     ## walk3 condition
     walk3 = subject.add_condition('walk3', metadata={'walking_speed': 1.50})
@@ -229,7 +226,7 @@ def add_to_study(study):
     # walk3: main study tasks
     mrs_setup_tasks = helpers.generate_main_tasks(walk3_trial)
     helpers.generate_exotopology_tasks(walk3_trial, mrs_setup_tasks)
-    helpers.generate_mult_controls_tasks(walk3_trial, mrs_setup_tasks)
+    helpers.generate_coupled_controls_tasks(walk3_trial, mrs_setup_tasks)
 
     ## walk4 condition
     walk4 = subject.add_condition('walk4', metadata={'walking_speed': 1.75})
@@ -253,15 +250,7 @@ def add_to_study(study):
     # walk4: main study tasks
     mrs_setup_tasks = helpers.generate_main_tasks(walk4_trial)
     helpers.generate_exotopology_tasks(walk4_trial, mrs_setup_tasks)
-    helpers.generate_mult_controls_tasks(walk4_trial, mrs_setup_tasks)
-
-    # aggregate muscle parameters
-    agg_task = subject.add_task(tasks.TaskAggregateMuscleParameters,
-        study.param_dict, 
-        conditions=['walk1','walk2','walk3','walk4'], 
-        cycles_to_exclude=['cycle03'])
-    subject.add_task(tasks.TaskPlotMuscleParameters, agg_task, 
-        cycles_to_exclude=['cycle03'])
+    helpers.generate_coupled_controls_tasks(walk4_trial, mrs_setup_tasks)
 
     # multi-phase parameter calibration (trial does not matter)
     calibrate_setup_task = walk3_trial.add_task(

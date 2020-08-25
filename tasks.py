@@ -4,6 +4,8 @@ import time
 import numpy as np
 import pylab as pl
 import pandas as pd
+import pdb
+
 import matplotlib.pyplot as plt
 plt.rcParams['mathtext.fontset'] = 'cm'
 plt.rcParams['mathtext.rm'] = 'serif'
@@ -266,6 +268,38 @@ class TaskScaleMuscleMaxIsometricForce(osp.SubjectTask):
 
         subj_model.printToXML(target[0])
 
+class TaskAdjustScaledModelMarkers(osp.SubjectTask):
+    REGISTRY = []
+    def __init__(self, subject, marker_adjustments):
+        super(TaskAdjustScaledModelMarkers, self).__init__(subject)
+        self.subject = subject
+        self.name = '%s_adjust_scaled_model_markers' % self.subject.name
+        self.doc = 'Make adjustments to model marker post-scale'
+        self.scaled_param_model_fpath = os.path.join(
+            self.subject.results_exp_path, 
+            '%s_scaled_Fmax.osim' % self.subject.name)
+        self.final_model_fpath = os.path.join(
+            self.subject.results_exp_path, 
+            '%s_final.osim' % self.subject.name)
+        self.marker_adjustments = marker_adjustments
+
+        self.add_action([self.scaled_param_model_fpath],
+                        [self.final_model_fpath],
+                        self.adjust_model_markers)
+
+    def adjust_model_markers(self, file_dep, target):
+        print("Adjusting model markers... ")
+        import opensim as osm
+        scaled_model = osm.Model(file_dep[0])        
+        markerSet = scaled_model.updMarkerSet()
+        for name, adj in self.marker_adjustments.iteritems():
+            marker = markerSet.get(name)
+            loc = marker.getOffset()
+            loc.set(adj[0], adj[1])
+            marker.setOffset(loc)
+
+        scaled_model.printToXML(target[0])
+
 class TaskValidateMarkerErrors(osp.StudyTask):
     REGISTRY = []
     def __init__(self, study, cond_names=['walk1','walk2','walk3','walk4']):
@@ -411,15 +445,31 @@ class TaskValidateKinetics(osp.StudyTask):
                             colors, masses)
 
         residuals_fname = os.path.join(self.validate_path, 'residuals.txt')
-        self.add_action(moments_fpaths_all, [residuals_fname],
+        moments_fname = os.path.join(self.validate_path, 'moments.csv')
+        forces_fname = os.path.join(self.validate_path, 'forces.csv')
+        self.add_action(moments_fpaths_all, 
+                        [residuals_fname, moments_fname, forces_fname],
                         self.validate_residuals, gait_events_all, grf_fpaths_all)
 
     def validate_joint_moments(self, file_dep, target, gait_events, isubjs,
             colors, masses):
         if not os.path.isdir(self.validate_path): os.mkdir(self.validate_path)
 
-        fig = pl.figure(figsize=(8, 8))
+        nice_gen_force_names = {'hip_flexion_r_moment': 'hip flexion moment',
+                                'knee_angle_r_moment': 'knee flexion moment',
+                                'ankle_angle_r_moment': 'ankle plantarflexion moment'}
+
+        y_lim_dict = {'hip_flexion_r_moment': (-1.2, 1.2),
+                       'knee_angle_r_moment': (-1.2, 1.2),
+                       'ankle_angle_r_moment': (-0.5, 2.0)}
+
+        subject_labels = ['subject 1', 'subject 2', 'subject 3', 'subject 4',
+                          'subject 5']
+
+        import matplotlib
+        fig = pl.figure(figsize=(6, 8))
         ind_axes = list()
+        ind_handles = list()
         mean_axes = list()
         dfs = list()
         for iforce, gen_force in enumerate(self.gen_forces):
@@ -431,7 +481,7 @@ class TaskValidateKinetics(osp.StudyTask):
         for file, gait_events_cond, isubj in zip(file_dep, gait_events, isubjs):
             id = pp.storage2numpy(file)
             time = id['time']
-            for gait_event in gait_events_cond:
+            for ige, gait_event in enumerate(gait_events_cond):
                 start = np.argmin(abs(time-gait_event[0]))
                 end = np.argmin(abs(time-gait_event[1]))
                 new_time = np.linspace(time[start], time[end], 101)
@@ -442,21 +492,47 @@ class TaskValidateKinetics(osp.StudyTask):
                     dfs[iforce] = pd.concat([dfs[iforce], 
                             pd.DataFrame(force_interp)], axis=1)
 
-                    ind_axes[iforce].plot(pgc, force_interp, color=colors[isubj])
-                    ind_axes[iforce].set_ylabel('%s (N-m/kg)' % gen_force)
+                    sign = -1 if gen_force=='ankle_angle_r_moment' else 1
+                    h, = ind_axes[iforce].plot(pgc, sign*force_interp, color=colors[isubj])
+                    if not ige and not iforce:
+                        ind_handles.append(h)
+                    ind_axes[iforce].set_ylabel(
+                        '%s (N-m/kg)' % nice_gen_force_names[gen_force])
+                    ind_axes[iforce].set_ylim(y_lim_dict[gen_force])
+                    ind_axes[iforce].set_xlim((0, 100))
+                    ind_axes[iforce].axhline(ls='--', color='lightgray', zorder=0)
+                    ind_axes[iforce].spines['top'].set_visible(False)
+                    ind_axes[iforce].spines['right'].set_visible(False)
+
+        ind_axes[0].legend(ind_handles, subject_labels, fancybox=False,
+                frameon=False, prop={'size': 8}, loc=2)                    
 
         for iforce, gen_force in enumerate(self.gen_forces):
-            force_mean = dfs[iforce].mean(axis=1)
+            sign = -1 if gen_force=='ankle_angle_r_moment' else 1
+            force_mean = sign*dfs[iforce].mean(axis=1)
             force_std = dfs[iforce].std(axis=1)
             mean_axes[iforce].fill_between(pgc, force_mean-force_std, 
                 force_mean+force_std, color='black', alpha=0.2)
-            mean_axes[iforce].plot(pgc, force_mean, color='black')
+            std_h = matplotlib.patches.Patch(color='black', alpha=0.2)
+            mean_h, = mean_axes[iforce].plot(pgc, force_mean, color='black')
+            mean_axes[iforce].set_ylim(y_lim_dict[gen_force])
+            mean_axes[iforce].set_xlim((0, 100))
+            mean_axes[iforce].axhline(ls='--', color='lightgray', zorder=0)
+            mean_axes[iforce].spines['top'].set_visible(False)
+            mean_axes[iforce].spines['right'].set_visible(False)
             if iforce == len(self.gen_forces)-1:
                 mean_axes[iforce].set_xlabel('gait cycle (%)')
                 ind_axes[iforce].set_xlabel('gait cycle (%)')
+            else:
+                ind_axes[iforce].set_xticklabels([])
+                mean_axes[iforce].set_xticklabels([])
+
+        mean_axes[0].legend([mean_h, std_h], ['mean', 'std'], fancybox=False,
+                frameon=False, prop={'size': 8}, loc=2)  
 
         fig.tight_layout()
         fig.savefig(target[0])
+        fig.savefig(target[0].replace('.pdf', '.png'), dpi=600)
         pl.close(fig)
 
     def validate_residuals(self, file_dep, target, gait_events, grf_fpaths):
@@ -535,6 +611,20 @@ class TaskValidateKinetics(osp.StudyTask):
             f.write('RMS residual moments (%% GRF): %1.3f \n' % rms_moments)
             f.write('Peak residual forces (%% GRF): %1.3f \n' % peak_forces) 
             f.write('RMS residual forces (%% GRF): %1.3f \n' % rms_forces)
+
+        target_dir = os.path.dirname(target[1])
+        if not os.path.exists(target_dir):
+            os.makedirs(target_dir)
+        with open(target[1], 'w') as f:
+            f.write('residual moments\n')
+            df_moments.to_csv(f, line_terminator='\n')
+
+        target_dir = os.path.dirname(target[2])
+        if not os.path.exists(target_dir):
+            os.makedirs(target_dir)
+        with open(target[2], 'w') as f:
+            f.write('residual forces\n')
+            df_forces.to_csv(f, line_terminator='\n')
       
 def get_muscle_parameters_as_list(fpath):
 
@@ -1649,7 +1739,7 @@ class TaskAggregateMetabolicRate(osp.StudyTask):
         with file(target[0], 'w') as f:
             f.write('# columns contain whole body metabolic rate normalized by '
                     'subject mass (W/kg)\n')
-            df.to_csv(f)
+            df.to_csv(f, line_terminator='\n')
 
     def aggregate_metabolic_rate_muscles(self, file_dep, target):
         import numpy as np
@@ -1677,7 +1767,172 @@ class TaskAggregateMetabolicRate(osp.StudyTask):
         with file(target[0], 'w') as f:
             f.write('# columns contain muscle metabolic rates normalized by '
                     'subject mass (W/kg)\n')
-            df.to_csv(f)
+            df.to_csv(f, line_terminator='\n')
+
+class TaskAggregateDeviceMoments(osp.StudyTask):
+    """Aggregate peak  and average device moments for assisted cases 
+    across all subjects and gait cycles for each provided condition."""
+    REGISTRY = []
+    def __init__(self, study, mods, subjects=None, 
+            conditions=['walk1','walk2','walk3','walk4'], suffix=''):
+        super(TaskAggregateDeviceMoments, self).__init__(study)
+        self.mod_names = list()
+        self.mod_dirs = list()
+        for mod in mods:
+            self.mod_dirs.append(mod.replace('/', '\\'))
+            if len(mod.split('/')) > 1:
+                self.mod_names.append('_'.join(mod.split('/')))
+            else:
+                self.mod_names.append(mod)
+        self.suffix_path = suffix
+        if suffix != '':
+            suffix = '_' + suffix
+        self.costdir = ''
+        if not (study.costFunction == 'Default'):
+            suffix += '_%s' % study.costFunction
+            self.costdir = study.costFunction
+        self.suffix = suffix
+        self.name = 'aggregate_device_moments%s' % suffix
+        self.peak_moment_fpath = os.path.join(study.config['analysis_path'], 
+            self.suffix_path, 'peak_moment%s.csv' % suffix)
+        self.avg_moment_fpath = os.path.join(study.config['analysis_path'],
+            self.suffix_path, 'avg_moment%s.csv' % suffix)
+        self.doc = """Aggregate peak and average moments '
+                     'normalized by subject mass."""
+        self.study = study
+
+        if subjects == None:
+            subjects = [s.num for s in study.subjects]
+
+        # Get multiindex tuples and cycles list
+        self.multiindex_tuples, all_cycles = construct_multiindex_tuples(study, 
+            subjects, conditions, dof_level=True)
+
+        self.mod_for_file_dep = list()
+        self.subject_masses = list()
+        deps = list()
+        cycles = list()
+        for mod_name, mod_dir in zip(self.mod_names, self.mod_dirs):
+            for cycle in all_cycles:
+                if study.cycles_to_plot:
+                    if not (cycle.name in study.cycles_to_plot): 
+                        continue
+                self.mod_for_file_dep.append(mod_name)
+                self.subject_masses.append(cycle.subject.mass)
+                cycles.append(cycle)
+                deps.append(os.path.join(
+                        self.study.config['results_path'],
+                        mod_dir, cycle.trial.rel_path, 'mrs', 
+                        cycle.name, self.costdir,
+                        '%s_%s_mrs.mat' % (study.name, cycle.id))
+                    )
+        self.add_action(deps,
+                [self.peak_moment_fpath,
+                 self.avg_moment_fpath], 
+                self.aggregate_device_moments, 
+                cycles)
+
+    def aggregate_device_moments(self, file_dep, target, cycles):
+        import numpy as np
+        from scipy.interpolate import interp1d
+        from collections import OrderedDict
+        peak_norm_moments = OrderedDict()
+        avg_norm_moments = OrderedDict()
+        for ifile, fpath in enumerate(file_dep):
+            df_Texo = util.hdf2pandas(fpath, 'DatStore/ExoTorques', 
+                labels=self.study.dof_names)
+
+            Tmax = df_Texo.max() / self.subject_masses[ifile]
+            Tmin = df_Texo.min() / self.subject_masses[ifile]
+            Tavg = df_Texo.mean() / self.subject_masses[ifile]
+
+            this_mod = self.mod_for_file_dep[ifile]
+            if not this_mod in peak_norm_moments:
+                peak_norm_moments[this_mod] = list()
+            if not this_mod in avg_norm_moments:
+                avg_norm_moments[this_mod] = list()
+
+            for dof_name in self.study.dof_names:
+                Tmax_abs = abs(Tmax[dof_name])
+                Tmin_abs = abs(Tmin[dof_name])
+
+                if Tmax_abs > Tmin_abs:
+                    if Tmax_abs > 1e-3:
+                        peak_norm_moments[this_mod].append(Tmax[dof_name])
+                    else:
+                        peak_norm_moments[this_mod].append(0.0)
+                else:
+                    if Tmin_abs > 1e-3:
+                        peak_norm_moments[this_mod].append(Tmin[dof_name])
+                    else:
+                        peak_norm_moments[this_mod].append(0.0)
+
+                avg_norm_moments[this_mod].append(Tavg[dof_name])
+
+        index = pd.MultiIndex.from_tuples(self.multiindex_tuples,
+                names=['subject', 'condition', 'cycle', 'DOF'])
+
+        df_peak = pd.DataFrame(peak_norm_moments, index=index)
+        target_dir = os.path.dirname(target[0])
+        if not os.path.exists(target_dir):
+            os.makedirs(target_dir)
+        with file(target[0], 'w') as f:
+            f.write('peak device moment normalized by subject mass (N-m/kg)\n')
+            df_peak.to_csv(f, line_terminator='\n')
+
+        df_avg = pd.DataFrame(avg_norm_moments, index=index)
+        target_dir = os.path.dirname(target[1])
+        if not os.path.exists(target_dir):
+            os.makedirs(target_dir)
+        with file(target[1], 'w') as f:
+            f.write('average device moment normalized by subject mass (N-m/kg)\n')
+            df_avg.to_csv(f, line_terminator='\n')  
+                       
+class TaskCreateDeviceMomentTable(osp.StudyTask):
+    REGISTRY = []
+    def __init__(self, study, agg_task, suffix=''):
+        super(TaskCreateDeviceMomentTable, self).__init__(study)
+        self.name = 'create_device_peak_moment_power_table_%s' % suffix
+        self.doc = """Tabulate peak instantaneous power and peak moment for '
+                   'each degree-of-freedom normalized by subject mass."""
+        self.output_path = os.path.join(study.config['analysis_path'], suffix)
+        if not os.path.exists(self.output_path): os.mkdir(self.output_path)
+        self.study = study
+        self.device_names = agg_task.mod_names
+
+        self.add_action(
+                [agg_task.peak_moment_fpath,
+                 agg_task.avg_moment_fpath],
+                [os.path.join(self.output_path, 
+                    'moment_table_mean%s.csv' % agg_task.suffix),
+                os.path.join(self.output_path, 
+                    'moment_table_std%s.csv' % agg_task.suffix)],
+                self.create_moment_table)
+
+    def create_moment_table(self, file_dep, target):
+
+        df_peak_moments = pd.read_csv(file_dep[0], index_col=[0, 1, 2, 3], 
+            skiprows=1)
+        df_peak_moments_by_dofs_subjs = df_peak_moments.groupby(
+            level=['subject', 'DOF']).mean()
+        peak_moments_dof_mean = df_peak_moments_by_dofs_subjs.groupby(
+            level=['DOF']).mean()[self.device_names]
+        peak_moments_dof_std = df_peak_moments_by_dofs_subjs.groupby(
+            level=['DOF']).std()[self.device_names]
+
+        target_dir = os.path.dirname(target[0])
+        if not os.path.exists(target_dir):
+            os.makedirs(target_dir)
+        with file(target[0], 'w') as f:
+            f.write('peak moment at each dof (W/kg) average across subjects\n')
+            peak_moments_dof_mean.transpose().to_csv(f, line_terminator='\n')
+
+        target_dir = os.path.dirname(target[1])
+        if not os.path.exists(target_dir):
+            os.makedirs(target_dir)
+        with file(target[1], 'w') as f:
+            f.write('peak moment at each dof (W/kg) std across subjects\n')
+            peak_moments_dof_std.transpose().to_csv(f, line_terminator='\n')
 
 class TaskAggregateDevicePower(osp.StudyTask):
     """Aggregate peak instantaneous and average device power for assisted cases 
@@ -1701,21 +1956,27 @@ class TaskAggregateDevicePower(osp.StudyTask):
         if not (study.costFunction == 'Default'):
             suffix += '_%s' % study.costFunction
             self.costdir = study.costFunction
+        self.suffix = suffix
         self.name = 'aggregate_device_power%s' % suffix
-        self.peak_power_fpath = os.path.join(self.suffix_path, 
-            'peak_power%s.csv' % suffix)
-        self.avg_pos_power_fpath = os.path.join(self.suffix_path, 
-            'avg_pos_power%s.csv' % suffix)
-        self.avg_neg_power_fpath = os.path.join(self.suffix_path, 
-            'avg_neg_power%s.csv' % suffix)
-        self.total_power_fpath = os.path.join(self.suffix_path, 
-            'total_power%s.csv' % suffix)
+        self.peak_power_fpath = os.path.join(study.config['analysis_path'], 
+            self.suffix_path, 'peak_power%s.csv' % suffix)
+        self.avg_pos_power_fpath = os.path.join(study.config['analysis_path'],
+            self.suffix_path, 'avg_pos_power%s.csv' % suffix)
+        self.avg_neg_power_fpath = os.path.join(study.config['analysis_path'],
+            self.suffix_path, 'avg_neg_power%s.csv' % suffix)
+        self.total_power_fpath = os.path.join(study.config['analysis_path'], 
+            self.suffix_path, 'total_power%s.csv' % suffix)
+        self.peak_power_by_dof_fpath = os.path.join(study.config['analysis_path'], 
+            self.suffix_path, 'peak_power_by_dof%s.csv' % suffix)
         self.doc = """Aggregate peak instantaneous and average negative and '
                    'positive power normalized by subject mass."""
         self.study = study
 
         if subjects == None:
             subjects = [s.num for s in study.subjects]
+
+        self.subjects = subjects
+        self.conditions = conditions
 
         # Get multiindex tuples and cycles list
         self.multiindex_tuples, all_cycles = construct_multiindex_tuples(study, 
@@ -1740,14 +2001,11 @@ class TaskAggregateDevicePower(osp.StudyTask):
                         '%s_%s_mrs.mat' % (study.name, cycle.id))
                     )
         self.add_action(deps,
-                [os.path.join(study.config['analysis_path'], 
-                    self.peak_power_fpath),
-                os.path.join(study.config['analysis_path'], 
-                    self.avg_pos_power_fpath),
-                os.path.join(study.config['analysis_path'], 
-                    self.avg_neg_power_fpath),
-                os.path.join(study.config['analysis_path'], 
-                    self.total_power_fpath)], 
+                [self.peak_power_fpath,
+                 self.avg_pos_power_fpath,
+                 self.avg_neg_power_fpath,
+                 self.total_power_fpath,
+                 self.peak_power_by_dof_fpath], 
                 self.aggregate_device_power, 
                 cycles)
 
@@ -1756,6 +2014,7 @@ class TaskAggregateDevicePower(osp.StudyTask):
         from scipy.interpolate import interp1d
         from collections import OrderedDict
         peak_norm_power = OrderedDict()
+        peak_norm_power_by_dof = OrderedDict()
         avg_pos_norm_power = OrderedDict()
         avg_neg_norm_power = OrderedDict()
         device_array = list()
@@ -1799,6 +2058,7 @@ class TaskAggregateDevicePower(osp.StudyTask):
 
             # Get max value and normalize to subject mass
             Pmax_norm = df_P.max().sum() / self.subject_masses[ifile]
+            Pmax_by_dof_norm = df_P.max() / self.subject_masses[ifile]
 
             # Get average positive power and normalize to subject mass
             df_Ppos = df_P.copy(deep=True)
@@ -1815,6 +2075,9 @@ class TaskAggregateDevicePower(osp.StudyTask):
             if not this_mod in peak_norm_power:
                 peak_norm_power[this_mod] = list()
             peak_norm_power[this_mod].append(Pmax_norm)
+
+            if not this_mod in peak_norm_power_by_dof:
+                peak_norm_power_by_dof[this_mod] = list()
 
             if not this_mod in avg_pos_norm_power:
                 avg_pos_norm_power[this_mod] = list()
@@ -1836,6 +2099,8 @@ class TaskAggregateDevicePower(osp.StudyTask):
                     num_time_points)
                 power = np.interp(new_time, time_sqz, df_P[dof_name].squeeze())
                 all_P.append(power)
+                peak_norm_power_by_dof[this_mod].append(
+                    Pmax_by_dof_norm[dof_name])
 
         index = pd.MultiIndex.from_tuples(self.multiindex_tuples,
                 names=['subject', 'condition', 'cycle'])
@@ -1847,7 +2112,7 @@ class TaskAggregateDevicePower(osp.StudyTask):
         with file(target[0], 'w') as f:
             f.write('peak instantaneous positive power normalized by subject '
                 'mass (W/kg)\n')
-            df_peak.to_csv(f)
+            df_peak.to_csv(f, line_terminator='\n')
 
         df_avg_pos = pd.DataFrame(avg_pos_norm_power, index=index)
         target_dir = os.path.dirname(target[1])
@@ -1855,7 +2120,7 @@ class TaskAggregateDevicePower(osp.StudyTask):
             os.makedirs(target_dir)
         with file(target[1], 'w') as f:
             f.write('average positive power normalized by subject mass (W/kg)\n')
-            df_avg_pos.to_csv(f)
+            df_avg_pos.to_csv(f, line_terminator='\n')
 
         df_avg_neg = pd.DataFrame(avg_neg_norm_power, index=index)
         target_dir = os.path.dirname(target[2])
@@ -1863,7 +2128,7 @@ class TaskAggregateDevicePower(osp.StudyTask):
             os.makedirs(target_dir)
         with file(target[2], 'w') as f:
             f.write('average negative power normalized by subject mass (W/kg)\n')
-            df_avg_neg.to_csv(f)
+            df_avg_neg.to_csv(f, line_terminator='\n')
 
         # Convert from (n_cycles * n_dofs * n_muscles) x n_times
         #         to   n_times x (n_cycles * n_dofs * n_muscles)
@@ -1881,10 +2146,114 @@ class TaskAggregateDevicePower(osp.StudyTask):
             os.makedirs(target_dir)
         with file(target[3], 'w') as f:
             f.write('# all columns are device power normalized by subject '
-                    'mass (N-m/kg).\n')
-            all_P_df.to_csv(f)
+                    'mass (W/kg).\n')
+            all_P_df.to_csv(f, line_terminator='\n')
         # How to read this in: df.read_csv(..., index_col=0, header=[0, 1, 2, 3],
         #                                  skiprows=1)
+        
+        multiindex_tuples_by_dof, _ = construct_multiindex_tuples(self.study, 
+        self.subjects, self.conditions, dof_level=True)
+        index = pd.MultiIndex.from_tuples(multiindex_tuples_by_dof,
+                names=['subject', 'condition', 'cycle', 'DOF'])
+        df_peak_by_dof = pd.DataFrame(peak_norm_power_by_dof, index=index)
+        target_dir = os.path.dirname(target[3])
+        if not os.path.exists(target_dir):
+            os.makedirs(target_dir)
+        with file(target[4], 'w') as f:
+            f.write('peak instantaneous positive power normalized by subject '
+                'mass by DOF (W/kg)\n')
+            df_peak_by_dof.to_csv(f, line_terminator='\n')                         
+
+class TaskCreateDevicePowerTable(osp.StudyTask):
+    REGISTRY = []
+    def __init__(self, study, agg_task, suffix=''):
+        super(TaskCreateDevicePowerTable, self).__init__(study)
+        self.name = 'create_device_power_table_%s' % suffix
+        self.doc = """Tabulate peak instantaneous and average negative and '
+                   'positive power normalized by subject mass."""
+        self.output_path = os.path.join(study.config['analysis_path'], suffix)
+        if not os.path.exists(self.output_path): os.mkdir(self.output_path)
+        self.study = study
+        self.device_names = agg_task.mod_names
+
+        self.add_action(
+                [agg_task.peak_power_fpath,
+                 agg_task.avg_pos_power_fpath,
+                 agg_task.avg_neg_power_fpath,
+                 agg_task.total_power_fpath,
+                 agg_task.peak_power_by_dof_fpath],
+                [os.path.join(self.output_path, 
+                    'power_table_mean%s.csv' % agg_task.suffix),
+                 os.path.join(self.output_path, 
+                    'power_table_std%s.csv' % agg_task.suffix),
+                 os.path.join(self.output_path,
+                    'power_table_peak_by_dofs_mean%s.csv' % agg_task.suffix),
+                 os.path.join(self.output_path,
+                    'power_table_peak_by_dofs_std%s.csv' % agg_task.suffix)],
+                self.create_power_table)
+
+    def create_power_table(self, file_dep, target):
+        df_peak_power = pd.read_csv(file_dep[0], index_col=[0, 1, 2], skiprows=1)
+        df_peak_power_by_subjs = df_peak_power.groupby(level='subject').mean()
+        peak_power_mean = df_peak_power_by_subjs.mean()[self.device_names]
+        peak_power_std = df_peak_power_by_subjs.std()[self.device_names]
+
+        df_avg_pos_power = pd.read_csv(file_dep[1], index_col=[0, 1, 2], skiprows=1)
+        df_avg_pos_power_by_subjs = df_avg_pos_power.groupby(level='subject').mean()
+        avg_pos_power_mean = df_avg_pos_power_by_subjs.mean()[self.device_names]
+        avg_pos_power_std = df_avg_pos_power_by_subjs.std()[self.device_names]
+
+        df_avg_neg_power = pd.read_csv(file_dep[2], index_col=[0, 1, 2], skiprows=1)
+        df_avg_neg_power_by_subjs = df_avg_neg_power.groupby(level='subject').mean()
+        avg_neg_power_mean = df_avg_neg_power_by_subjs.mean()[self.device_names]
+        avg_neg_power_std = df_avg_neg_power_by_subjs.std()[self.device_names]
+
+        columns = ['peak positive', 'average positive', 'average negative']
+
+        power_mean_dfs = [peak_power_mean, avg_pos_power_mean, avg_neg_power_mean]
+        power_mean = pd.concat(power_mean_dfs, axis=1)
+        power_mean.columns = columns
+
+        power_std_dfs = [peak_power_std, avg_pos_power_std, avg_neg_power_std]
+        power_std = pd.concat(power_std_dfs, axis=1)
+        power_std.columns = columns
+
+        target_dir = os.path.dirname(target[0])
+        if not os.path.exists(target_dir):
+            os.makedirs(target_dir)
+        with file(target[0], 'w') as f:
+            f.write('mean power (W/kg) across subjects\n')
+            power_mean.to_csv(f, line_terminator='\n')
+
+        target_dir = os.path.dirname(target[1])
+        if not os.path.exists(target_dir):
+            os.makedirs(target_dir)
+        with file(target[1], 'w') as f:
+            f.write('power standard deviation (W/kg) across subjects\n')
+            power_std.to_csv(f, line_terminator='\n')
+
+        df_peak_power_by_dofs = pd.read_csv(file_dep[4], index_col=[0, 1, 2, 3], 
+            skiprows=1)
+        df_peak_power_by_dofs_subjs = df_peak_power_by_dofs.groupby(
+            level=['subject', 'DOF']).mean()
+        peak_power_dof_mean = df_peak_power_by_dofs_subjs.groupby(
+            level=['DOF']).mean()[self.device_names]
+        peak_power_dof_std = df_peak_power_by_dofs_subjs.groupby(
+            level=['DOF']).std()[self.device_names]
+
+        target_dir = os.path.dirname(target[2])
+        if not os.path.exists(target_dir):
+            os.makedirs(target_dir)
+        with file(target[2], 'w') as f:
+            f.write('peak power at each dof (W/kg) average across subjects\n')
+            peak_power_dof_mean.transpose().to_csv(f, line_terminator='\n')
+
+        target_dir = os.path.dirname(target[3])
+        if not os.path.exists(target_dir):
+            os.makedirs(target_dir)
+        with file(target[3], 'w') as f:
+            f.write('peak power at each dof (W/kg) std across subjects\n')
+            peak_power_dof_std.transpose().to_csv(f, line_terminator='\n')
 
 class TaskPlotMetabolicReductionVsPeakPower(osp.StudyTask):
     REGISTRY = []
@@ -2173,7 +2542,7 @@ def aggregate_moments(file_dep, target, cond_name, cycles):
     with file(target[0], 'w') as f:
         f.write('# all columns are moments normalized by subject '
                 'mass (N-m/kg).\n')
-        all_data_df.to_csv(f)
+        all_data_df.to_csv(f, line_terminator='\n')
     # How to read this in: df.read_csv(..., index_col=0, header=[0, 1, 2, 3],
     #                                  skiprows=1)
 
@@ -2425,7 +2794,7 @@ def aggregate_reserves(file_dep, target, cond_name, cycles):
         os.makedirs(target_dir)
     with file(target[0], 'w') as f:
         f.write('# all columns are reserve torques.\n')
-        all_exc_df.to_csv(f)
+        all_exc_df.to_csv(f, line_terminator='\n')
     # How to read this in: df.read_csv(..., index_col=0, header=[0, 1, 2],
     #                                  skiprows=1)
 
@@ -2622,7 +2991,7 @@ def aggregate_muscle_data(file_dep, target, cond_name, cycles):
         os.makedirs(target_dir)
     with file(target[0], 'w') as f:
         f.write('# all columns are muscle excitations.\n')
-        all_exc_df.to_csv(f)
+        all_exc_df.to_csv(f, line_terminator='\n')
 
     all_act_df = pd.DataFrame(all_act_array, columns=columns, index=pgc)
     target_dir = os.path.dirname(target[1])
@@ -2630,7 +2999,7 @@ def aggregate_muscle_data(file_dep, target, cond_name, cycles):
         os.makedirs(target_dir)
     with file(target[1], 'w') as f:
         f.write('# all columns are muscle activations.\n')
-        all_act_df.to_csv(f)
+        all_act_df.to_csv(f, line_terminator='\n')
 
     all_fce_df = pd.DataFrame(all_fce_array, columns=columns, index=pgc)
     target_dir = os.path.dirname(target[2])
@@ -2638,7 +3007,7 @@ def aggregate_muscle_data(file_dep, target, cond_name, cycles):
         os.makedirs(target_dir)
     with file(target[2], 'w') as f:
         f.write('# all columns are normalized muscle active fiber forces.\n')
-        all_fce_df.to_csv(f)
+        all_fce_df.to_csv(f, line_terminator='\n')
 
     all_fpe_df = pd.DataFrame(all_fpe_array, columns=columns, index=pgc)
     target_dir = os.path.dirname(target[3])
@@ -2646,7 +3015,7 @@ def aggregate_muscle_data(file_dep, target, cond_name, cycles):
         os.makedirs(target_dir)
     with file(target[3], 'w') as f:
         f.write('# all columns are normalized muscle passive fiber forces.\n')
-        all_fpe_df.to_csv(f)
+        all_fpe_df.to_csv(f, line_terminator='\n')
 
     all_lMtilde_df = pd.DataFrame(all_lMtilde_array, columns=columns, index=pgc)
     target_dir = os.path.dirname(target[4])
@@ -2654,7 +3023,7 @@ def aggregate_muscle_data(file_dep, target, cond_name, cycles):
         os.makedirs(target_dir)
     with file(target[4], 'w') as f:
         f.write('# all columns are normalized muscle fiber lengths.\n')
-        all_lMtilde_df.to_csv(f)
+        all_lMtilde_df.to_csv(f, line_terminator='\n')
 
     all_vMtilde_df = pd.DataFrame(all_vMtilde_array, columns=columns, index=pgc)
     target_dir = os.path.dirname(target[5])
@@ -2662,7 +3031,7 @@ def aggregate_muscle_data(file_dep, target, cond_name, cycles):
         os.makedirs(target_dir)
     with file(target[5], 'w') as f:
         f.write('# all columns are normalized muscle fiber velocities.\n')
-        all_vMtilde_df.to_csv(f)
+        all_vMtilde_df.to_csv(f, line_terminator='\n')
 
     all_pce_df = pd.DataFrame(all_pce_array, columns=columns, index=pgc)
     target_dir = os.path.dirname(target[6])
@@ -2670,7 +3039,7 @@ def aggregate_muscle_data(file_dep, target, cond_name, cycles):
         os.makedirs(target_dir)
     with file(target[6], 'w') as f:
         f.write('# all columns are normalized muscle active fiber powers.\n')
-        all_pce_df.to_csv(f)
+        all_pce_df.to_csv(f, line_terminator='\n')
 
     all_Pce_df = pd.DataFrame(all_Pce_array, columns=columns, index=pgc)
     target_dir = os.path.dirname(target[7])
@@ -2678,7 +3047,7 @@ def aggregate_muscle_data(file_dep, target, cond_name, cycles):
         os.makedirs(target_dir)
     with file(target[7], 'w') as f:
         f.write('# all columns are muscle active fiber powers.\n')
-        all_Pce_df.to_csv(f)
+        all_Pce_df.to_csv(f, line_terminator='\n')
     # How to read this in: df.read_csv(..., index_col=0, header=[0, 1, 2],
     #                                  skiprows=1)
 
@@ -2963,115 +3332,6 @@ class TaskPlotMuscleData(osp.StudyTask):
         fig.savefig(agg_target.replace('.csv', '.png'), dpi=600)
         pl.close(fig)
 
-class TaskCopyEMGData(osp.StudyTask):
-    REGISTRY = []
-    def __init__(self, study):
-        super(TaskCopyEMGData, self).__init__(study)
-        self.name = '%s_copy_emg_data' % study.name
-        self.data_path = self.study.config['motion_capture_data_path']  
-        self.results_path = self.study.config['results_path']
-        self.cond_map = {
-                    'walk1' : 'Walk_100',
-                    'walk2' : 'Walk_125',
-                    'walk3' : 'Walk_150',
-                    'walk4' : 'Walk_175',
-                    'run1' : 'Run_200',
-                    'run2' : 'Run_300',
-                    'run3' : 'Run_400',
-                    'run4' : 'Run_500'
-                    }
-        self.cond_map2 = {
-                    'walk1' : 'walk100',
-                    'walk2' : 'walk125',
-                    'walk3' : 'walk150',
-                    'walk4' : 'walk175',
-                    'run1' : 'run200',
-                    'run2' : 'run300',
-                    'run3' : 'run400',
-                    'run4' : 'run500'
-                    }
-
-
-        self.actions += [self.copy_emg_data]
-
-    def copy_emg_data(self):
-        for subject in self.study.subjects:
-            for cond in subject.conditions:
-
-                if cond.name=='static': continue
-
-                if self.cond_map2[cond.name] in subject.cond_args:
-                    args = subject.cond_args[self.cond_map2[cond.name]]
-                    num_tag = args[0]
-                else:
-                    num_tag = 2
-
-                emg_fpath = os.path.join(self.data_path, subject.name, 
-                    'Results', self.cond_map[cond.name], 
-                    '%s%02i_gait_controls.sto' % (self.cond_map[cond.name],
-                        num_tag))
-                states_fpath = os.path.join(self.data_path, subject.name, 
-                    'Results', self.cond_map[cond.name], 
-                    '%s%02i_gait_states.sto' % (self.cond_map[cond.name],
-                        num_tag))
-
-                emg = util.storage2numpy(emg_fpath)
-                names = emg.dtype.names
-                muscle_names = [m for m in names if not m=='time']
-                states = util.storage2numpy(states_fpath)
-                time = states['time']
-                knee_angle_r = states['knee_angle_r']
-
-                r_strikes, l_strikes, r_offs, l_offs = \
-                    util.gait_landmarks_from_grf(states_fpath,
-                        right_grfy_column_name='knee_angle_r',
-                        left_grfy_column_name='knee_angle_l',
-                        threshold=0.075)
-
-                from scipy.signal import argrelmin
-                idxs = argrelmin(knee_angle_r)[0]                
-                if subject.name=='subject01':
-                    strikes = [time[i] for i in idxs if knee_angle_r[i] < 0.075]
-                elif subject.name=='subject02':
-                    strikes = [time[i] for i in idxs if knee_angle_r[i] > 0.13]
-                elif subject.name=='subject04':
-                    strikes = [0.272, 1.379, 2.528, 3.620]
-                elif subject.name=='subject18':
-                    strikes = [0.284, 1.381, 2.453, 3.517]
-                elif subject.name=='subject19':
-                    strikes = [0.581, 1.637, 2.696, 3.759]
-
-                cycle_array = list()
-                muscle_array = list()
-                emg_data = list()
-                for i, cycle in enumerate(cond.trials[0].cycles):
-                    for muscle in muscle_names:
-                        cycle_array.append(cycle.id)
-                        muscle_array.append(muscle)
-                        x = np.linspace(strikes[i], strikes[i+1], 400)
-                        emg_interp = np.interp(x, time, emg[muscle])
-                        pgc = np.linspace(0, 100, 400)
-                        emg_interp = np.interp(pgc, pgc, emg_interp)
-                        emg_data.append(emg_interp)
-
-                emg_data_array = np.array(emg_data).transpose()
-
-                multiindex_arrays = [cycle_array, muscle_array]
-                columns = pd.MultiIndex.from_arrays(multiindex_arrays,
-                names=['cycle', 'muscle'])
-
-                all_exc_df = pd.DataFrame(emg_data_array, columns=columns, 
-                    index=pgc)
-                emg_target_fpath = os.path.join(self.results_path,
-                    'experiments', subject.name, cond.name, 'expdata',
-                    'processed_emg.csv')
-                target_dir = os.path.dirname(emg_target_fpath)
-                if not os.path.exists(target_dir):
-                    os.makedirs(target_dir)
-                with file(emg_target_fpath, 'w') as f:
-                    f.write('# all columns are processed EMG data.\n')
-                    all_exc_df.to_csv(f)
-
 class TaskValidateMuscleActivity(osp.StudyTask):
     REGISTRY = []
     def __init__(self, study, cond_names=['walk1','walk2','walk3','walk4']):
@@ -3088,147 +3348,291 @@ class TaskValidateMuscleActivity(osp.StudyTask):
             'muscle_activity')
 
         for cond_name in cond_names:
+            emg_fpaths = list()
+            exc_fpaths = list()
+            act_fpaths = list()
+            subjects = list()
             for subject in study.subjects:
-                emg_fpath = os.path.join(self.results_path, 'experiments',
-                    subject.name, cond_name, 'expdata', 'emg_with_headers.sto')
-                exc_fpath = os.path.join(self.results_path, 'experiments',
-                    'experiment_%s_excitations%s.csv' % (cond_name, suffix))
-                act_fpath = os.path.join(self.results_path, 'experiments',
-                    'experiment_%s_activations%s.csv' % (cond_name, suffix))
+                emg_fpaths.append(os.path.join(self.results_path, 'experiments',
+                    subject.name, cond_name, 'expdata', 'emg_with_headers.sto'))
+                exc_fpaths.append(os.path.join(self.results_path, 'experiments',
+                    'experiment_%s_excitations%s.csv' % (cond_name, suffix)))
+                act_fpaths.append(os.path.join(self.results_path, 'experiments',
+                    'experiment_%s_activations%s.csv' % (cond_name, suffix)))
+                subjects.append(subject)
 
-                val_fname = os.path.join(self.validate_path, 
-                    '%s_%s_emg_validation%s' % (subject.name, cond_name, 
-                        suffix))
+            val_fname = os.path.join(self.validate_path, 
+                '%s_emg_validation%s' % (cond_name, suffix))
                 
-                self.add_action([emg_fpath, exc_fpath, act_fpath],
-                                [val_fname],
-                                self.validate_muscle_activity,
-                                cond_name, subject)
+            self.add_action(emg_fpaths + exc_fpaths + act_fpaths,
+                            [val_fname],
+                            self.validate_muscle_activity,
+                            cond_name, subjects)
 
-    def validate_muscle_activity(self, file_dep, target, cond_name, subject):
+    def validate_muscle_activity(self, file_dep, target, cond_name, subjects):
+        if not os.path.isdir(self.validate_path): os.mkdir(self.validate_path)
+
+        from matplotlib import gridspec
+
+        n = len(subjects)
+        deps = [file_dep[i:i + n] for i in xrange(0, len(file_dep), n)]
+        emg_fpaths = deps[0]
+        exc_fpaths = deps[1]
+        act_fpaths = deps[2]
+        fpaths = zip(emg_fpaths, exc_fpaths, act_fpaths, subjects)
 
         muscles = self.study.muscle_names
-        fig = pl.figure(figsize=(12, 12))
         nice_muscle_names_dict = self.study.nice_muscle_names_dict
 
+        # emg_map = {
+        #         'bflh_r': [],
+        #         'gaslat_r': [],
+        #         'gasmed_r': 'med_gas_r',
+        #         'glmax1_r': [],
+        #         'glmax2_r': 'glut_max2_r',
+        #         'glmax3_r': [],
+        #         'glmed1_r': [],
+        #         'glmed2_r': [],
+        #         'glmed3_r': [],
+        #         'recfem_r': 'rect_fem_r',
+        #         'semimem_r': 'semimem_r',
+        #         'semiten_r': 'semimem_r',
+        #         'soleus_r': 'soleus_r',
+        #         'tibant_r': 'tib_ant_r',
+        #         'vaslat_r': 'vas_int_r',
+        #         'vasmed_r': 'vas_int_r', 
+        # }
+        # 
+    
+        emg_muscles = ['glmax2_r','recfem_r', 'semimem_r', 'vasmed_r',
+                       'gasmed_r', 'soleus_r', 'tibant_r']
+        ylims = [0.5, 0.25, 0.5, 0.5, 0.6, 1.0, 0.6]
         emg_map = {
-                'bflh_r': [],
-                'gaslat_r': [],
                 'gasmed_r': 'med_gas_r',
-                'glmax1_r': [],
                 'glmax2_r': 'glut_max2_r',
-                'glmax3_r': [],
-                'glmed1_r': [],
-                'glmed2_r': [],
-                'glmed3_r': [],
                 'recfem_r': 'rect_fem_r',
                 'semimem_r': 'semimem_r',
-                'semiten_r': 'semimem_r',
                 'soleus_r': 'soleus_r',
                 'tibant_r': 'tib_ant_r',
-                'vaslat_r': 'vas_int_r',
                 'vasmed_r': 'vas_int_r', 
         }
 
-        emg_muscles = ['bflh_r', 'gaslat_r', 'gasmed_r', 'glmax1_r', 'glmax2_r',
-                       'glmax3_r', 'glmed1_r', 'glmed2_r', 'glmed3_r', 
-                       'recfem_r', 'semimem_r', 'semiten_r', 'soleus_r',
-                       'tibant_r', 'vaslat_r', 'vasmed_r']
+        fig = pl.figure(figsize=(10, 8))
+        gs = gridspec.GridSpec(len(emg_map.keys()), len(emg_fpaths)) 
 
-        # df_emg = pd.read_csv(file_dep[0], index_col=0, header=[0, 1], 
-        #     skiprows=1)
+        for isubj, (emg_fpath, exc_fpath, act_fpath, subject) in enumerate(fpaths):
 
-        emg = util.storage2numpy(file_dep[0])
-        time = emg['time']
-        pgc_emg = np.linspace(0, 100, 400)
+            emg = util.storage2numpy(emg_fpath)
+            time = emg['time']
+            pgc_emg = np.linspace(0, 100, 400)
 
-        def min_index(vals):
-            idx, val = min(enumerate(vals), key=lambda p: p[1])
-            return idx
+            def min_index(vals):
+                idx, val = min(enumerate(vals), key=lambda p: p[1])
+                return idx
 
-        condition = subject.get_condition(cond_name)
-        trial = condition.get_trial(1) # only one trial per condition
-        cycle_array = list()
-        muscle_array = list()
-        emg_data = list()
-        for cycle_num in self.study.test_cycles_num:
-            cycle = trial.get_cycle(cycle_num)
-            start_idx = min_index(abs(time-cycle.start))
-            end_idx = min_index(abs(time-cycle.end))
+            condition = subject.get_condition(cond_name)
+            trial = condition.get_trial(1) # only one trial per condition
+            cycle_array = list()
+            muscle_array = list()
+            emg_data = list()
+            for cycle_num in self.study.test_cycles_num:
+                cycle = trial.get_cycle(cycle_num)
+                start_idx = min_index(abs(time-cycle.start))
+                end_idx = min_index(abs(time-cycle.end))
 
-            for emg_name in emg_muscles:
+                for emg_name in emg_muscles:
+                    emg_interp = np.interp(pgc_emg, 
+                        np.linspace(0, 100, len(time[start_idx:end_idx])), 
+                        emg[emg_name][start_idx:end_idx])
+                    emg_peak = max(emg_interp);
+                    scale = emg_peak / (emg_peak - 0.05);
+                    emg_interp_rescaled = scale * (emg_interp - 0.05);
+                    emg_data.append(emg_interp_rescaled)
+                    cycle_array.append(cycle.id)
+                    muscle_array.append(emg_name)
 
-                emg_interp = np.interp(pgc_emg, 
-                    np.linspace(0, 100, len(time[start_idx:end_idx])), 
-                    emg[emg_name][start_idx:end_idx])
-                emg_data.append(emg_interp)
-                cycle_array.append(cycle.id)
-                muscle_array.append(emg_name)
+            # Convert from (n_cycles * n_muscles) x n_times
+            #         to   n_times x (n_cycles * n_muscles)
+            emg_data_array = np.array(emg_data).transpose()
+            columns = pd.MultiIndex.from_arrays([cycle_array, muscle_array],
+                    names=['cycle', 'muscle'])
+            df_emg = pd.DataFrame(emg_data_array, columns=columns, index=pgc_emg)
+            df_emg_mean = df_emg.groupby(level=['muscle'], axis=1).mean()
+            df_emg_std = df_emg.groupby(level=['muscle'], axis=1).std()
 
-        # Convert from (n_cycles * n_muscles) x n_times
-        #         to   n_times x (n_cycles * n_muscles)
-        emg_data_array = np.array(emg_data).transpose()
-        columns = pd.MultiIndex.from_arrays([cycle_array, muscle_array],
-                names=['cycle', 'muscle'])
-        df_emg = pd.DataFrame(emg_data_array, columns=columns, index=pgc_emg)
-        df_emg_mean = df_emg.groupby(level=['muscle'], axis=1).mean()
-        df_emg_std = df_emg.groupby(level=['muscle'], axis=1).std()
+            df_exc_all = pd.read_csv(exc_fpath, index_col=0, header=[0, 1, 2], 
+                skiprows=1)
+            df_exc = df_exc_all[subject.name]
+            df_exc_mean = df_exc.groupby(level=['muscle'], axis=1).mean()
+            df_exc_std = df_exc.groupby(level=['muscle'], axis=1).std()
 
-        df_exc_all = pd.read_csv(file_dep[1], index_col=0, header=[0, 1, 2], 
-            skiprows=1)
-        df_exc = df_exc_all[subject.name]
-        df_exc_mean = df_exc.groupby(level=['muscle'], axis=1).mean()
-        df_exc_std = df_exc.groupby(level=['muscle'], axis=1).std()
+            df_act_all = pd.read_csv(act_fpath, index_col=0, header=[0, 1, 2], 
+                skiprows=1)
+            df_act = df_act_all[subject.name]
+            df_act_mean = df_act.groupby(level=['muscle'], axis=1).mean()
+            df_act_std = df_act.groupby(level=['muscle'], axis=1).std()
 
-        df_act_all = pd.read_csv(file_dep[2], index_col=0, header=[0, 1, 2], 
-            skiprows=1)
-        df_act = df_act_all[subject.name]
-        df_act_mean = df_act.groupby(level=['muscle'], axis=1).mean()
-        df_act_std = df_act.groupby(level=['muscle'], axis=1).std()
+            pgc_exc = df_exc_mean.index
+            pgc_act = df_act_mean.index
 
-        pgc_exc = df_exc_mean.index
-        pgc_act = df_act_mean.index
+            for iemg, (emg_name, ylim) in enumerate(zip(emg_muscles, ylims)):
+                ax = fig.add_subplot(gs[iemg, isubj])
+                ax.axhline(color='k', linewidth=0.5, zorder=0)
+                y_emg_mean = df_emg_mean[emg_name]
+                y_emg_zeroed = y_emg_mean - min(y_emg_mean)
+                emg_zeros = np.zeros(400)
 
+                ax.fill_between(pgc_emg, emg_zeros, y_emg_zeroed,
+                        color='gray', alpha=0.7)
+                if emg_map.get(emg_name):
+                    # y_exc_mean = df_exc_mean[emg_map[emg_name]]
+                    # y_exc_std = df_exc_std[emg_map[emg_name]]
+                    y_act_mean = df_act_mean[emg_map[emg_name]]
+                    # y_act_std = df_act_std[emg_map[emg_name]]
+                    # exc_plot, = ax.plot(pgc_exc, y_exc_mean, color='blue', 
+                    #     linestyle='--')
+                    # ax.fill_between(pgc_exc, y_exc_mean-y_exc_std, 
+                    #     y_exc_mean+y_exc_std, color='blue', alpha=0.25)
+                    act_plot, = ax.plot(pgc_act, y_act_mean, color='black', 
+                        linewidth=2)
+                    # ax.fill_between(pgc_act, y_act_mean-y_act_std, 
+                    #     y_act_mean+y_act_std, color='red', alpha=0.25)
+                    # handles = [act_plot]
+                    # labels = ['%s act.' % nice_muscle_names_dict[emg_map[emg_name]]]
+                    # ax.legend(handles, labels
 
-        for iemg, emg_name in enumerate(emg_muscles):
-            side_len = np.ceil(np.sqrt(len(emg_muscles)))
-            ax = fig.add_subplot(side_len, side_len, iemg + 1)
-            ax.axhline(color='k', linewidth=0.5, zorder=0)
-            y_emg_mean = df_emg_mean[emg_name]
-            y_emg_std = df_emg_std[emg_name]
-            ax.plot(pgc_emg, y_emg_mean, color='black', linestyle='-')
-            ax.fill_between(pgc_emg, y_emg_mean-y_emg_std, y_emg_mean+y_emg_std,
-                    color='black', alpha=0.5)
-            if emg_map.get(emg_name):
-                # y_exc_mean = df_exc_mean[emg_map[emg_name]]
-                # y_exc_std = df_exc_std[emg_map[emg_name]]
-                y_act_mean = df_act_mean[emg_map[emg_name]]
-                y_act_std = df_act_std[emg_map[emg_name]]
-                # exc_plot, = ax.plot(pgc_exc, y_exc_mean, color='blue', 
-                #     linestyle='--')
-                # ax.fill_between(pgc_exc, y_exc_mean-y_exc_std, 
-                #     y_exc_mean+y_exc_std, color='blue', alpha=0.25)
-                act_plot, = ax.plot(pgc_act, y_act_mean, color='red', 
-                    linestyle='--')
-                ax.fill_between(pgc_act, y_act_mean-y_act_std, 
-                    y_act_mean+y_act_std, color='red', alpha=0.25)
-                handles = [act_plot]
-                labels = ['%s act.' % nice_muscle_names_dict[emg_map[emg_name]]]
-                ax.legend(handles, labels)
+                # ax.legend(frameon=False, fontsize=6)
+                ax.set_xlim(0, 100)
+                ax.set_ylim(0, ylim)
 
-            # ax.legend(frameon=False, fontsize=6)
-            ax.set_xlim(0, 100)
-            ax.set_ylim(0, 1.0)
-            ax.set_title(emg_name)
-            ax.set_xlabel('% gait cycle')
-            ax.tick_params(axis='both', which='major', labelsize=8)
-            ax.spines['right'].set_visible(False)
-            ax.spines['top'].set_visible(False)
-            ax.xaxis.set_ticks_position('bottom')
-            ax.yaxis.set_ticks_position('left')
+                if not isubj:
+                    ax.set_yticks([0, ylim])
+                    ax.set_ylabel(nice_muscle_names_dict[emg_map[emg_name]])
+                else:
+                    ax.set_yticks([])
+
+                if iemg == len(emg_muscles)-1:
+                    ax.set_xticks([0, 50, 100])
+                    ax.set_xlabel('% gait cycle')
+                else:
+                    ax.set_xticks([])
+
+                if not iemg:
+                    ax.set_title('subject %i' % (isubj+1))
+
+                ax.tick_params(axis='both', which='major', labelsize=8)
+                ax.spines['right'].set_visible(False)
+                ax.spines['top'].set_visible(False)
+                ax.xaxis.set_ticks_position('bottom')
+                ax.yaxis.set_ticks_position('left')
+                from matplotlib.ticker import FormatStrFormatter
+                ax.yaxis.set_major_formatter(FormatStrFormatter('%g'))
+
+        fig.align_ylabels()
         fig.tight_layout()
         fig.savefig(target[0]+'.pdf')
-        fig.savefig(target[0]+'.png', dpi=600)
+        fig.savefig(target[0]+'.png', dpi=400)
+        pl.close(fig)
+
+class TaskPlotMuscleActivity(osp.StudyTask):
+    REGISTRY = []
+    def __init__(self, study, plot_lists, condition, fig_height=6, fig_width=6):
+        super(TaskPlotMuscleActivity, self).__init__(study)
+        self.name = 'plot_muscle_activity_%s' % condition
+        self.doc = 'Plot muscle activity across all assistance cases.'
+        self.output_path = os.path.join(study.config['figures_path'], 'figureS3')
+        if not os.path.exists(self.output_path): os.mkdir(self.output_path)
+        self.fig_width = fig_width
+        self.fig_height = fig_height
+        self.device_list = plot_lists['device_list']
+        self.label_list = plot_lists['label_list']
+        self.color_list = plot_lists['color_list']
+        self.index_list = plot_lists['index_list']
+
+        md_deps = list()
+        fname ='experiment_%s_activations_Met.csv' % condition
+        md_deps.append(os.path.join(study.config['results_path'], 
+            'experiments', fname))
+        for device in self.device_list:
+            fname = '%s_%s_activations_Met.csv' % (device, condition)
+            md_deps.append(os.path.join(study.config['results_path'], 
+                device, fname))                            
+
+        self.add_action(md_deps,
+                        [os.path.join(self.output_path,
+                            'activations_%s.pdf' % condition)],
+                        self.plot_muscle_activity)
+
+    def plot_muscle_activity(self, file_dep, target):
+
+        muscles = self.study.muscle_names
+        nice_muscle_names_dict = self.study.nice_muscle_names_dict
+
+        from matplotlib import gridspec        
+        fig = pl.figure(figsize=(self.figure_width, self.figure_height))
+        gs = gridspec.GridSpec(len(self.index_list), len(muscles)) 
+
+        mean_list = list()
+        std_list = list()
+        pgc_list = list()
+        for dep in file_dep:
+            df = pd.read_csv(dep, index_col=0, header=[0, 1, 2], skiprows=1)
+            for subj in self.study_subjects:
+                if not (subj in self.subjects):
+                    df.drop(subj, axis='columns', inplace=True)
+
+            # Average over cycles.
+            df_by_subj_musc = df.groupby(level=['subject', 'muscle'], 
+                axis=1).mean()
+            df_mean = df_by_subj_musc.groupby(level=['muscle'], axis=1).mean()
+            df_std = df_by_subj_musc.groupby(level=['muscle'], axis=1).std()
+            pgc = df_mean.index
+
+            mean_list.append(df_mean)
+            std_list.append(df_std)
+            pgc_list.append(pgc)
+
+        mean_act_exp = mean_list[0]
+        std_act_exp = std_list[0]
+        pgc_act_exp = pgc_list[0]
+        mean_act_device = mean_list[1:]
+        std_act_device = std_list[1:]
+        pgc_act_device = pgc_list[1:]
+
+        for imusc, musc_name in enumerate(muscles):
+            for idevice, label in enumerate(self.label_list):
+                ax = fig.add_subplot(gs[i, imusc])
+
+                for iidx, index in self.index_list:
+                    if index == idevice:
+                        df_mean = mean_act_device[iidx]
+                        pgc = pgc_act_device[iidx]
+                        device = self.device_list[iidx]
+                        if 'coupled' in device:
+                            color = 'orange'
+                        elif 'independent' in device:
+                            color = 'blue'  
+                        else:
+                            color = 'gray'
+                        ax.plot(pgc, df_mean[musc_name], label=label, 
+                            color=color, lw=2)
+                
+                # ax.set_xlim(0, 100)
+                # ax.set_xticks([0, 50, 100])
+                # ax.set_ylim(0, 0.5)
+                # ax.set_yticks([0, 0.5])
+                # ax.set_xlabel('% gait cycle')
+                # ax.set_xticklabels([])
+                # ax.set_ylabel('activation')
+                # ax.set_yticklabels([])
+                ax.spines['right'].set_visible(False)
+                ax.spines['top'].set_visible(False)
+                ax.xaxis.set_ticks_position('bottom')
+                ax.yaxis.set_ticks_position('left')
+
+        fig.tight_layout()
+        fig.savefig(target[0])
+        fig.savefig(target[0].replace('.pdf','.png'), dpi=600)
         pl.close(fig)
 
 def plot_dof(ax, df, dof, actuator, label, color, ls=None, drop_subjects=None,
@@ -3285,51 +3689,14 @@ def plot_dof(ax, df, dof, actuator, label, color, ls=None, drop_subjects=None,
                 ax.fill_between(pgc, y_mean-y_std, y_mean+y_std, facecolor=color, 
                     alpha=0.3, zorder=zorder)
 
-def set_axis(ax, idof, dof, dof_labels, legend_dof=None, label_as_title=False):
-    # ylabel_coordx = -0.
-    # ylabel_coordy = 0.5
-    if dof == 'hip_flexion_r':
-        ax.set_xlim(0, 100)
-        ax.set_xticks([0, 50, 100])
-        ax.set_ylim(-1.5, 2.0)
-        # ax.yaxis.set_label_coords(ylabel_coordx, ylabel_coordy)
-        ax.tick_params(labelsize=5)
-        # ax.set_yticks([-1.5, -1, -0.5, 0, 0.5, 1, 1.5])
-
-    elif dof == 'knee_angle_r':
-        ax.set_xlim(0, 100)
-        ax.set_xticks([0, 50, 100])
-        ax.set_ylim(-1.5, 2.0)
-        # ax.yaxis.set_label_coords(ylabel_coordx, ylabel_coordy)
-        ax.tick_params(labelsize=5)
-        # ax.set_yticks([-1.5, -1, -0.5, 0, 0.5, 1, 1.5])
-
-    elif dof == 'ankle_angle_r':
-        ax.set_xlim(0, 100)
-        ax.set_xticks([0, 50, 100])                
-        ax.set_ylim(-1.5, 2.0)
-        # ax.yaxis.set_label_coords(ylabel_coordx, ylabel_coordy)
-        ax.tick_params(labelsize=5)
-        # ax.set_yticks([-0.5, 0, 0.5, 1, 1.5, 2.0])
-
-    # if idof < len(self.dof_names)-1:
-    #     ax.set_xticklabels([])
-    if label_as_title:
-        ax.set_title('%s' % dof_labels[idof], fontsize=4)
-    else: 
-        ax.set_ylabel('%s \n moment (N-m/kg)' % dof_labels[idof], fontsize=6)
-    ax.set_xlabel('% gait cycle', fontsize=5)
+def set_axis(ax, idof, dof):
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
-    if dof == legend_dof:
-        handles, labels = ax.get_legend_handles_labels()
-        ax.legend(handles, labels, frameon=False, fontsize=7, 
-            loc="best")
-        ax.get_legend().get_title().set_fontsize(8)
-        # ax.get_legend().get_title().set_fontstyle('italic')
-        ax.get_legend().get_title().set_fontweight('bold')
+    ax.set_xlim(0, 100)
+    ax.set_xticks([0, 50, 100])                
+    ax.set_ylim(-1.5, 2.0)
 
 # Get whole body metabolic percent reductions.
 def get_percent_reductions(dep, device_names, plot_case, 
@@ -3352,15 +3719,19 @@ def get_percent_reductions(dep, device_names, plot_case,
 
     df_met_change = df_met_cond.subtract(df_met_cond['experiment'], 
         axis='index')
+    abs_met_by_subjs = df_met_change.groupby(level='subject').mean()
+    abs_met_mean = abs_met_by_subjs.mean()[device_names]
+    abs_met_std = abs_met_by_subjs.std()[device_names]
+
     df_met_relchange = df_met_change.divide(df_met_cond['experiment'], 
         axis='index')
     df_met_relchange.drop('experiment', axis='columns', inplace=True)
 
-    df_met_by_subjs = df_met_relchange.groupby(level='subject').mean()
-    met_mean = df_met_by_subjs.mean()[device_names] * 100
-    met_std = df_met_by_subjs.std()[device_names] * 100
+    per_met_by_subjs = df_met_relchange.groupby(level='subject').mean()
+    per_met_mean = per_met_by_subjs.mean()[device_names] * 100
+    per_met_std = per_met_by_subjs.std()[device_names] * 100
 
-    return met_mean, met_std, df_met_change
+    return per_met_mean, per_met_std, abs_met_mean, abs_met_std
 
 # Get individual muscle metabolic percent reductions, normalized by whole body
 # metabolic rate.
@@ -3658,7 +4029,7 @@ class TaskPlotDeviceComparison(osp.StudyTask):
                     plot_dof(ax, df_compare, dof, 'device', label_compare, 
                         color_compare, ls=ls_compare,
                         drop_subjects=self.drop_subjects)
-                set_axis(ax, idof, dof, self.dof_labels)
+                set_axis(ax, idof, dof)
 
             fig.tight_layout()
             fname = '%s_moments' % device
@@ -3688,7 +4059,7 @@ class TaskPlotDeviceComparison(osp.StudyTask):
                 plot_dof(ax, df, dof, 'device', label, color, ls=ls,
                     drop_subjects=self.drop_subjects)
 
-            set_axis(ax, idof, dof, self.dof_labels)
+            set_axis(ax, idof, dof)
 
         fig.tight_layout()
         fname = '%s_all_device_moments' % self.folder
@@ -3754,8 +4125,9 @@ class TaskPlotDeviceComparison(osp.StudyTask):
         ax = fig.add_subplot(1,1,1)
         ind = np.arange(len(self.device_names))
 
-        met_mean, met_std, df_met_change = get_percent_reductions(file_dep[0], 
-            self.device_names, plot_case, drop_subjects=self.drop_subjects,
+        met_mean, met_std, abs_met_mean, abs_met_std = get_percent_reductions(
+            file_dep[0], self.device_names, plot_case, 
+            drop_subjects=self.drop_subjects,
             add_basal_rate=True, assume_symmetry=True)
 
         met_mean.to_csv(os.path.join(self.output_path, 
@@ -3786,86 +4158,86 @@ class TaskPlotDeviceComparison(osp.StudyTask):
         fig.savefig(target[0].replace('.pdf','.eps'), metadata='eps')
         pl.close(fig)
 
-        # Plot normalized absolute metabolic reduction by peak positive device 
-        # power
-        df_peak_power = pd.read_csv(file_dep[1], index_col=[0, 1, 2], skiprows=1)
-        for subj in self.study_subjects:
-            if not (subj in self.subjects):
-                df_peak_power.drop(subj, axis='index', inplace=True)
+        # # Plot normalized absolute metabolic reduction by peak positive device 
+        # # power
+        # df_peak_power = pd.read_csv(file_dep[1], index_col=[0, 1, 2], skiprows=1)
+        # for subj in self.study_subjects:
+        #     if not (subj in self.subjects):
+        #         df_peak_power.drop(subj, axis='index', inplace=True)
 
-        if plot_case in self.cond_names:
-            df_peak_power_cond = df_peak_power.xs(plot_case, level='condition')
-        else:
-            df_peak_power_cond = df_peak_power.copy(deep=True)
+        # if plot_case in self.cond_names:
+        #     df_peak_power_cond = df_peak_power.xs(plot_case, level='condition')
+        # else:
+        #     df_peak_power_cond = df_peak_power.copy(deep=True)
 
-        df_eff = -df_met_change.divide(df_peak_power_cond)
-        df_eff_by_subjs = df_eff.groupby(level='subject').mean()
-        eff_mean = df_eff_by_subjs.mean()[self.device_names]
-        eff_std = df_eff_by_subjs.std()[self.device_names]
+        # df_eff = -df_met_change.divide(df_peak_power_cond)
+        # df_eff_by_subjs = df_eff.groupby(level='subject').mean()
+        # eff_mean = df_eff_by_subjs.mean()[self.device_names]
+        # eff_std = df_eff_by_subjs.std()[self.device_names]
 
-        fig = pl.figure(figsize=(4*1.2, 6*1.2))
-        ax = fig.add_subplot(1,1,1)
-        ind = np.arange(len(self.device_names))
+        # fig = pl.figure(figsize=(4*1.2, 6*1.2))
+        # ax = fig.add_subplot(1,1,1)
+        # ind = np.arange(len(self.device_names))
 
-        barlist = ax.bar(ind, eff_mean, yerr=eff_std)
-        for barelt, color in zip(barlist, self.color_list):
-            barelt.set_color(color)
+        # barlist = ax.bar(ind, eff_mean, yerr=eff_std)
+        # for barelt, color in zip(barlist, self.color_list):
+        #     barelt.set_color(color)
 
-        ax.set_xticks(ind)
-        ax.set_xticklabels(self.label_list, rotation=45, ha='right')
-        ax.set_ylabel('device efficiency (met rate / peak device power)')
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-        ax.xaxis.set_ticks_position('bottom')
+        # ax.set_xticks(ind)
+        # ax.set_xticklabels(self.label_list, rotation=45, ha='right')
+        # ax.set_ylabel('device efficiency (met rate / peak device power)')
+        # ax.spines['right'].set_visible(False)
+        # ax.spines['top'].set_visible(False)
+        # ax.xaxis.set_ticks_position('bottom')
 
-        fig.tight_layout()
-        fig.savefig(target[1])
-        fig.savefig(target[1].replace('.pdf','.png'), ppi=1800)
-        fig.savefig(target[1].replace('.pdf','.svg'), format='svg', dpi=1000)
+        # fig.tight_layout()
+        # fig.savefig(target[1])
+        # fig.savefig(target[1].replace('.pdf','.png'), ppi=1800)
+        # fig.savefig(target[1].replace('.pdf','.svg'), format='svg', dpi=1000)
 
-        pl.close(fig)
+        # pl.close(fig)
 
-        # Plot normalized absolute metabolic reduction by peak positive device 
-        # power
-        df_avg_power = pd.read_csv(file_dep[2], index_col=[0, 1, 2], skiprows=1)
-        for subj in self.study_subjects:
-            if not (subj in self.subjects):
-                df_avg_power.drop(subj, axis='index', inplace=True)
+        # # Plot normalized absolute metabolic reduction by peak positive device 
+        # # power
+        # df_avg_power = pd.read_csv(file_dep[2], index_col=[0, 1, 2], skiprows=1)
+        # for subj in self.study_subjects:
+        #     if not (subj in self.subjects):
+        #         df_avg_power.drop(subj, axis='index', inplace=True)
 
-        if plot_case in self.cond_names:
-            df_avg_power_cond = df_avg_power.xs(plot_case, level='condition')
-        else:
-            df_avg_power_cond = df_avg_power.copy(deep=True)
+        # if plot_case in self.cond_names:
+        #     df_avg_power_cond = df_avg_power.xs(plot_case, level='condition')
+        # else:
+        #     df_avg_power_cond = df_avg_power.copy(deep=True)
 
-        df_perfidx = -df_met_change.divide(df_avg_power_cond)
-        df_perfidx_by_subjs = df_perfidx.groupby(level='subject').mean()
-        perfidx_mean = df_perfidx_by_subjs.mean()[self.device_names]
-        perfidx_std = df_perfidx_by_subjs.std()[self.device_names]
+        # df_perfidx = -df_met_change.divide(df_avg_power_cond)
+        # df_perfidx_by_subjs = df_perfidx.groupby(level='subject').mean()
+        # perfidx_mean = df_perfidx_by_subjs.mean()[self.device_names]
+        # perfidx_std = df_perfidx_by_subjs.std()[self.device_names]
 
-        fig = pl.figure(figsize=(4*1.2, 6*1.2))
-        ax = fig.add_subplot(1,1,1)
-        ind = np.arange(len(self.device_names))
+        # fig = pl.figure(figsize=(4*1.2, 6*1.2))
+        # ax = fig.add_subplot(1,1,1)
+        # ind = np.arange(len(self.device_names))
 
-        barlist = ax.bar(ind, perfidx_mean, yerr=perfidx_std)
-        for barelt, color in zip(barlist, self.color_list):
-            barelt.set_color(color)
+        # barlist = ax.bar(ind, perfidx_mean, yerr=perfidx_std)
+        # for barelt, color in zip(barlist, self.color_list):
+        #     barelt.set_color(color)
 
-        ax.set_xticks(ind)
-        ax.set_xticklabels(self.label_list, rotation=45, ha='right')
-        ax.set_ylabel('performance index (met rate / avg device power)')
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-        ax.xaxis.set_ticks_position('bottom')
+        # ax.set_xticks(ind)
+        # ax.set_xticklabels(self.label_list, rotation=45, ha='right')
+        # ax.set_ylabel('performance index (met rate / avg device power)')
+        # ax.spines['right'].set_visible(False)
+        # ax.spines['top'].set_visible(False)
+        # ax.xaxis.set_ticks_position('bottom')
 
-        fig.tight_layout()
-        fig.savefig(target[2])
-        fig.savefig(target[2].replace('.pdf','.png'), ppi=1800)
-        fig.savefig(target[2].replace('.pdf','.svg'), format='svg', dpi=1000)
-        pl.close(fig)
+        # fig.tight_layout()
+        # fig.savefig(target[2])
+        # fig.savefig(target[2].replace('.pdf','.png'), ppi=1800)
+        # fig.savefig(target[2].replace('.pdf','.svg'), format='svg', dpi=1000)
+        # pl.close(fig)
 
     def plot_metabolics_muscles(self, file_dep, target, plot_case):
 
-        met_mean, met_std, df_met_change = \
+        met_mean, met_std, df_met_change_muscles = \
             get_percent_reductions_muscles(file_dep[0], file_dep[1],
             self.device_names, plot_case, drop_subjects=self.drop_subjects,
             add_basal_rate=True, assume_symmetry=True)
@@ -4184,7 +4556,7 @@ class TaskPlotDeviceComparison(osp.StudyTask):
                     plot_dof(ax, df, dof, 'device', label, color, ls=ls,
                         drop_subjects=self.drop_subjects)
 
-                set_axis(ax, idof, dof, self.dof_labels)
+                set_axis(ax, idof, dof)
 
         fig.tight_layout()
         fig.savefig(target[1])
@@ -4298,24 +4670,26 @@ class TaskPlotDeviceComparison(osp.StudyTask):
             os.makedirs(target_dir)
         with file(target[2], 'w') as f:
             f.write('# all columns are torque parameter means.\n')
-            df_mean_params.to_csv(f)
+            df_mean_params.to_csv(f, line_terminator='\n')
 
 class TaskPlotMetabolicReductions(osp.StudyTask):
     REGISTRY = []
     def __init__(self, study, plot_lists, folder, 
             cond_names=['walk1','walk2','walk3','walk4'], subjects=None,
-            max_metabolic_reduction=35, fig_width=8, fig_height=6, 
-            bar_width=0.4):
+            max_metabolic_reduction=45, fig_width=8, fig_height=16, 
+            bar_width=0.4, multijoint_only=False):
         super(TaskPlotMetabolicReductions, self).__init__(study)
         self.name = 'plot_metabolic_reductions_%s' % folder
         self.doc = 'Plots of metabolic reductions across devices.'
         self.output_path = os.path.join(study.config['analysis_path'], folder)
+        self.figure_path = os.path.join(study.config['figures_path'], 'figure1')
         if not os.path.exists(self.output_path): os.mkdir(self.output_path)
         self.cond_names = cond_names
         self.max_metabolic_reduction = max_metabolic_reduction
         self.fig_width = fig_width
         self.fig_height = fig_height
         self.bar_width = bar_width
+        self.multijoint_only = multijoint_only
         self.device_list = plot_lists['device_list']
         self.device_names = list()
         self.device_dirs = list()
@@ -4385,47 +4759,89 @@ class TaskPlotMetabolicReductions(osp.StudyTask):
 
     def plot_metabolics(self, file_dep, target):
 
-        fig = plt.figure(figsize=(self.fig_width, self.fig_height))
-        ax = fig.add_subplot(1,1,1)
+        from matplotlib import gridspec
+        import cv2
 
-        met_mean, met_std, df_met_change = get_percent_reductions(file_dep[0], 
-            self.device_names, 'all', drop_subjects=self.drop_subjects,
-            add_basal_rate=True, assume_symmetry=True)
+        # plt.rcParams['figure.constrained_layout.use'] = True
+        fig = plt.figure(figsize=(self.fig_width, self.fig_height))
+
+        if self.multijoint_only:
+            png_height = 0.51
+        else:
+            png_height = 0.175
+        gs = gridspec.GridSpec(2, 1, figure=fig, 
+                height_ratios=[png_height, 1], hspace=0.20)
+
+        image_ax = fig.add_subplot(gs[0, 0])
+        if self.multijoint_only:
+            png_name = 'stick_figures_large_multijoint.png'
+        else:
+            png_name = 'stick_figures_small_inverted.png'
+        image = cv2.imread(
+            os.path.join(self.figure_path, png_name),)[..., ::-1]
+        image_ax.imshow(image, interpolation='none')
+        l, b, w, h = image_ax.get_position().bounds
+        if self.multijoint_only:
+            l = 1.06*l
+            b = 1.02*b
+        else:
+            l = 0.95*l
+        image_ax.set_position([l, b, w, h], which='active')
+        plt.axis('off')
+
+        ax = fig.add_subplot(gs[1, 0])
+        met_mean, met_std, abs_met_mean, abs_met_std = get_percent_reductions(
+            file_dep[0], self.device_names, 'all', 
+            drop_subjects=self.drop_subjects, add_basal_rate=True, 
+            assume_symmetry=True)
 
         met_mean.to_csv(os.path.join(self.output_path, 
-            'total_whole_body_reductions.csv'))
+            'whole_body_percent_reductions_mean.csv'))
+        met_std.to_csv(os.path.join(self.output_path, 
+            'whole_body_percent_reductions_std.csv'))
+        abs_met_mean.to_csv(os.path.join(self.output_path, 
+            'whole_body_absolute_reductions_mean.csv'))
+        abs_met_std.to_csv(os.path.join(self.output_path, 
+            'whole_body_absolute_reductions_std.csv'))
         
         handles = list()
         labels = list()
         singleFlag = True
         coupledFlag = True
-        uncoupledFlag = True
+        independentFlag = True
         for device, index in zip(self.device_names, self.index_list):
             # color = self.color_list[index]
-            if 'multControls' in device:
+            if 'independent' in device:
                 index += self.bar_width / 2.0
                 color = 'blue'
-            elif 'fixed' in device:
-                color = 'dimgray' 
-            else: 
+            elif 'coupled' in device:
                 index -= self.bar_width / 2.0
                 color = 'orange'
+            else:
+                color = 'dimgray' 
             
             hbar = ax.bar(index, met_mean[device], color=color,
                    ls='-', width=self.bar_width)
 
-            if ('multControls' in device) and uncoupledFlag:
+            if ('independent' in device) and independentFlag:
                 handles.append(hbar)
-                labels.append('multi-joint, uncoupled')
-                uncoupledFlag = False
-            elif ('fixed' in device) and singleFlag:
+                if self.multijoint_only:
+                    labels.append('independent')
+                else:
+                    labels.append('multi-joint, independent')
+                independentFlag = False
+            elif ('coupled' in device) and coupledFlag: 
                 handles.append(hbar)
-                labels.append('single-joint') 
-                singleFlag = False
-            elif ('fixed' not in device) and coupledFlag: 
-                handles.append(hbar)
-                labels.append('multi-joint, coupled')
+                if self.multijoint_only:
+                    labels.append('coupled')
+                else:
+                    labels.append('multi-joint, coupled')
                 coupledFlag = False
+            elif singleFlag:
+                if not self.multijoint_only:
+                    handles.append(hbar)
+                    labels.append('single-joint') 
+                    singleFlag = False
                 
             yerr = met_std[device]
             plotline, caplines, barlinecols = ax.errorbar(
@@ -4434,38 +4850,48 @@ class TaskPlotMetabolicReductions(osp.StudyTask):
             caplines[0].set_marker('_')
             caplines[0].set_markersize(8)
 
-        ax.set_xticks(self.xticks )
-        ax.set_xticklabels(self.label_list)
+        ax.set_xticks(self.xticks)
         ax.margins(0.2, None)
-        ax.set_ylabel(r'change in gross average whole-body metabolic rate (%)', 
-                fontsize=10)
+        if self.multijoint_only:
+            ax.set_xticklabels(self.label_list, fontsize=10)
+            ax.set_ylabel(
+                'change in metabolic cost (%)', 
+                fontsize=12)
+            ax.legend(handles, labels, loc=(0.10, 0.10), prop={'size': 10})
+        else:
+            ax.set_xticklabels(self.label_list)
+            ax.set_ylabel(
+                r'change in gross average whole-body metabolic rate (%)', 
+                fontsize=8)
+            ax.legend(handles, labels, loc=(0.12, 0.12), prop={'size': 8})
+
         ax.set_ylim(-self.max_metabolic_reduction, 0)
         ax.set_xlim(-0.1-(self.bar_width/2), 
                     self.index_list[-1]+self.bar_width+0.1)  
         ax.spines['right'].set_visible(False)
         ax.spines['bottom'].set_visible(False)
         ax.xaxis.set_ticks_position('top')
-        ax.legend(handles, labels, loc=(0.3, 0.25))
         # for i, label in enumerate(ax.get_xmajorticklabels()):
         #     if i < 5:
         #         label.set_rotation(45)
         #         label.set_horizontalalignment('left')
 
-        fig.tight_layout()
-        fig.savefig(target[0])
-        fig.savefig(target[0].replace('.pdf','.png'), ppi=1800)
-        fig.savefig(target[0].replace('.pdf','.svg'), format='svg', dpi=1000)
+        fig.savefig(target[0], bbox_inches='tight', pad_inches=0.1)
+        fig.savefig(target[0].replace('.pdf','.png'), 
+            dpi=2000, bbox_inches='tight', pad_inches=0.1)
+        fig.savefig(os.path.join(self.figure_path, 'figure1.png'), 
+            dpi=600, bbox_inches='tight', pad_inches=0.1)
         pl.close(fig)
 
 class TaskPlotDeviceShowcase(osp.StudyTask):
     REGISTRY = []
     def __init__(self, study, name, plot_lists, cond_name, subjects, act_muscs,
+            figure_folder,
             met_ylim=[-20, 5], 
             met_yticks=[-20, -15, -10, -5, 0, 5],
             moment_ylim=[-1, 2],
             moment_yticks=[-1, 0, 1, 2],
-            legend_loc=(0.55, 0.7),
-            include_activations=True):
+            legend_loc=(0.3, 0.7)):
         super(TaskPlotDeviceShowcase, self).__init__(study)
         self.device_list = plot_lists['device_list']
         self.name = 'plot_%s' % name
@@ -4477,12 +4903,14 @@ class TaskPlotDeviceShowcase(osp.StudyTask):
         self.folder = 'showcase_%s' % self.device_list[-1]
         self.output_path = os.path.join(study.config['analysis_path'], 
                 self.folder)
+        self.figure_folder = figure_folder
+        self.figure_path = os.path.join(study.config['figures_path'], 
+                self.figure_folder)
         self.met_ylim = met_ylim
         self.met_yticks = met_yticks
         self.moment_ylim = moment_ylim
         self.moment_yticks = moment_yticks
         self.legend_loc = legend_loc
-        self.include_activations = include_activations
 
         if ('He' in self.folder) or ('Hf' in self.folder):
             self.legend_dof = 'hip_flexion_r'
@@ -4497,15 +4925,15 @@ class TaskPlotDeviceShowcase(osp.StudyTask):
             if ('H' in device) or ('Hf' in device):
                 if 'hip_flexion_r' in self.dof_names: continue
                 self.dof_names.append('hip_flexion_r')
-                self.dof_labels.append('hip extension')
+                self.dof_labels.append('hip')
             if ('K' in device) or ('Kf' in device):
                 if 'knee_angle_r' in self.dof_names: continue
                 self.dof_names.append('knee_angle_r')
-                self.dof_labels.append('knee extension')
+                self.dof_labels.append('knee')
             if ('A' in device) or ('Ad' in device):
                 if 'ankle_angle_r' in self.dof_names: continue
                 self.dof_names.append('ankle_angle_r')
-                self.dof_labels.append('ankle plantarflexion')
+                self.dof_labels.append('ankle')
 
         self.fill_between = True # if len(self.device_list) == 1 else False
 
@@ -4535,13 +4963,6 @@ class TaskPlotDeviceShowcase(osp.StudyTask):
         for device in self.device_list:
             deps.append(os.path.join(study.config['results_path'], device,
                 '%s_%s_moments%s.csv' % (device, cond_name, cost)))
-
-        deps.append(os.path.join(study.config['results_path'], 'experiments', 
-                'experiment_%s_activations%s.csv' % (cond_name, cost)))
-
-        for device in self.device_list:
-            deps.append(os.path.join(study.config['results_path'], device, 
-                '%s_%s_activations%s.csv' % (device, cond_name, cost)))
             
         # Plot action.
         self.add_action(deps,
@@ -4551,22 +4972,36 @@ class TaskPlotDeviceShowcase(osp.StudyTask):
 
     def plot_device_showcase(self, file_dep, target):
 
+        import cv2
         unassisted_color = 'dimgray'
 
-        scale = 2.2
-        aspect = 1.35 if self.include_activations else 1.1
+        ncols = len(self.dof_names)+1
+        scale = 5 if ncols > 3 else 5
+        aspect = 0.75 if ncols > 3 else 0.75
         fig = pl.figure(figsize=(scale, scale*aspect))
         dpi_scale_trans = fig.dpi_scale_trans
-        pl.subplots_adjust(left=0.22, top=0.9, bottom=0.1, right=0.95)
+        # pl.subplots_adjust(left=0.22, top=0.9, bottom=0.1, right=0.95)
         from matplotlib import gridspec
-        if self.include_activations:
-            heights = [0.8, 1.0, 0.5]
-            nrows = 3
-        else: 
-            heights = [0.8, 1.0]
-            nrows = 2
-        gs = gridspec.GridSpec(ncols=144, nrows=nrows, height_ratios=heights,
-            hspace=0.6)
+        height_ratios = [1.0, 0.6]
+        nrows = 2
+        ncols = len(self.dof_names)+1
+        width_ratios = np.ones(ncols)
+        width_ratios[-1] = 0.9 if ncols > 3 else 0.6
+        hspace = 0.7 if ncols > 3 else 0.7
+        gs = gridspec.GridSpec(figure=fig, ncols=ncols, nrows=nrows, 
+             width_ratios=width_ratios,
+             height_ratios=height_ratios,
+             hspace=0.7)
+
+        image_ax = fig.add_subplot(gs[0, ncols-1])
+        image = cv2.imread(
+            os.path.join(self.figure_path,'stick_figure.png'))[..., ::-1]
+        image_ax.imshow(image, interpolation='none')
+        l, b, w, h = image_ax.get_position().bounds
+        l = 0.96*l if ncols > 3 else 0.95*l
+        b = 1.15*b if ncols > 3 else 1.15*b
+        image_ax.set_position([l, b, w, h], which='active')
+        plt.axis('off')
 
         # https://stackoverflow.com/questions/28615887/how-to-move-a-ticks-label-in-matplotlib
         import matplotlib.transforms
@@ -4594,13 +5029,8 @@ class TaskPlotDeviceShowcase(osp.StudyTask):
             self.color_list)
 
         import matplotlib.lines as mlines
-        for idof, dof in enumerate(self.dof_names):
-            spacing = 144 / len(self.dof_names) - 6
-            gap = (144 - spacing*len(self.dof_names)) / (len(self.dof_names)-1)
-            col = idof*(spacing+gap)
-            # import pdb
-            # pdb.set_trace()
-            ax = fig.add_subplot(gs[0, col:col+spacing])
+        for idof, dof in enumerate(self.dof_names):            
+            ax = fig.add_subplot(gs[0, idof])
             pl.axhline(zorder=0, color='darkgray', linewidth=0.25, linestyle='--')
             
             handles = list()
@@ -4610,39 +5040,94 @@ class TaskPlotDeviceShowcase(osp.StudyTask):
                         skiprows=1)
                 if not i:
                    plot_dof(ax, df, dof, 'net', 'net joint moment', unassisted_color,
-                        lw=0.7, ls='-', drop_subjects=self.drop_subjects, zorder=0,
+                        lw=1.0, ls='-', drop_subjects=self.drop_subjects, zorder=0,
                         fill_between=self.fill_between)
                    h = mlines.Line2D([], [], ls='-', color=unassisted_color, lw=1)
                    handles.append(h)
                    labels.append('net joint moment')
 
                 plot_dof(ax, df, dof, 'device', label, color, 
-                    ls='-', lw=0.7, drop_subjects=self.drop_subjects, 
+                    ls='-', lw=1.0, drop_subjects=self.drop_subjects, 
                     fill_between=self.fill_between, zorder=1)
+
                 h = mlines.Line2D([], [], ls='-', color=color, lw=1)
                 handles.append(h)       
                 labels.append(label)
 
-            set_axis(ax, idof, dof, self.dof_labels, label_as_title=True)
+            set_axis(ax, idof, dof)
             ax.set_ylim(self.moment_ylim[0], self.moment_ylim[1])
             ax.set_yticks(self.moment_yticks)
             if not idof: 
-                ax.set_ylabel('moment (N-m/kg)', fontsize=5)
                 leg = ax.legend(handles, labels, loc=self.legend_loc, 
-                    fontsize=2.5, fancybox=False, edgecolor='black', 
+                    fontsize=5, fancybox=False, edgecolor='black', 
                     borderpad=0.8, frameon=False)
+                ax.set_ylabel('moment (N-m/kg)', fontsize=6)
             else:
                 ax.set_yticklabels([])
-            ax.tick_params(labelsize=3.5)
-            ax.set_xlabel('% gait cycle', fontsize=4)
+            ax.set_xlabel('time (% gait cycle)', fontsize=6)
+            ax.set_title('%s' % self.dof_labels[idof], fontsize=5)
             shift_xticks(ax, 2)
             shift_yticks(ax, 2)
+            ax.tick_params(axis='both', which='major', labelsize=6, 
+                direction='in')
+            alpha = 0.7
+            x = -5.5 if len(self.dof_names) == 3 else -4
+            y = 0.3
+            size = 4 if 'ankle_angle_r' in self.dof_names else 5
+            alen = 0.5 if 'ankle_angle_r' in self.dof_names else 0.3 
+            pad = -0.8
+            if dof == 'hip_flexion_r':
+                ax.annotate('ext.', xy=(x, y+alen), xytext=(x, y), 
+                    arrowprops=dict(arrowstyle='->', lw=0.25, alpha=alpha,
+                        mutation_scale=3),
+                    bbox=dict(pad=pad, facecolor="none", edgecolor="none"), 
+                    rotation=90, style='italic', 
+                    size=size, alpha=alpha, va='center', ha='center',
+                    annotation_clip=False)
+                ax.annotate('flex.', xy=(x, -(y+alen)), xytext=(x, -y), 
+                    arrowprops=dict(arrowstyle='->', lw=0.25, alpha=alpha,
+                        mutation_scale=3),
+                    bbox=dict(pad=pad, facecolor="none", edgecolor="none"),  
+                    rotation=90, style='italic', 
+                    size=size, alpha=alpha, va='center', ha='center',
+                    annotation_clip=False)
+            elif dof == 'knee_angle_r':
+                ax.annotate('ext.', xy=(x, y+alen), xytext=(x, y), 
+                    arrowprops=dict(arrowstyle='->', lw=0.25, alpha=alpha,
+                        mutation_scale=3),
+                    bbox=dict(pad=pad, facecolor="none", edgecolor="none"), 
+                    rotation=90, style='italic', 
+                    size=size, alpha=alpha, va='center', ha='center',
+                    annotation_clip=False)
+                ax.annotate('flex.', xy=(x, -(y+alen)), xytext=(x, -y), 
+                    arrowprops=dict(arrowstyle='->', lw=0.25, alpha=alpha,
+                        mutation_scale=3),
+                    bbox=dict(pad=pad, facecolor="none", edgecolor="none"),  
+                    rotation=90, style='italic', 
+                    size=size, alpha=alpha, va='center', ha='center',
+                    annotation_clip=False)
+            elif dof == 'ankle_angle_r':
+                ax.annotate('plantar.', xy=(x, y+alen), xytext=(x, y), 
+                    arrowprops=dict(arrowstyle='->', lw=0.25, alpha=alpha,
+                        mutation_scale=3),
+                    bbox=dict(pad=pad, facecolor="none", edgecolor="none"), 
+                    rotation=90, style='italic', 
+                    size=size, alpha=alpha, va='center', ha='center',
+                    annotation_clip=False)
+                ax.annotate('dorsi.', xy=(x, -(y+alen)), xytext=(x, -y),
+                    arrowprops=dict(arrowstyle='->', lw=0.25, alpha=alpha,
+                        mutation_scale=3),
+                    bbox=dict(pad=pad, facecolor="none", edgecolor="none"),  
+                    rotation=90, style='italic', 
+                    size=size, alpha=alpha, va='center', ha='center',
+                    annotation_clip=False)
+            
 
         # Metabolic breakdown
         # -------------------
-        ax = fig.add_subplot(gs[1, :])
+        ax = fig.add_subplot(gs[1, :-1])
 
-        met_mean, met_std, df_met_change = \
+        met_mean, met_std, df_met_change_muscles = \
             get_percent_reductions_muscles(file_dep[0], file_dep[1],
             self.device_list, self.cond_name, drop_subjects=self.drop_subjects,
             add_basal_rate=True, assume_symmetry=True)
@@ -4652,11 +5137,11 @@ class TaskPlotDeviceShowcase(osp.StudyTask):
                         'tib_ant_r']
         met_mean = 100 * met_mean.reindex(muscle_index)
         met_std = 100 * met_std.reindex(muscle_index)
-        # df_met_change.reindex(muscle_index) 
 
         met_mean_copy = met_mean.copy(deep=True)
         met_mean_copy.plot.bar(ax=ax, color=self.color_list, legend=False)
         ax.axes.get_xaxis().get_label().set_visible(False)
+        ax.tick_params(axis='y', which='major', labelsize=6)
 
         # for index, musc in enumerate(muscle_index):
         #     # met_mean_musc = met_mean[musc]
@@ -4673,105 +5158,29 @@ class TaskPlotDeviceShowcase(osp.StudyTask):
         nice_muscle_names = \
             [nice_muscle_names_dict[name] for name in met_mean.index]
 
-        # import pdb
-        # pdb.set_trace()
         ax.set_xticks(np.arange(len(met_mean.index)))
         ax.set_xticklabels(nice_muscle_names, rotation=45, ha='left',
-                fontsize=5, rotation_mode='anchor')
+            va='bottom', rotation_mode='anchor', fontsize=5)
         ax.set_ylabel('change in average\nmuscle metabolic rate (%)',
-                fontsize=5)
+            fontsize=6)
         ax.set_ylim(self.met_ylim[0], self.met_ylim[1])
         ax.set_yticks(self.met_yticks)
         ax.spines['right'].set_visible(False)
         ax.spines['bottom'].set_visible(False)
         ax.xaxis.set_ticks_position('top')
-        ax.tick_params(labelsize=3.5)
+        ax.tick_params(direction='in')
         pl.axhline(zorder=0, color='darkgray', linewidth=0.25, linestyle='--')
-        shift_xticks(ax, -2)
-        shift_yticks(ax, 2)
+        shift_xticks(ax, -1)
+        shift_yticks(ax, 1)
 
-
-        dy = -4/72. 
-        box = ax.get_position()
-        box.y0 = box.y0 + dy
-        box.y1 = box.y1 + dy
-        ax.set_position(box)
-
-        # Activations
-        # -----------
-        if self.include_activations:
-            device_list = ['experiment'] + self.device_list
-            label_list = ['unassisted'] + self.label_list
-            color_list = [unassisted_color] + self.color_list
-            act_deps = file_dep[(num_devices+2):(2*num_devices+4)]
-            plot_iterate = zip(act_deps, device_list, label_list, color_list)
-
-            mean_list = list()
-            std_list = list()
-            pgc_list = list()
-            for dep in act_deps:
-                df = pd.read_csv(dep, index_col=0, header=[0, 1, 2], skiprows=1)
-                for subj in self.drop_subjects:
-                    df.drop(subj, axis='columns', inplace=True)
-
-                df_by_subj_musc = df.groupby(level=['subject', 'muscle'], 
-                        axis=1).mean()
-                df_mean = df_by_subj_musc.groupby(level=['muscle'], axis=1).mean()
-                df_std = df_by_subj_musc.groupby(level=['muscle'], axis=1).std() 
-                pgc = df_mean.index
-
-                mean_list.append(df_mean)
-                std_list.append(df_std)
-                pgc_list.append(pgc)
-
-            from math import floor
-            for imusc, musc in enumerate(self.act_muscs):
-                spacing = 144 / len(self.act_muscs) - 6
-                gap = (144 - spacing*len(self.act_muscs)) / (len(self.act_muscs) - 1)
-                col = int(imusc*(spacing+gap))
-                ax = fig.add_subplot(gs[2, col:col+int(spacing)])
-                ax.axhline(color='k', linewidth=0.5, zorder=0)
-
-                for i, (dep, device, label, color) in enumerate(plot_iterate):
-                    df_mean = mean_list[i]
-                    df_std = std_list[i]
-                    pgc = pgc_list[i]
-                    lw = 0.7 if device == 'experiment' else 0.7
-                    color = unassisted_color if device == 'experiment' else color
-                    ax.plot(pgc, df_mean[musc], label=label, color=color, 
-                        linestyle='-', linewidth=lw)
-                    # ax.fill_between(pgc, df_mean[musc]-df_std[musc], 
-                    #     df_mean[musc]+df_std[musc], facecolor=color, 
-                    #     alpha=0.3, zorder=1)
-                    ax.set_xlim(0, 100)
-                    ax.set_ylim(0, 0.5)
-
-                # ax.set_title(nice_muscle_names[musc])
-                ax.set_xlabel('% gait cycle', fontsize=4)
-                ax.set_xticks([0, 50, 100])
-                ax.set_yticks([0, 0.5])
-                if imusc:
-                    ax.set_yticklabels([])
-                ax.tick_params(axis='both', which='major', labelsize=3)
-                if not imusc: ax.set_ylabel('activation', fontsize=5)
-                ax.spines['right'].set_visible(False)
-                ax.spines['top'].set_visible(False)
-                ax.xaxis.set_ticks_position('bottom')
-                ax.yaxis.set_ticks_position('left')
-                ax.set_title(nice_muscle_names_dict[musc], fontsize=4)
-                shift_xticks(ax, 2)
-                shift_yticks(ax, 2) 
-
-        # Generate figure
-        # fig.tight_layout(h_pad=0.3)
-        # fig.tight_layout()
-        # gs.tight_layout(fig)
         fig_name = '%s_showcase' % self.device_list[0]
-        fig.savefig(os.path.join(self.output_path, fig_name + '.pdf'))
-        fig.savefig(os.path.join(self.output_path, fig_name + '.png'), ppi=1800)
-        fig.savefig(os.path.join(self.output_path, fig_name + '.svg'))
-        fig.savefig(os.path.join(self.output_path, fig_name + '.eps'), 
-            metadata='eps')
+        fig.savefig(os.path.join(self.output_path, fig_name + '.pdf'),
+            bbox_inches='tight', pad_inches=0.1)
+        fig.savefig(os.path.join(self.output_path, fig_name + '.png'), dpi=2000,
+            bbox_inches='tight', pad_inches=0.1)
+        fig.savefig(os.path.join(self.figure_path, self.figure_folder + '.png'), 
+            dpi=600, bbox_inches='tight', pad_inches=0.1)
+
         pl.close(fig)
 
 class TaskPlotMetabolicSummary(osp.StudyTask):
@@ -4834,7 +5243,7 @@ class TaskPlotMetabolicSummary(osp.StudyTask):
         mutation_scale = 10
         arrowstyle = '->'
 
-        met_mean, met_std, df_met_change = get_percent_reductions(
+        met_mean, met_std, abs_met_mean, abs_met_std = get_percent_reductions(
             self.input_fpath, self.device_list + self.mult_device_list, 'all', 
             drop_subjects=self.drop_subjects, add_basal_rate=True, 
             assume_symmetry=True)

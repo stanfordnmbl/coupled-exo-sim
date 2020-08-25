@@ -7,19 +7,11 @@ import os
 def get_device_info(study):
 
     momentArms=study.momentArms
-    # fixMomentArms (bool)
-    # Flag whether or not to include fixed moment arm tasks
-    fixMomentArms=study.fixMomentArms
 
     # Can moment arms be optimized in either direction or are they restricted
     # to the anterior or posterior side of a joint?
     if momentArms == 'free':
         device_dofs = ['H','K','A']
-        # Can't fix moment arms in this case, so override user input
-        if not fixMomentArms == True:
-            Exception("Moment arms cannot be fixed when optimizing in both "
-                "directions across a DOF. Setting flag to free moment arm "
-                " optimization.")
 
     elif momentArms == 'fixed_direction':
         device_dofs = ['Hf','He','Kf','Ke','Ap']
@@ -106,15 +98,18 @@ def get_exotopology_flags(study):
                 else:
                     mod_name += 'Ad'
 
-            if len(device_dofs)==0:
+            numDeviceDOFs = len(device_dofs)
+            if numDeviceDOFs==0:
                 deviceDOFs = ''
-            elif len(device_dofs)==1:
+            elif numDeviceDOFs==1:
                 deviceDOFs = "'%s'" % device_dofs[0]
-            elif len(device_dofs)==2:
+            elif numDeviceDOFs==2:
                 deviceDOFs = "'%s','%s'" % (device_dofs[0], device_dofs[1])
-            elif len(device_dofs)==3:
+                mod_name = mod_name + '_independent'
+            elif numDeviceDOFs==3:
                 deviceDOFs = "'%s','%s','%s'" % (device_dofs[0], device_dofs[1],
                     device_dofs[2])
+                mod_name = mod_name + '_independent'
 
             mod_names.append(mod_name)
             deviceDOFs_list.append(deviceDOFs)
@@ -155,11 +150,10 @@ def generate_exotopology_tasks(trial, mrs_setup_tasks):
 
     for mod_name, deviceDOFs in itertools.izip(mod_names, deviceDOFs_list):
 
-        # Optimized torque control profiles
         mrsflags = [
             "study='SoftExosuitDesign/Topology'",
             "deviceDOFs={%s}" % deviceDOFs,
-            "fixMomentArms=[]" ,
+            "fixMomentArms=1.0",
             ]
 
         mrsmod_opt_tasks = trial.add_task_cycles(
@@ -173,57 +167,42 @@ def generate_exotopology_tasks(trial, mrs_setup_tasks):
         trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
             setup_tasks=mrsmod_opt_tasks)
 
-        if trial.study.fixMomentArms:
-            # Optimized torque control profiles
-            mrsflags = [
-                "study='SoftExosuitDesign/Topology'",
-                "deviceDOFs={%s}" % deviceDOFs,
-                "fixMomentArms=1.0",
-                ]
-
-            mrsmod_fixed_opt_tasks = trial.add_task_cycles(
-                tasks.TaskMRSDeGrooteMod,
-                'mrsmod_%s_fixed' % mod_name,
-                'ExoTopology: multiarticular device optimization',
-                mrsflags,
-                setup_tasks=mrs_setup_tasks
-                )
-
-            trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
-                setup_tasks=mrsmod_fixed_opt_tasks)
-
-def get_mult_controls_mod_names(study):
+def get_coupled_control_mod_names(study):
 
     device_dofs = get_device_info(study)[0]
     mod_names, deviceDOFs_list = get_exotopology_flags(study)
 
-    mult_controls_mod_names = list()
+    coupled_control_mod_names = list()
     for mod_name in mod_names:
-        mult_controls_mod_names.append('%s_multControls' % mod_name)
+        coupled_mod_name = mod_name.replace('_independent', '_coupled')
+        coupled_control_mod_names.append(coupled_mod_name)
 
-    return mult_controls_mod_names
+    return coupled_control_mod_names
 
-def generate_mult_controls_tasks(trial, mrs_setup_tasks):
+def generate_coupled_controls_tasks(trial, mrs_setup_tasks):
 
     device_dofs = get_device_info(trial.study)[0]
     mod_names, deviceDOFs_list = get_exotopology_flags(trial.study)
 
     for mod_name, deviceDOFs in itertools.izip(mod_names, deviceDOFs_list):
+        if '_independent' in mod_name:
+            coupled_mod_name = mod_name.replace('_independent', '_coupled')
 
-        mrsflags = [
-            "study='SoftExosuitDesign/Topology'",
-            "deviceDOFs={%s}" % deviceDOFs,
-            "fixMomentArms=1.0",
-            "mult_controls=true",
-            ]
+            mrsflags = [
+                "study='SoftExosuitDesign/Topology'",
+                "deviceDOFs={%s}" % deviceDOFs,
+                "fixMomentArms=[]",
+                "coupledControl=true",
+                ]
 
-        mrsmod_tasks = trial.add_task_cycles(
-            tasks.TaskMRSDeGrooteMod,
-            'mrsmod_%s_multControls' % mod_name,
-            'ExoTopology: multiarticular device optimization',
-            mrsflags,
-            setup_tasks=mrs_setup_tasks
-            )
+            mrsmod_tasks = trial.add_task_cycles(
+                tasks.TaskMRSDeGrooteMod,
+                'mrsmod_%s' % coupled_mod_name,
+                'ExoTopology: multiarticular device optimization',
+                mrsflags,
+                setup_tasks=mrs_setup_tasks
+                )
 
-        mrsmod_post_tasks = trial.add_task_cycles(tasks.TaskMRSDeGrooteModPost,
-            setup_tasks=mrsmod_tasks)
+            mrsmod_post_tasks = trial.add_task_cycles(
+                tasks.TaskMRSDeGrooteModPost,
+                setup_tasks=mrsmod_tasks)

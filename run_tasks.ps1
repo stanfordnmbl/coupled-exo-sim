@@ -1,48 +1,57 @@
-# doit subject*_calibrate*multiphase*post*
+# doit subject*scale*
+# doit subject*adjust*
+# doit subject*ik*
+# doit validate*marker*error*
+# doit subject*id*
+# doit validate*kinetics*
+# doit subject*calibrate_multiphase*post*
 
 # Unassisted conditions + validation w/ EMG
-doit -n 2 subject*_walk2_mrs_post_cycle02_Met 
-doit -n 2 subject*_walk2_mrs_post_cycle03_Met 
+# doit -n 2 subject*_walk2_mrs_post_cycle02_Met 
+# doit -n 2 subject*_walk2_mrs_post_cycle03_Met 
 # doit aggregate*muscle*data*experiment*
 # doit plot*muscle*data*experiment*
 # doit validate*
 
-# doit -n 2 subject*_walk2_mrsmod_deviceHe_fixed_post_cycle02_Met
-# doit -n 2 subject*_walk2_mrsmod_deviceHe_fixed_post_cycle03_Met
-# doit -n 2 subject*_walk2_mrsmod_deviceKe_fixed_post_cycle02_Met 
-# doit -n 2 subject*_walk2_mrsmod_deviceKe_fixed_post_cycle03_Met 
-# doit -n 2 subject*_walk2_mrsmod_deviceHeKe_post_cycle02_Met
-# doit -n 2 subject*_walk2_mrsmod_deviceHeKe_post_cycle03_Met
-# doit -n 2 subject*_walk2_mrsmod_deviceHeKe_multControls_post_cycle02_Met
-# doit -n 2 subject*_walk2_mrsmod_deviceHeKe_multControls_post_cycle03_Met
-# doit -n 2 subject*_walk2_mrsmod_deviceAp_fixed_post_cycle02_Met
-# doit -n 2 subject*_walk2_mrsmod_deviceAp_fixed_post_cycle03_Met
-# doit -n 2 subject*_walk2_mrsmod_deviceHf_fixed_post_cycle02_Met
-# doit -n 2 subject*_walk2_mrsmod_deviceHf_fixed_post_cycle03_Met
-# doit -n 2 subject*_walk2_mrsmod_deviceHfAp_post_cycle02_Met
-# doit -n 2 subject*_walk2_mrsmod_deviceHfAp_post_cycle03_Met
-# doit -n 2 subject*_walk2_mrsmod_deviceHfAp_multControls_post_cycle02_Met
-# doit -n 2 subject*_walk2_mrsmod_deviceHfAp_multControls_post_cycle03_Met
-# doit -n 2 subject*_walk2_mrsmod_deviceHfKf_post_cycle02_Met 
-# doit -n 2 subject*_walk2_mrsmod_deviceHfKf_post_cycle03_Met 
-# doit -n 2 subject*_walk2_mrsmod_deviceHfKf_multControls_post_cycle02_Met 
-# doit -n 2 subject*_walk2_mrsmod_deviceHfKf_multControls_post_cycle03_Met 
-# doit -n 2 subject*_walk2_mrsmod_deviceHfKfAp_post_cycle02_Met 
-# doit -n 2 subject*_walk2_mrsmod_deviceHfKfAp_post_cycle03_Met 
-# doit -n 2 subject*_walk2_mrsmod_deviceHfKfAp_multControls_post_cycle02_Met 
-# doit -n 2 subject*_walk2_mrsmod_deviceHfKfAp_multControls_post_cycle03_Met 
-# doit -n 2 subject*_walk2_mrsmod_deviceKf_fixed_post_cycle02_Met 
-# doit -n 2 subject*_walk2_mrsmod_deviceKf_fixed_post_cycle03_Met 
-# doit -n 2 subject*_walk2_mrsmod_deviceKfAp_post_cycle02_Met 
-# doit -n 2 subject*_walk2_mrsmod_deviceKfAp_post_cycle03_Met 
-# doit -n 2 subject*_walk2_mrsmod_deviceKfAp_multControls_post_cycle02_Met 
-# doit -n 2 subject*_walk2_mrsmod_deviceKfAp_multControls_post_cycle03_Met
+doit -n 2 subject*_walk2_mrsmod_deviceHe_post_cycle02_Met
+doit -n 2 subject*_walk2_mrsmod_deviceHe_post_cycle03_Met
+# doit -n 2 subject*_walk2_mrsmod_deviceKe_post_cycle02_Met
+# doit -n 2 subject*_walk2_mrsmod_deviceKe_post_cycle03_Met 
+# doit -n 2 subject*_walk2_mrsmod_deviceHeKe_coupled_post_cycle02_Met
+# doit -n 2 subject*_walk2_mrsmod_deviceHeKe_coupled_post_cycle03_Met
+# doit -n 2 subject*_walk2_mrsmod_deviceHeKe_independent_post_cycle02_Met
+# doit -n 2 subject*_walk2_mrsmod_deviceHeKe_independent_post_cycle03_Met
+# doit -n 2 subject*_walk2_mrsmod_deviceAp_post_cycle02_Met
+# doit -n 2 subject*_walk2_mrsmod_deviceAp_post_cycle03_Met
+# doit -n 2 subject*_walk2_mrsmod_deviceHf_post_cycle02_Met
+# doit -n 2 subject*_walk2_mrsmod_deviceHf_post_cycle03_Met
+# doit -n 2 subject*_walk2_mrsmod_deviceHfAp_coupled_post_cycle02_Met
+# doit -n 2 subject*_walk2_mrsmod_deviceHfAp_coupled_post_cycle03_Met
+# doit -n 2 subject*_walk2_mrsmod_deviceHfAp_independent_post_cycle02_Met
+# doit -n 2 subject*_walk2_mrsmod_deviceHfAp_independent_post_cycle03_Met
+# doit -n 2 subject*_walk2_mrsmod_deviceHfKf_coupled_post_cycle02_Met 
+# doit -n 2 subject*_walk2_mrsmod_deviceHfKf_coupled_post_cycle03_Met 
+# doit -n 2 subject*_walk2_mrsmod_deviceHfKf_independent_post_cycle02_Met 
+# doit -n 2 subject*_walk2_mrsmod_deviceHfKf_independent_post_cycle03_Met 
+# doit -n 2 subject*_walk2_mrsmod_deviceHfKfAp_coupled_post_cycle02_Met 
+# doit -n 2 subject*_walk2_mrsmod_deviceHfKfAp_coupled_post_cycle03_Met 
+# doit -n 2 subject*_walk2_mrsmod_deviceHfKfAp_independent_post_cycle02_Met 
+# doit -n 2 subject*_walk2_mrsmod_deviceHfKfAp_independent_post_cycle03_Met 
+# doit -n 2 subject*_walk2_mrsmod_deviceKf_post_cycle02_Met 
+# doit -n 2 subject*_walk2_mrsmod_deviceKf_post_cycle03_Met 
+# doit -n 2 subject*_walk2_mrsmod_deviceKfAp_coupled_post_cycle02_Met 
+# doit -n 2 subject*_walk2_mrsmod_deviceKfAp_coupled_post_cycle03_Met 
+# doit -n 2 subject*_walk2_mrsmod_deviceKfAp_independent_post_cycle02_Met 
+# doit -n 2 subject*_walk2_mrsmod_deviceKfAp_independent_post_cycle03_Met
 
-# doit -n 2 subject*_walk2_mrsmod_deviceHKAp_multControls_post_cycle02_Met
-# doit -n 2 subject*_walk2_mrsmod_deviceHKAp_multControls_post_cycle03_Met
-
-# doit aggregate*muscle*data*mrsmod*deviceHKAp_multControls*
-# doit plot*muscle*data*mrsmod*deviceHKAp_multControls*
-# doit aggregate*moment*mrsmod*deviceHKAp_multControls*
-# doit plot*moment*mrsmod*deviceHKAp_multControls*
-# doit plot*device*comparison*mrsmod*HKAp_multControls
+doit aggregate*muscle*data*mrsmod*
+doit plot*muscle*data*mrsmod*
+doit aggregate*moment*mrsmod*
+doit plot*moment*mrsmod*
+doit plot*device*comparison*mrsmod*
+doit plot*metabolic*reduction*
+doit plot*showcase*
+doit aggregate*device*power*
+doit create*power*table*
+doit aggregate*device*moment*
+doit create*moment*table*
