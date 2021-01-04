@@ -181,6 +181,7 @@ def add_to_study(study):
     walk2_trial.add_task(tasks.TaskUpdateGroundReactionColumnLabels)
 
     # walk2: main study tasks
+    helpers.generate_sensitivity_tasks(walk2_trial)
     mrs_setup_tasks = helpers.generate_main_tasks(walk2_trial)
     helpers.generate_exotopology_tasks(walk2_trial, mrs_setup_tasks)
     helpers.generate_coupled_controls_tasks(walk2_trial, mrs_setup_tasks)

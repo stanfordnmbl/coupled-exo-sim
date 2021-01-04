@@ -2,6 +2,7 @@ import itertools
 import osimpipeline as osp
 import tasks
 import pandas as pd
+import numpy as np
 import os
 
 def get_device_info(study):
@@ -127,8 +128,12 @@ def generate_main_tasks(trial):
     # inverse dynamics
     id_setup_task = trial.add_task(osp.TaskIDSetup, ik_setup_task)
     trial.add_task(osp.TaskID, id_setup_task)
-
     trial.add_task(osp.TaskIDPost, id_setup_task)
+
+    # body kinematics
+    bodykin_setup_task = trial.add_task(tasks.TaskBodyKinematicsSetup, 
+        ik_setup_task)
+    trial.add_task(tasks.TaskBodyKinematics, bodykin_setup_task)
 
     # muscle redundancy solver
     mrs_setup_tasks = trial.add_task_cycles(tasks.TaskMRSDeGrooteSetup,
@@ -142,6 +147,23 @@ def generate_main_tasks(trial):
         setup_tasks=mrs_setup_tasks)
 
     return mrs_setup_tasks
+
+def generate_sensitivity_tasks(trial):
+
+    tolerances = [1e0, 1e-1, 1e-2, 1e-3, 1e-4]
+    subpaths = ['tol%i' % i for i in np.arange(len(tolerances))]
+    for tolerance, subpath in zip(tolerances, subpaths):
+        mrs_setup_tasks = trial.add_task_cycles(
+            tasks.TaskMRSDeGrooteSensitivitySetup,
+            trial.study.param_dict, tolerance, subpath,
+            cost=trial.study.costFunction,
+            use_filtered_id_results=False,
+            actdyn=trial.study.actdyn)
+        trial.add_task_cycles(tasks.TaskMRSDeGrooteSensitivity, 
+            setup_tasks=mrs_setup_tasks)
+        trial.add_task_cycles(tasks.TaskMRSDeGrooteSensitivityPost,
+            setup_tasks=mrs_setup_tasks)
+
 
 def generate_exotopology_tasks(trial, mrs_setup_tasks):
 

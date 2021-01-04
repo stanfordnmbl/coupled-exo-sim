@@ -154,12 +154,25 @@ study.add_task(TaskAggregateMuscleDataExperiment, cond_names=conditions)
 study.add_task(TaskPlotMuscleData, study.tasks[-1])
 study.add_task(TaskAggregateMomentsExperiment, cond_names=conditions)
 study.add_task(TaskPlotMoments, study.tasks[-1])
+study.add_task(TaskAggregateReservesExperiment, cond_names=conditions)
+study.add_task(TaskComputeReserves, study.tasks[-1])
 
 # Validation
 # ----------
 study.add_task(TaskValidateMarkerErrors, cond_names=conditions)
 study.add_task(TaskValidateMuscleActivity, cond_names=conditions)
-study.add_task(TaskValidateKinetics, cond_names=conditions)
+study.add_task(TaskValidateKinematics, cond_name=conditions[0])
+study.add_task(TaskValidateKinetics, cond_name=conditions[0])
+task_names = ['experiment', 'mrsmod_deviceHe', 'mrsmod_deviceKe', 
+               'mrsmod_deviceHf', 'mrsmod_deviceKf', 'mrsmod_deviceAp',
+               'mrsmod_deviceHeKe_coupled', 'mrsmod_deviceHeKe_independent', 
+               'mrsmod_deviceHfKf_coupled', 'mrsmod_deviceHfKf_independent', 
+               'mrsmod_deviceKfAp_coupled', 'mrsmod_deviceKfAp_independent', 
+               'mrsmod_deviceHfAp_coupled', 'mrsmod_deviceHfAp_independent', 
+               'mrsmod_deviceHfKfAp_coupled', 'mrsmod_deviceHfKfAp_independent', 
+               ]
+study.add_task(TaskValidateReserves, task_names, cond_name=conditions[0])
+study.add_task(TaskValidateSensitivity)
 
 ## Device comparisons
 master_device_list = list()
@@ -361,11 +374,18 @@ study.add_task(TaskAggregateMetabolicRate, device_list, suffix=folder,
     conditions=conditions)
 study.add_task(TaskPlotMetabolicReductions, plot_lists, folder, subjects=subjects,
     max_metabolic_reduction=50, fig_height=5, fig_width=7,
-    cond_names=conditions)
+    cond_names=conditions, multijoint_only=True)
 
 # Muscle activations
 # ------------------
 plot_lists['index_list'] = [0, 1, 2, 3, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9]
+plot_lists['label_list'] = ['hip\next.', 'knee\next.', 
+                            'hip\nflex.', 'knee\nflex.', 'ankle\npl.',
+                            'hip ext.\nknee ext.',
+                            'hip flex.\nknee flex.', 'knee flex.\nankle pl.',
+                            'hip flex.\nankle pl.',
+                            'hip flex.\nknee flex.\nankle pl.',
+                            ]
 study.add_task(TaskPlotMuscleActivity, plot_lists, 'walk2')
 
 # Device moments and powers
@@ -377,6 +397,17 @@ study.add_task(TaskAggregateDevicePower, device_list, suffix=folder,
     conditions=conditions)
 study.add_task(TaskCreateDevicePowerTable, study.tasks[-1], suffix=folder)
 
+# Muscle comparisons
+# ------------------
+study.add_task(TaskPlotMuscleMultijointComparison, 'walk2', 'mrsmod_deviceKfAp',
+    'psoas_r', muscle_data=['norm_fiber_powers'],
+    min_norm_power=-1, max_norm_power=2)
+study.add_task(TaskPlotMuscleMultijointComparison, 'walk2', 'mrsmod_deviceKfAp',
+    'rect_fem_r', muscle_data=['norm_fiber_powers'],
+    min_norm_power=-3, max_norm_power=0.5)
+study.add_task(TaskPlotMuscleMultijointComparison, 'walk2', 'mrsmod_deviceKfAp',
+    'soleus_r', muscle_data=['activations', 'norm_fiber_powers'],
+    min_norm_power=-0.5, max_norm_power=2.5)
 
 # Wholebody metabolic cost reductions
 # -----------------------------------
@@ -527,3 +558,5 @@ for mod in master_device_list:
     study.add_task(TaskPlotMoments, study.tasks[-1])
     study.add_task(TaskAggregateMuscleDataMod, mod, cond_names=conditions)
     study.add_task(TaskPlotMuscleData, study.tasks[-1])
+    study.add_task(TaskAggregateReservesMod, mod, cond_names=conditions)
+    study.add_task(TaskComputeReserves, study.tasks[-1])
