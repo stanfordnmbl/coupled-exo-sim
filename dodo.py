@@ -354,7 +354,6 @@ device_list = ['mrsmod_deviceHe', 'mrsmod_deviceKe',
                'mrsmod_deviceHfAp_coupled', 'mrsmod_deviceHfAp_independent', 
                'mrsmod_deviceHfKfAp_coupled', 'mrsmod_deviceHfKfAp_independent', 
                ]
-
 plot_lists['index_list'] = [0, 0.5, 1, 1.5, 2, 2.7, 2.7, 3.6, 3.6, 4.5, 4.5, 5.4, 5.4, 6.3, 6.3]
 plot_lists['device_list'] = device_list
 plot_lists['label_list'] = ['hip\next.', 'knee\next.', 
@@ -374,7 +373,7 @@ study.add_task(TaskAggregateMetabolicRate, device_list, suffix=folder,
     conditions=conditions)
 study.add_task(TaskPlotMetabolicReductions, plot_lists, folder, subjects=subjects,
     max_metabolic_reduction=50, fig_height=5, fig_width=7,
-    cond_names=conditions, multijoint_only=True)
+    cond_names=conditions, multijoint_only=False)
 
 # Muscle activations
 # ------------------

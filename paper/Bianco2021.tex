@@ -1,0 +1,381 @@
+% Template for PLoS
+% Version 3.5 March 2018
+%
+% % % % % % % % % % % % % % % % % % % % % %
+%
+% -- IMPORTANT NOTE
+%
+% This template contains comments intended 
+% to minimize problems and delays during our production 
+% process. Please follow the template instructions
+% whenever possible.
+%
+% % % % % % % % % % % % % % % % % % % % % % % 
+%
+% Once your paper is accepted for publication, 
+% PLEASE REMOVE ALL TRACKED CHANGES in this file 
+% and leave only the final text of your manuscript. 
+% PLOS recommends the use of latexdiff to track changes during review, as this will help to maintain a clean tex file.
+% Visit https://www.ctan.org/pkg/latexdiff?lang=en for info or contact us at latex@plos.org.
+%
+%
+% There are no restrictions on package use within the LaTeX files except that 
+% no packages listed in the template may be deleted.
+%
+% Please do not include colors or graphics in the text.
+%
+% The manuscript LaTeX source should be contained within a single file (do not use \input, \externaldocument, or similar commands).
+%
+% % % % % % % % % % % % % % % % % % % % % % %
+%
+% -- FIGURES AND TABLES
+%
+% Please include tables/figure captions directly after the paragraph where they are first cited in the text.
+%
+% DO NOT INCLUDE GRAPHICS IN YOUR MANUSCRIPT
+% - Figures should be uploaded separately from your manuscript file. 
+% - Figures generated using LaTeX should be extracted and removed from the PDF before submission. 
+% - Figures containing multiple panels/subfigures must be combined into one image file before submission.
+% For figure citations, please use "Fig" instead of "Figure".
+% See http://journals.plos.org/plosone/s/figures for PLOS figure guidelines.
+%
+% Tables should be cell-based and may not contain:
+% - spacing/line breaks within cells to alter layout or alignment
+% - do not nest tabular environments (no tabular environments within tabular environments)
+% - no graphics or colored text (cell background color/shading OK)
+% See http://journals.plos.org/plosone/s/tables for table guidelines.
+%
+% For tables that exceed the width of the text column, use the adjustwidth environment as illustrated in the example table in text below.
+%
+% % % % % % % % % % % % % % % % % % % % % % % %
+%
+% -- EQUATIONS, MATH SYMBOLS, SUBSCRIPTS, AND SUPERSCRIPTS
+%
+% IMPORTANT
+% Below are a few tips to help format your equations and other special characters according to our specifications. For more tips to help reduce the possibility of formatting errors during conversion, please see our LaTeX guidelines at http://journals.plos.org/plosone/s/latex
+%
+% For inline equations, please be sure to include all portions of an equation in the math environment.  For example, x$^2$ is incorrect; this should be formatted as $x^2$ (or $\mathrm{x}^2$ if the romanized font is desired).
+%
+% Do not include text that is not math in the math environment. For example, CO2 should be written as CO\textsubscript{2} instead of CO$_2$.
+%
+% Please add line breaks to long display equations when possible in order to fit size of the column. 
+%
+% For inline equations, please do not include punctuation (commas, etc) within the math environment unless this is part of the equation.
+%
+% When adding superscript or subscripts outside of brackets/braces, please group using {}.  For example, change "[U(D,E,\gamma)]^2" to "{[U(D,E,\gamma)]}^2". 
+%
+% Do not use \cal for caligraphic font.  Instead, use \mathcal{}
+%
+% % % % % % % % % % % % % % % % % % % % % % % % 
+%
+% Please contact latex@plos.org with any questions.
+%
+% % % % % % % % % % % % % % % % % % % % % % % %
+
+\documentclass[10pt,letterpaper]{article}
+\usepackage[top=0.85in,left=2.75in,footskip=0.75in]{geometry}
+
+% amsmath and amssymb packages, useful for mathematical formulas and symbols
+\usepackage{amsmath,amssymb}
+
+% Use adjustwidth environment to exceed column width (see example table in text)
+\usepackage{changepage}
+
+% Use Unicode characters when possible
+\usepackage[utf8x]{inputenc}
+
+% textcomp package and marvosym package for additional characters
+\usepackage{textcomp,marvosym}
+
+% cite package, to clean up citations in the main text. Do not remove.
+\usepackage{cite}
+
+% Use nameref to cite supporting information files (see Supporting Information section for more info)
+\usepackage{nameref,hyperref}
+
+% line numbers
+\usepackage[right]{lineno}
+
+% ligatures disabled
+\usepackage{microtype}
+\DisableLigatures[f]{encoding = *, family = * }
+
+% color can be used to apply background shading to table cells only
+\usepackage[table]{xcolor}
+
+% array package and thick rules for tables
+\usepackage{array}
+
+% create "+" rule type for thick vertical lines
+\newcolumntype{+}{!{\vrule width 2pt}}
+
+% create \thickcline for thick horizontal lines of variable length
+\newlength\savedwidth
+\newcommand\thickcline[1]{%
+  \noalign{\global\savedwidth\arrayrulewidth\global\arrayrulewidth 2pt}%
+  \cline{#1}%
+  \noalign{\vskip\arrayrulewidth}%
+  \noalign{\global\arrayrulewidth\savedwidth}%
+}
+
+% \thickhline command for thick horizontal lines that span the table
+\newcommand\thickhline{\noalign{\global\savedwidth\arrayrulewidth\global\arrayrulewidth 2pt}%
+\hline
+\noalign{\global\arrayrulewidth\savedwidth}}
+
+% Remove comment for double spacing
+%\usepackage{setspace} 
+%\doublespacing
+
+% Text layout
+\raggedright
+\setlength{\parindent}{0.5cm}
+\textwidth 5.25in 
+\textheight 8.75in
+
+% Bold the 'Figure #' in the caption and separate it from the title/caption with a period
+% Captions will be left justified
+\usepackage[aboveskip=1pt,labelfont=bf,labelsep=period,justification=raggedright,singlelinecheck=off]{caption}
+\renewcommand{\figurename}{Fig}
+
+% Use the PLoS provided BiBTeX style
+\bibliographystyle{plos2015}
+
+% Remove brackets from numbering in List of References
+\makeatletter
+\renewcommand{\@biblabel}[1]{\quad#1.}
+\makeatother
+
+% Header and Footer with logo
+\usepackage{lastpage,fancyhdr,graphicx}
+\usepackage{epstopdf}
+%\pagestyle{myheadings}
+\pagestyle{fancy}
+\fancyhf{}
+%\setlength{\headheight}{27.023pt}
+%\lhead{\includegraphics[width=2.0in]{PLOS-submission.eps}}
+\rfoot{\thepage/\pageref{LastPage}}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrule}{\hrule height 2pt \vspace{2mm}}
+\fancyheadoffset[L]{2.25in}
+\fancyfootoffset[L]{2.25in}
+\lfoot{\today}
+
+\begin{document}
+\vspace*{0.2in}
+
+% Title must be 250 characters or less.
+\begin{flushleft}
+{\Large
+\textbf\newline{Coupled exoskeleton assistance simplifies control and maintains metabolic benefits: a simulation study} % Please use "sentence case" for title and headings (capitalize only the first word in a title (or heading), the first word in a subtitle (or subheading), and any proper nouns).
+}
+\newline
+% Insert author names, affiliations and corresponding author email (do not include titles, positions, or degrees).
+\\
+Nicholas A. Bianco\textsuperscript{1*},
+Patrick W. Franks\textsuperscript{1},
+Jennifer L. Hicks\textsuperscript{2},
+Scott L. Delp\textsuperscript{1,2,3},
+\\
+\bigskip
+\textbf{1} Department of Mechanical Engineering, Stanford University, Stanford, California, United States of America
+\\
+\textbf{2} Department of Bioengineering, Stanford University, Stanford, California, United States of America
+\\
+\textbf{3} Department of Orthopaedic Surgery, Stanford University, Stanford, California, United States of America
+\\
+\bigskip
+
+% Insert additional author notes using the symbols described below. Insert symbol callouts after author names as necessary.
+
+% Use the asterisk to denote corresponding authorship and provide email address in note below.
+* nbianco@stanford.edu
+
+\end{flushleft}
+% Please keep the abstract below 300 words
+\section*{Abstract}
+Assistive exoskeletons can reduce the metabolic cost of walking, and recent advances in exoskeleton device design and control have resulted in large metabolic savings. Most exoskeleton devices provide assistance at either the ankle or hip. Exoskeletons that assist multiple joints have the potential to provide greater metabolic savings, but can require many actuators and complicated controllers, making it difficult to design effective assistance. Coupled assistance, when two or more joints are assisted using one actuator or control signal, could reduce control dimensionality while retaining metabolic benefits. However, it is unknown which combinations of assisted joints are most promising and if there are negative consequences associated with coupled assistance. Since designing assistance with human experiments is expensive and time-consuming, we used musculoskeletal simulation to evaluate metabolic savings from multi-joint assistance and identify promising joint combinations. We generated 2D muscle-driven simulations of walking while simultaneously optimizing control strategies for simulated lower-limb exoskeleton assistive devices to minimize metabolic cost. Each device provided assistance either at a single joint or at multiple joints using massless, ideal actuators. To assess if control could be simplified for multi-joint exoskeletons, we simulated different control strategies in which the torque provided at each joint was either controlled independently or coupled between joints. We compared the predicted optimal torque profiles and changes in muscle and whole-body metabolic power consumption across the single joint and multi-joint assistance strategies. We found multi-joint devices--whether independent or coupled--provided 50\% greater metabolic savings than single joint devices. The coupled multi-joint devices were able to achieve most of the metabolic savings produced by independently-controlled multi-joint devices; these coupled devices are simpler to control. Our results indicate that device designers could simplify multi-joint exoskeleton designs by reducing the number of torque control parameters through coupling, while still maintaining large reductions in metabolic cost. We invite researchers to use our freely available data (<SimTK page link here>) and code (<GitHub repo link here>) to build upon our work.
+
+% Please keep the Author Summary between 150 and 200 words
+% Use first person. PLOS ONE authors please skip this step. 
+% Author Summary not valid for PLOS ONE submissions.   
+\section*{Author summary}
+TODO
+
+\linenumbers
+
+% Use "Eq" instead of "Equation" for equation citations.
+\section*{Introduction}
+Wearable robotic exoskeletons that reduce the metabolic cost of walking could improve mobility for individuals with musculoskeletal or neurological impairments and assist soldiers and firefighters carrying heavy loads. Assistance strategies that reduce metabolic cost have only recently been discovered using both powered~\cite{Sawicki:2008, Malcolm:2013, Mooney:2014, Sawicki:2020} and unpowered~\cite{Collins:2015} devices. Despite these successes, designing controllers for exoskeletons can be counterintuitive and time-consuming. To better understand what aspects of exoskeleton assistance affect metabolic cost, many recent studies have designed assistance by varying the timing and magnitude of assistive torques and powers~\cite{Zhang:2017, Ding:2016, Ding:2018, Galle:2017, Quinlivan:2017}. For example, a recent study showed that optimizing both assistance torque onset timing and average power together produces larger metabolic reductions than when considering each quantity alone~\cite{Galle:2017}. Some exoskeleton designs focused on biomimicry, where assistive devices attempt to emulate biological joint kinematics, kinetics, and power, but these seemingly intuitive approaches have had limited success in reducing metabolic cost~\cite{vanDijk:2011, Cornwall:2015}. More recent approaches such as human-in-the-loop optimization experiments, which continuously optimize assistance for a subject based on real-time estimates of metabolic energy, have produced large reductions in metabolic cost~\cite{Zhang:2017, Ding:2018}. However, since each human-in-the-loop optimization evaluation requires several minutes of human metabolic data from indirect calorimetry, it is time-consuming and expensive to test a large number of devices. For example, a human-in-the-loop optimization may take several days of experimentation to complete.
+
+Simulations and experiments suggest that assisting multiple joints at once could deliver larger metabolic savings than from assisting a single joint~\cite{Uchida:2016, Malcolm:2018, Bryan:2020}. However, designing assistance for these ‘multi-joint’ exoskeletons can magnify the challenges of optimizing the control, since such devices can include multiple actuators with independent control laws, which increases the number of parameters that must be tested in experiments. For example, the convergence time for human-in-the-loop optimization experiments scales poorly with increasing optimization variables, and therefore may be prohibitively long for multi-joint exoskeletons due to the large number of control variables needed for several assistive torques. As a result, most exoskeleton studies focus on assisting only one degree of freedom to simplify parameter design, usually preferring the hip or the ankle since they produce most of the positive power during walking and running~\cite{Winter:1991, Novacheck:1998, Farris:2012, Sawicki:2020}. An alternative approach is to assist two joints at once using one actuator, as was done in recent exoskeleton studies with an ankle-hip soft exosuit~\cite{Ding:2017, Panizzolo:2016, Quinlivan:2017, Lee:2018} and a knee-ankle device~\cite{Malcolm:2018}. These studies exploit the similar timings of joint moments (e.g., the hip flexion moment and ankle plantarflexion moment reach a maximum at approximately the same point in the gait cycle). Other combinations of assisted joints may be effective but haven’t been tested in experiments due to time constraints. Simulations enable rapid prototyping of multi-joint devices that may be infeasible to test in experiments. Simulations also provide the ability to evaluate metabolic energy expenditures in individual muscles, which cannot be measured in human experiments. 
+
+Musculoskeletal simulation has become a valuable tool for examining the complex muscle and metabolic changes produced by exoskeleton devices~\cite{Grabke:2019}. Researchers have used simulation to analyze an existing exoskeleton and optimize its mechanical design~\cite{Manns:2017} and to better understand human-device interaction~\cite{Fournier:2018}. Other studies have used simulation to help interpret experimental results, for example, to understand how muscle mechanics drive metabolic changes for an ankle exoskeleton~\cite{Jackson:2017}. Researchers have also used simulation to model exoskeleton devices as ideal actuators to discover guidelines for designing walking~\cite{Dembia:2017} and running~\cite{Uchida:2016} exoskeletons. A recent study~\cite{Lee:2017} applied results from assisted running simulations~\cite{Uchida:2016} to design assistance for a soft running exoskeleton. The simulation derived controls provided greater metabolic cost reductions compared to assistance designed based on biological joint moments, demonstrating the ability of simulations to improve exoskeleton design. Another recent study conducted by our group used simulation to design assistance for an experimental hip-knee-ankle exoskeleton, resulting in a large metabolic reduction~\cite{Franks:2020}. While this study and the running simulation study examined multi-joint assistance~\cite{Uchida:2016}, no study has used simulation to systematically compare different multi-joint assistance strategies for walking.
+
+In this study, we examined how simulated multi-joint assistance affects the metabolic cost of walking. We added ideal, massless assistive devices to a lower-extremity musculoskeletal model and simultaneously optimized muscle activity and device controls to match the net joint moments of normal walking and minimize metabolic cost. Each device assisted a single joint or assisted multiple joints simultaneously. Multi-joint devices could control assistance at joints independently or couple assistance for multiple joints, using the same control with independent peak torque magnitudes. We used the simulations to achieve two goals. First, we sought to estimate the metabolic savings provided by multi-joint exoskeletons during walking as compared to exoskeletons that assist only a single joint. Second, we sought to determine if coupled assistance could achieve similar metabolic savings to independent assistance. To address our second aim, we compared whole-body and muscle metabolic cost savings and optimal device torques between coupled and independent multi-joint assistance.
+
+\section*{Materials and methods}
+
+\subsection*{Experimental data}
+We utilized data collected as 5 healthy individuals walked on a treadmill as described in a previous study (mean $\pm$ s.d.: age: 29.2 $\pm$ 6.3 years, height: 1.80 $\pm$ 0.03 m, mass: 72.4 $\pm$ 5.7 kg)~\cite{Arnold:2013}. The data included marker trajectories, ground reaction forces, and electromyography (EMG) signals. For each subject, we simulated three gait cycles of walking at 1.25 m/s. One gait cycle was used in a model calibration step, and the other two were used for simulations of exoskeleton devices. We used the processed EMG signals as described in the previous study~\cite{Arnold:2013}, where signals were normalized by the highest value recorded across all walking speeds.
+
+% For figure citations, please use "Fig" instead of "Figure".
+
+\subsection*{Musculoskeletal model}
+A generic 29 degree-of-freedom skeletal model was scaled to each subject’s anthropomorphic data based on static marker trials~\cite{Rajagopal:2016}. Nine Hill-type muscle-tendon units, as modeled in a previous simulation study from our group~\cite{Ong:2019}, were included on each leg of the model. Muscles with similar sagittal-plane functions were combined into one muscle with combined maximum isometric force values: gluteus maximus, biarticular hamstrings, iliopsoas, rectus femoris, vasti, biceps femoris short head, gastrocnemius, soleus, and tibialis anterior. We used this reduced muscle set since we only simulated sagittal-plane exoskeleton devices and since fewer muscles kept the optimizations tractable. Joint and muscle kinematics and net joint moments were computed through inverse kinematics and inverse dynamics tools using OpenSim 3.3~\cite{Delp:2007}.
+
+\subsection*{Simulation framework}
+We used a simulation framework~\cite{DeGroote:2016} based on the GPOPS-II direct collocation optimal control software (version 2.3)~\cite{Patterson:2014} to solve the muscle redundancy problem for unassisted walking. In each simulation, we solved for muscle activity while enforcing muscle activation and tendon compliance dynamics. Muscle kinematics were constrained to match muscle-tendon lengths and velocities obtained from inverse kinematics, and muscle-generated moments were constrained to match net joint moments computed from inverse dynamics. Since we only included sagittal-plane muscles in our model, only sagittal-plane joint moments (hip flexion-extension, knee flexion-extension, and ankle plantarflexion-dorsiflexion) were matched in each optimization. We assumed left-right symmetry of walking and therefore only solved for muscle activity in the right leg. Each problem included reserve torque actuators in addition to muscle-generated moments to help ensure dynamic consistency; these actuators were penalized in the objective function such that the muscles were the primary actuators enforcing the joint moment constraints. Each optimal control problem was solved with the Legendre-Gauss-Radau quadrature collocation method provided by GPOPS-II using an initial mesh of 100 mesh intervals per second. The initial mesh was updated using mesh refinement with a tolerance of 10-3 to reduce muscle activation and tendon compliance dynamic errors in the solution trajectories. The resulting nonlinear programs produced from the collocation method were solved with a convergence tolerance of 10-3 using IPOPT, the non-linear optimization solver~\cite{Wachter:2006}. 
+
+\subsection*{Muscle parameter calibration}
+We calibrated the model’s muscle parameters so that estimated muscle activations would better match EMG measurements. Our model calibration approach consisted of three main steps. In the first step, we scaled maximum isometric force values based on a previously reported relationship between muscle volume and total body mass~\cite{Handsfield:2014}. In the second step, we optimized optimal fiber lengths, tendon slack lengths, and passive muscle strain parameters while minimizing the error between model and reported experimental passive muscle moments~\cite{Silder:2007}. We used MATLAB’s fmincon to minimize passive moment errors across a range of static joint positions with a rigid-tendon assumption for computing passive muscle force. In addition to the cost term penalizing deviations from experimental passive muscle moments, secondary cost terms were included to minimize total muscle passive force and prevent deviations from default parameter values which would lead to undesirable solutions with large passive forces in individual muscles.
+
+The third step of our model calibration used EMG data to further adjust the model’s muscle parameters. Passive muscle strain parameters were fixed to the values obtained from the first calibration step, and tendon slack length and optimal fiber lengths were again optimized within 25\% of their original values, using the first-step calibration values as an initial guess. The error between EMG data and muscle excitations was the primary term minimized in the objective function. Passive muscle forces were also minimized to prevent undesired increases in passive forces due to the readjusted parameters. The muscle activations were also included as a lower-weighted, secondary objective term to aid convergence. The resulting muscle parameters were used in all subsequent simulations.
+
+\subsection*{Exoskeleton device simulations}
+After calibrating the model for a given subject, we simulated unassisted and assisted gait using the subject’s remaining two gait cycles. In both unassisted and assisted gait, the primary objective was to minimize metabolic cost computed from a version of the metabolic energy model developed by Umberger et al. (2003) that was modified to have a continuous first derivative for gradient-based optimization~\cite{Umberger:2003, Koelewijn:2018}. We included additional secondary objective terms to minimize muscle excitation, muscle activation, and the derivative of tendon force, all of which aided problem convergence. Since our simulation method relied on kinematics obtained from an inverse kinematics solution, the unassisted and assisted simulations used the same healthy walking kinematics (i.e., the simulation did not change the model's kinematics in response to the assistive device). In the unassisted simulations, the muscles and the heavily-penalized reserve torque actuators were the only actuators available to reproduce the net joint moments.
+ 
+In the assisted simulations, exoskeleton devices were modeled as massless torque actuators and could apply torques to reduce muscle effort, while still matching the net joint moment constraints from inverse dynamics. The actuators had no power limits, but had peak torque limits for hip flexion-extension (1.0 N-m/kg), knee flexion-extension (1.0 N-m/kg), and ankle plantarflexion (2.0 N-m/kg); these peak torque limits were included to speed convergence and were chosen such that optimized device controls never exceeded the optimization bounds. Torques were applied in the following five joint directions: hip flexion, hip extension, knee flexion, knee extension, and ankle plantarflexion. Single joint exoskeleton devices provided assistive torques in one of the five joint directions. Multi-joint exoskeleton devices provided assistance to the following combinations of joint directions: (1) hip-extension knee-extension, (2) hip-flexion knee-flexion, (3) knee-flexion ankle-plantarflexion, (4) hip-flexion ankle-plantarflexion, and (5) hip-flexion knee-flexion ankle-plantarflexion. The multi-joint exoskeleton devices were actuated by individual control signals (i.e., “independent” control) or with only one control signal applied to all joint directions (i.e., “coupled” control). When using coupled control, additional “gain” variables scaled the applied exoskeleton torques to allow different applied torque magnitudes since net joint moment magnitudes differ between the hip, knee, and ankle.
+ 
+For all unassisted and assisted conditions, we computed both whole-body and muscle-level metrics of metabolic cost to assess device performance. The gross average whole-body metabolic rate was computed by integrating the sum of individual muscle metabolic rates, multiplying by two (since we only solved for the right leg and assumed medio-lateral symmetry), dividing by the motion duration and total body mass, and adding a constant basal rate of 1.2 W/kg. The average muscle metabolic rate was computed by integrating the metabolic rate of a muscle, multiplying by two, and dividing by the duration of the motion and body mass. Changes in both gross average whole-body metabolic rate and average muscle metabolic rate due to assistance were computed as a percent of unassisted gross average whole-body metabolic rate.
+
+\subsection*{Validation of simulations}
+To validate our simulations, we compared musculoskeletal model outputs to available experimental data and values reported in the literature. Joint moments (\nameref{S1_Fig}) and joint angles (\nameref{S2_Fig}) computed with OpenSim were qualitatively similar to previously reported joint moments and joint angles for normal treadmill walking at a similar walking speed~\cite{Silder:2013} and consistent with values computed in the original study for which the motion capture data was collected~\cite{Arnold:2013}. Unassisted muscle activity was qualitatively similar between most simulated activations and EMG measurements (\nameref{S3_Fig}). The simulations accurately predicted muscle activity in early stance for both the gluteus maximus and vastus intermedius. However, the magnitude of simulated gluteus maximus activity was higher than the normalized experimental EMG measurements for three of the five subjects, and two subjects produced gluteus maximus EMG in swing not seen in the simulation results. The simulated rectus femoris muscle did not exhibit the early-stance activity observed in the EMG measurements. Simulated semimembranosus activity was qualitatively similar to EMG measurements, except for for two subjects who had increased peak knee-flexion moments (\nameref{S1_Fig} and \nameref{S3_Fig}, subjects 2 and 3). Peak values of simulated soleus and gastrocnemius activity matched qualitatively the peak values of EMG measurements, but had peak timings later in stance compared to the EMG measurements. Simulated tibialis anterior activity matched qualitatively the timing of EMG measurements, but had differences in activity magnitudes for some subjects. Estimates of gross whole-body metabolic rate (3.2 $\pm$ 0.2 W/kg, \nameref{S4_Table}) were lower than typical experimental values for normal unassisted walking (4.0-4.3 W/kg,~\cite{Waters:1999}). However, since we were more concerned with estimating percent metabolic changes rather than absolute values of metabolic cost, we deemed this underestimation acceptable for the purposes of this study.
+
+In addition to validation against experimental data, we computed a set of error metrics based on suggestions by Hicks et al. (page 20 in~\cite{Hicks:2015}). The RMS errors between experimental and model marker trajectories from inverse kinematics had a mean value of 2.2 cm across lower-limb markers and simulation gait cycles. To estimate the dynamic consistency of our simulations, we computed pelvis residual forces and moments from inverse dynamics across simulation gait cycles. The mean RMS error in the pelvis residual forces, expressed as a percent of the peak ground reaction force (GRF) magnitude, was 4.8\%, which is within the 5\% guideline suggested by Hicks et al. The mean RMS error in the pelvis residual moments, expressed as a percentage of the product of average mass center height and peak GRF magnitude, was 2.8\%, which exceeds the 1\% guideline suggested by Hicks et al. However, given the good qualitative matches in net joint moments compared to reported data and muscle activity compared to EMG measurements, we deemed this error to be acceptable. Finally, the RMS magnitude of the reserve torques had a mean value of 0.06 N-m across degrees of freedom and simulations; the maximum error across time, degrees of freedom, and simulations was 2.01 N-m. The ratio of the RMS reserve magnitude to the maximum absolute net joint moment had mean and peak values of 0.1\% and 3.7\%, respectively, which meet the guideline of 5\% provided by Hicks et al.
+
+We performed a sensitivity analysis to ensure that the convergence tolerance used in our unassisted and assisted walking optimizations did not affect our results. We varied the convergence tolerance between 1 and $10^{-4}$ and solved the unassisted walking problem for all subjects with the same gait cycles used to generate our results. We normalized objective values using the solution generated with the $10^{-4}$ tolerance and computed the mean and standard deviation across subjects and gait cycles (\nameref{S5_Fig}). The objective values for the $10^{-3}$ convergence tolerance, which were used to generate our results, were close to a normalized objective value of 1 in our sensitivity analysis, indicating that our choice of tolerance was appropriate for this study
+
+% Results and Discussion can be combined.
+\section*{Results}
+
+\subsection*{Device performance}
+All 15 ideal assistance devices—single joint, multi-joint coupled, and multi-joint independent—decreased average whole-body metabolic rate compared to unassisted walking (Fig~\ref{Fig1}). The largest reduction in metabolic cost among multi-joint devices was produced by the hip-flexion knee-flexion ankle-plantarflexion devices (34\% coupled, 39\% independent). Other multi-joint devices produced large metabolic savings: hip-extension knee-extension assistance (12\% coupled, 14\% independent), knee-flexion ankle-plantarflexion assistance (30\% coupled, 32\% independent), and hip-flexion ankle-plantarflexion (29\% coupled, 34\% independent). While independent assistance outperformed coupled assistance, the differences between coupled and independent were small (the percent change in cost for coupled assistance was 3.5\% lower on average across multi-joint devices). The single-joint hip-flexion device provided the largest savings of the single joint devices (22\% reduction), closely followed by knee-flexion assistance (21\%). Multi-joint devices provided greater savings compared to single joint devices for all conditions except for multi-joint hip-extension knee-extension assistance, which was outperformed by single-joint hip-flexion and knee-flexion assistance.
+
+% Place figure captions after the first paragraph in which they are cited.
+\begin{figure}[!h]
+\begin{adjustwidth}{-1in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
+    \centering
+    \includegraphics{../../figures/figure1/figure1.png}
+    \caption{{\bf Reduction in metabolic rate for single and multi-joint assistance devices.}
+        The percent change in gross whole-body metabolic rate, averaged over the gait cycle, for the single joint (gray), multi-joint coupled (orange), and multi-joint independent (blue) assistance devices. Each bar value and corresponding error bar provides the mean reduction and standard deviation across subjects.}
+\label{Fig1}
+\end{adjustwidth}
+\end{figure} 
+
+\subsection*{Muscle metabolic changes}
+The change in average muscle metabolic rates for a given multi-joint device were similar between the coupled and independent control devices. Both coupled and independent multi-joint hip-extension knee-extension assistance produced large metabolic reductions in the gluteus maximus and vastus intermedius muscles (Fig~\ref{Fig2}). Multi-joint hip-flexion knee-flexion assistance primarily reduced the iliopsoas average metabolic rate, and produced small reductions in the gastrocnemius and semimembranosus (Fig~\ref{Fig3}). Multi-joint knee-flexion ankle-plantarflexion assistance reduced the average metabolic rates of the soleus and gastrocnemius, but also produced a large reduction in the iliopsoas, which was not directly assisted (Fig~\ref{Fig4}). Iliopsoas effort was reduced since rectus femoris activity increased to counteract knee-flexion assistive torque, as seen by the small increase in rectus femoris average metabolic rate. Multi-joint hip-flexion ankle-plantarflexion assistance produced large metabolic reductions in the iliopsoas and soleus (Fig~\ref{Fig5}). Multi-joint hip-flexion knee-flexion ankle-plantarflexion assistance similarly produced large iliopsoas and soleus metabolic reductions, and the added knee-flexion torque produced a reduction (rather than increase) in the semimembranosus and a larger reduction in the gastrocnemius (Fig~\ref{Fig6}).
+
+\begin{figure}[!h]
+\begin{adjustwidth}{-1in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
+    \centering
+    \includegraphics[scale=1.45]{../../figures/figure2/figure2.png}
+    \caption{{\bf Summary of multi-joint hip-extension knee-extension assistance.}
+        Top: the device torques for multi-joint hip-extension knee-extension assistance with coupled (orange) and independent (blue) control compared to net joint moments (gray). Bottom: changes in average muscle metabolic rates as a percent of unassisted gross average whole-body metabolic rate for the multi-joint assistive devices. Summing the individual muscle percent changes yields the whole-body percent changes for the hip-extension knee-extension multi-joint devices reported in Fig~\ref{Fig1}.}
+\label{Fig2}
+\end{adjustwidth}
+\end{figure} 
+
+\begin{figure}[!h]
+\begin{adjustwidth}{-1in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
+    \centering
+    \includegraphics[scale=1.45]{../../figures/figure3/figure3.png}
+    \caption{{\bf Summary of multi-joint hip-flexion knee-flexion assistance.}
+        Top: the device torques for multi-joint hip-flexion knee-flexion assistance with coupled (orange) and independent (blue) control compared to net joint moments (gray). Bottom: changes in average muscle metabolic rates as a percent of unassisted gross average whole-body metabolic rate for the multi-joint assistive devices. Summing the individual muscle percent changes yields the whole-body percent changes for the hip-flexion knee-flexion multi-joint devices reported in Fig~\ref{Fig1}.}
+\label{Fig3}
+\end{adjustwidth}
+\end{figure}
+
+\begin{figure}[!h]
+\begin{adjustwidth}{-1in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
+    \centering
+    \includegraphics[scale=1.45]{../../figures/figure4/figure4.png}
+    \caption{{\bf Summary of multi-joint knee-flexion ankle-plantarflexion assistance.}
+        Top: the device torques for multi-joint knee-flexion ankle-plantarflexion assistance with coupled (orange) and independent (blue) control compared to net joint moments (gray). Bottom: changes in average muscle metabolic rates as a percent of unassisted gross average whole-body metabolic rate for the multi-joint assistive devices. Summing the individual muscle percent changes yields the whole-body percent changes for the knee-flexion ankle-plantarflexion multi-joint devices reported in Fig~\ref{Fig1}.}
+\label{Fig4}
+\end{adjustwidth}
+\end{figure}
+
+\begin{figure}[!h]
+\begin{adjustwidth}{-1in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
+    \centering
+    \includegraphics[scale=1.45]{../../figures/figure5/figure5.png}
+    \caption{{\bf Summary of multi-joint hip-flexion ankle-plantarflexion assistance.}
+        Top: the device torques for multi-joint hip-flexion ankle-plantarflexion assistance with coupled (orange) and independent (blue) control compared to net joint moments (gray). Bottom: changes in average muscle metabolic rates as a percent of unassisted gross average whole-body metabolic rate for the multi-joint assistive devices. Summing the individual muscle percent changes yields the whole-body percent changes for the hip-flexion ankle-plantarflexion multi-joint devices reported in Fig~\ref{Fig1}.}
+\label{Fig5}
+\end{adjustwidth}
+\end{figure}    
+
+\begin{figure}[!h]
+\begin{adjustwidth}{-1in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
+    \centering
+    \includegraphics[scale=1.40]{../../figures/figure6/figure6.png}
+    \caption{{\bf Summary of multi-joint hip-flexion knee-flexion ankle-plantarflexion assistance.}
+        Top: the device torques for multi-joint hip-flexion knee-flexion ankle-plantarflexion assistance with coupled (orange) and independent (blue) control compared to net joint moments (gray). Bottom: changes in average muscle metabolic rates as a percent of unassisted gross average whole-body metabolic rate for the multi-joint assistive devices. Summing the individual muscle percent changes yields the whole-body percent changes for the hip-flexion knee-flexion ankle-plantarflexion multi-joint devices reported in Fig~\ref{Fig1}.}
+\label{Fig6}
+\end{adjustwidth}
+\end{figure}
+
+\subsection*{Device torques and powers}
+Average peak device torques and powers were similar between coupled and independent multi-joint assistance for many of the devices (\nameref{S6_Table}), but there were some notable differences between peak torques and powers at individual degrees-of-freedom (\nameref{S7_Table}). For multi-joint hip-flexion knee-flexion assistance, a lower average peak knee-flexion torque was observed with coupled control (0.4 N-m/kg) compared to independent control (0.7 N-m/kg). However, despite this peak moment decrease, coupled control provided larger knee-flexion average peak power (1.7 W/kg) compared to independent control (1.0 W/kg). The largest differences in peak device torques were seen in ankle-plantarflexion assistance for multi-joint devices, but this did not necessarily result in similarly large metabolic changes. For example, the average peak ankle plantarflexion torque torque for independent knee-flexion ankle-plantarflexion assistance (1.6 N-m/kg) was larger than the average peak torque for coupled assistance (1.0 N-m/kg), but these devices produced similar metabolic savings (\nameref{S6_Table}, Fig~\ref{Fig4}). This could be partially explained by the relatively small difference in average peak powers at the ankle for knee-flexion ankle-plantarflexion multi-joint assistance between independent (3.4 W/kg) and coupled control (3.2 W/kg) (\nameref{S7_Table}). These results suggest that multi-joint assistance can exploit the timing of torque assistance to provide device powers necessary for large metabolic savings, even when coupled torque timing limits assistance torque magnitudes at individual joints.
+
+\section*{Discussion}
+We found that multi-joint torque assistance could provide larger metabolic savings compared to single-joint torque assistance in simulated lower-limb exoskeleton devices for walking. This is noteworthy considering that most current experimental exoskeleton devices only assist a single degree-of-freedom~\cite{Gordon:2007, Mooney:2014, Collins:2015, Zhang:2017, Galle:2017, Kim:2019, Lim:2019}.
+ 
+We found that the simulated multi-joint exoskeletons using coupled torque assistance could provide similar metabolic savings to those using independently-controlled torque assistance. This result suggests that exoskeleton designers should consider coupling torque actuators when building multi-joint exoskeletons. In addition, the largest metabolic reduction with coupled assistance occurred with hip-flexion knee-flexion ankle-plantarflexion assistance, suggesting that assisting more than two joints with one actuator can be beneficial. In many cases, peak assistive moments and powers were similar between coupled and independent multi-joint assistive devices, in spite of the reduced control complexity when coupling assistance between joints.
+ 
+Some of our coupled devices were similar to devices tested in exoskeleton experiments. Quinlivan et al. (2017) tested the effect of assistance torque magnitude on metabolic cost savings using a coupled hip-flexion ankle-plantarflexion soft exosuit which reduced metabolic cost by 23\%, which was similar, though less than the 29\% reduction achieved by our simulated hip-flexion ankle-plantarflexion coupled multi-joint assistance~\cite{Quinlivan:2017}. However, this experimental study only tested four peak torque values with fixed peak timings, whereas we optimized device peak timing and individual peak torques. Malcolm et al. (2018) reported a 5.6\% reduction in metabolic cost for a multi-joint device that provided active knee-flexion ankle-plantarflexion assistance and a 13\% reduction when introducing a spring element in series with the actuation~\cite{Malcolm:2018}. These reductions are less than half of the 30\% reduction achieved by our simulated knee-flexion ankle-plantarflexion coupled multi-joint device, but this experiment did not optimize the actuation profiles which potentially limited metabolic savings.
+ 
+Limitations of our simulation approach should be considered when interpreting our results. We excluded frontal plane muscles (e.g., hip adductors-abductors) from our simulations, but these muscles have important functions in walking, and this could partially explain why our simulation underestimates whole-body metabolic cost relative to ranges reported in the literature (\nameref{S4_Table}). In addition, since muscles that act in the sagittal plane often also have moment arms in the frontal plane (e.g., gluteus medius), our simulations may exclude muscle interactions between sagittal and frontal plane degrees of freedom~\cite{Dembia:2017}. Since we used a minimal muscle set in our musculoskeletal model, absolute predictions of metabolic cost would be less reliable than comparisons between simulated assistance conditions. Therefore, for this study, we focused on qualitative comparisons between single-joint and multi-joint devices and between coupled and independent multi-joint devices. As previously mentioned, there were quantitative differences between simulated and measured muscle activity (\nameref{S3_Fig}), so uncertainty in muscle model model parameters obtained from our calibration step may have also contributed to metabolic cost underestimates. Furthermore, while we optimized for metabolic cost in our simulations, users in exoskeleton experiments would likely also consider comfort, balance, or joint injury risk in response to assistance, and these factors may affect metabolic cost measurements. Absolute metabolic cost predictions from simulation could be made more accurate by including a full lower-limb muscle set and optimizing for user comfort and safety (e.g., minimizing joint contact forces and ligament strains).
+
+Future studies should build upon the simulation methods used in this study to further improve metabolic predictions. Users in experiments often adapt their kinematics in response to assistance (e.g.,~\cite{Gordon:2018, Collins:2015, Quinlivan:2017, Panizzolo:2016, Jackson:2015, Galle:2017, Koller:2015}), but our simulations utilized an approach where kinematics were prescribed exactly based on normal walking data. Predictive simulation methods that can optimize kinematic changes in addition to muscle adaptations could provide a better understanding of why exoskeleton users often change their gait with assistance. The inclusion of muscle synergies to constrain muscle activation predictions has been shown to improve predictions of subject-specific walking motions~\cite{Meyer:2016}, and could potentially improve predictions of user adaptations to exoskeleton assistance. Furthermore, it has been shown that personalizing joint axes, electromechanical delays, activation dynamics time constants, and other musculoskeletal  parameters can affect metabolic cost estimates and should be considered for future calibration methods~\cite{Arones:2020}. Finally, muscle kinematic states estimated from ultrasound measurements for both assisted and unassisted walking could be used to calibrate metabolic models and improve predictions~\cite{Nuckols:2020}.
+
+Future work should include experimental testing of assistance strategies designed through simulation to help reveal where simulation methods fall short. For example, our group recently successfully reduced the metabolic cost of walking for a hip-knee-ankle exoskeleton using simulation-designed assistance~\cite{Franks:2020}, but percent changes in metabolic cost and estimated muscle activity changes from the simulation did not match well with experimental measurements. Therefore, combining simulations and experiments in an iterative loop could be particularly effective for designing assistive devices to reduce metabolic cost. Experiments should test the multi-joint strategies we simulated in this study to verify the metabolic relationships between coupled and independent control strategies and should especially consider coupled hip-flexion knee-flexion ankle-plantarflexion assistance, since this device outperformed all the two-joint devices in our simulations. Simulations could pair with experiments in other novel ways aside from this “predict-test-validate” framework. With the advent of human-in-the-loop optimization methods, simulation may not need to predict metabolic cost changes with high accuracy to have utility, but only to generate good initial guesses or help optimizers prioritize promising assistance control strategies.
+
+\section*{Conclusion}
+In this study, we used musculoskeletal modeling and optimal control methods to simulate 15 single-joint and multi-joint ideal assistance devices. This work helps provide an understanding of the musculoskeletal factors driving the metabolic benefits of multi-joint assistance. Our results suggest that exoskeleton designers should consider coupled assistance when designing multi-joint devices. Coupled assistance approaches could simplify wearable devices, increase metabolic reductions when actuation is limited, and help keep experiment times tractable. Designers can use these results as a guide for generating new hypotheses to test in exoskeleton experiments or when prototyping new exoskeleton designs.
+
+\section*{Supporting information}
+
+% Include only the SI item label in the paragraph heading. Use the \nameref{label} command to cite SI items in the text.
+\paragraph*{S1 Fig.}
+\label{S1_Fig}
+{\bf Net joint moments.} Left: net joint moments from inverse dynamics for individual subjects. Right: joint moment means (black) and standard deviations (gray bands) across subjects.
+
+\paragraph*{S2 Fig.}
+\label{S2_Fig}
+{\bf Joint angles.} Left: joint angles from inverse kinematics for individual subjects. Right: joint angle means (black) and standard deviations (gray bands) across subjects.
+
+\paragraph*{S3 Fig.}
+\label{S3_Fig}
+{\bf Experimental electromyography data compared to unassisted simulation activations.} This figure shows electromyography data (gray bands) recorded from walking experiments compared to optimized activations generated from unassisted simulations (black). Both electromyography data and simulated activations are averaged across gait cycles not included in the muscle parameter calibration procedure.
+
+\paragraph*{S4 Table.}
+\label{S4_Table}
+{\bf Simulation-predicted unassisted metabolic rates.} This table shows the predicted gross average whole-body metabolic rates for each subject. The columns represent the gait cycles used when testing single and multi-joint devices. These values underestimate experimental values typical of normal unassisted walking (4.0-4.3 W/kg,~\cite{Waters:1999}).
+
+\paragraph*{S5 Fig.}
+\label{S5_Fig}
+{\bf Sensitivity of objective value to convergence tolerance.} The mean (bars) and standard deviation (whiskers) of normalized objective values for unassisted walking solutions across subjects and gait cycles. Objective values at each convergence tolerance are normalized by objective values using a convergence tolerance of $10^{-4}$. We used a convergence tolerance of $10^{-3}$ to generate our results.
+
+\paragraph*{S6 Table.}
+\label{S6_Table}
+{\bf Total metabolic reductions and device powers.} This table shows (a) relative and (b) absolute reductions in gross average whole-body metabolic rate and the (c) peak positive, (d) average positive, and (e) average negative power for each single and multi-joint device. Quantities in columns (b)-(e) are normalized by subject mass. All columns are reported as mean $\pm$ standard deviation across 5 subjects.
+
+\paragraph*{S7 Table.}
+\label{S7_Table}
+{\bf Peak device moments and powers at each degree-of-freedom.} This table shows the peak device moments and powers for individual degrees-of-freedom for each single and multi-joint device. All quantities are normalized by subject mass and are reported as mean ± standard deviation across 5 subjects. Peak moment values are peak magnitudes of device moments applied at each degree-of-freedom.
+
+\paragraph*{S8 Fig.}
+\label{S8_Fig}
+{\bf Muscle activations for unassisted and assisted simulations.} This figure shows muscle activations averaged across subjects for unassisted walking (black), single-joint assisted walking (gray), and multi-joint coupled (orange) and independent (blue) assisted walking.
+
+\section*{Acknowledgments}
+TODO: Steve Collins, Gwen Bryan, Chris Dembia, Rachel Jackson
+
+\nolinenumbers
+
+\bibliography{Bianco2021.bib}
+
+\end{document}
+

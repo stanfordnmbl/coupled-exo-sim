@@ -1612,7 +1612,8 @@ class TaskValidateSensitivity(osp.StudyTask):
         self.validate_path = os.path.join(study.config['validate_path'], 
                         'sensitivity')
         self.add_action(deps,
-                [os.path.join(self.validate_path, 'sensitivity.png')],
+                [os.path.join(self.validate_path, 'sensitivity.png'),
+                 os.path.join(self.validate_path, 'sensitivity.csv')],
                 self.plot_validate_sensitivity)
 
     def plot_validate_sensitivity(self, file_dep, target):
@@ -1633,6 +1634,9 @@ class TaskValidateSensitivity(osp.StudyTask):
         index = pd.MultiIndex.from_tuples(self.multiindex_tuples,
                 names=['subject', 'cycle', 'tolerance'])
         df = pd.DataFrame(objective, index=index)
+        with file(target[1], 'w') as f:
+            f.write('# normalized objective values\n')
+            df.to_csv(f, line_terminator='\n')
 
         df_mean = df.groupby(level=['tolerance']).mean()[0].to_list()[:-1]
         df_std = df.groupby(level=['tolerance']).std()[0].to_list()[:-1]
@@ -1640,13 +1644,19 @@ class TaskValidateSensitivity(osp.StudyTask):
         fig = pl.figure(figsize=(3.5, 2.5))
         ax = fig.add_subplot(1,1,1)
         x = np.arange(len(df_mean))
-        ax.errorbar(x, df_mean, yerr=df_std, fmt='o', 
-            color='black', elinewidth=1.0, capsize=2.0, ms=1.5)
+        ax.bar(x, df_mean)
+        yerr = np.zeros(shape=(2,len(df_std)))
+        yerr[1,:] = df_std
+        plotline, caplines, barlinecols = ax.errorbar(
+                x, df_mean, yerr=df_std, color='black', fmt='none',
+                capsize=0, solid_capstyle='projecting', lw=1, lolims=True)
+        caplines[0].set_marker('_')
+        caplines[0].set_markersize(8)
         tick_labels = ['$10^{%i}$' % -i for i in x]
         ax.set_xticks(x)
         ax.set_xticklabels(tick_labels)
-        ax.set_ylim(0.5, 2.5)
-        ax.set_yticks([0.5, 1, 1.5, 2, 2.5])
+        ax.set_ylim(1.0, 2.5)
+        ax.set_yticks([1, 1.5, 2, 2.5])
         ax.set_ylabel('normalized objective')
         ax.set_xlabel('convergence tolerance')
         ax.axhline(y=1.0, color='gray', linewidth=0.5, ls='--', zorder=0)
@@ -2393,8 +2403,8 @@ class TaskCreateDeviceMomentTable(osp.StudyTask):
     REGISTRY = []
     def __init__(self, study, agg_task, suffix=''):
         super(TaskCreateDeviceMomentTable, self).__init__(study)
-        self.name = 'create_device_peak_moment_power_table_%s' % suffix
-        self.doc = """Tabulate peak instantaneous power and peak moment for '
+        self.name = 'create_device_peak_moment_table_%s' % suffix
+        self.doc = """Tabulate peak moment for '
                    'each degree-of-freedom normalized by subject mass."""
         self.output_path = os.path.join(study.config['analysis_path'], suffix)
         if not os.path.exists(self.output_path): os.mkdir(self.output_path)
@@ -2657,7 +2667,7 @@ class TaskAggregateDevicePower(osp.StudyTask):
         index = pd.MultiIndex.from_tuples(multiindex_tuples_by_dof,
                 names=['subject', 'condition', 'cycle', 'DOF'])
         df_peak_by_dof = pd.DataFrame(peak_norm_power_by_dof, index=index)
-        target_dir = os.path.dirname(target[3])
+        target_dir = os.path.dirname(target[4])
         if not os.path.exists(target_dir):
             os.makedirs(target_dir)
         with file(target[4], 'w') as f:
@@ -3991,7 +4001,7 @@ class TaskValidateMuscleActivity(osp.StudyTask):
         self.results_path = study.config['results_path']
         self.validate_path = os.path.join(study.config['validate_path'], 
             'muscle_activity')
-        self.figure_path = os.path.join(study.config['figures_path'], 'figureS6')
+        self.figure_path = os.path.join(study.config['figures_path'], 'figureS3')
 
         for cond_name in cond_names:
             emg_fpaths = list()
@@ -4010,7 +4020,7 @@ class TaskValidateMuscleActivity(osp.StudyTask):
             val_fname = os.path.join(self.validate_path, 
                 '%s_emg_validation%s' % (cond_name, suffix))
             fig_fname = os.path.join(self.figure_path, 
-                'figureS6.pdf')
+                'figureS3.pdf')
                 
             self.add_action(emg_fpaths + exc_fpaths + act_fpaths,
                             [val_fname, fig_fname],
@@ -5748,8 +5758,10 @@ class TaskPlotDeviceShowcase(osp.StudyTask):
         unassisted_color = 'dimgray'
 
         ncols = len(self.dof_names)+1
-        scale = 5 if ncols > 3 else 5
-        aspect = 0.75 if ncols > 3 else 0.75
+        scale = 5
+        aspect = 0.75
+        # scale = 5 if ncols > 3 else 5
+        # aspect = 0.75 if ncols > 3 else 0.75
         fig = pl.figure(figsize=(scale, scale*aspect))
         dpi_scale_trans = fig.dpi_scale_trans
         # pl.subplots_adjust(left=0.22, top=0.9, bottom=0.1, right=0.95)
@@ -5946,6 +5958,7 @@ class TaskPlotDeviceShowcase(osp.StudyTask):
         shift_yticks(ax, 1)
 
         fig_name = '%s_showcase' % self.device_list[0]
+        # fig.set_size_inches(8, 6)
         fig.savefig(os.path.join(self.output_path, fig_name + '.pdf'),
             bbox_inches='tight', pad_inches=0.1)
         fig.savefig(os.path.join(self.output_path, fig_name + '.png'), dpi=2000,
