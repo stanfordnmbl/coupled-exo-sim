@@ -18,5 +18,10 @@ out.log
 # MATLAB
 *.asv
 
-# LaTeX equations
+# LaTeX
 /equations/*
+paper/*.aux
+paper/*.log
+paper/*.pdf
+paper/*.bbl
+paper/*.synctex.gz
