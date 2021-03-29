@@ -24,4 +24,5 @@ paper/*.aux
 paper/*.log
 paper/*.pdf
 paper/*.bbl
+paper/*.blg
 paper/*.synctex.gz
