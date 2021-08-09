@@ -4032,8 +4032,8 @@ class TaskValidateMuscleActivity(osp.StudyTask):
 
         from matplotlib import gridspec
 
-        n = len(subjects)
-        deps = [file_dep[i:i + n] for i in xrange(0, len(file_dep), n)]
+        num_subjs = len(subjects)
+        deps = [file_dep[i:i + num_subjs] for i in xrange(0, len(file_dep), num_subjs)]
         emg_fpaths = deps[0]
         exc_fpaths = deps[1]
         act_fpaths = deps[2]
@@ -4064,6 +4064,7 @@ class TaskValidateMuscleActivity(osp.StudyTask):
     
         emg_muscles = ['glmax2_r','recfem_r', 'semimem_r', 'vasmed_r',
                        'gasmed_r', 'soleus_r', 'tibant_r']
+        num_emg = len(emg_muscles)
         ylims = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
         emg_map = {
                 'gasmed_r': 'med_gas_r',
@@ -4077,6 +4078,12 @@ class TaskValidateMuscleActivity(osp.StudyTask):
 
         fig = pl.figure(figsize=(10, 8))
         gs = gridspec.GridSpec(len(emg_map.keys()), len(emg_fpaths)) 
+
+        shape = (num_emg, num_subjs)
+        sim_peak_times = np.zeros(shape)
+        sim_peak_values = np.zeros(shape)
+        emg_peak_times = np.zeros(shape)
+        emg_peak_values = np.zeros(shape)
 
         for isubj, (emg_fpath, exc_fpath, act_fpath, subject) in enumerate(fpaths):
 
@@ -4137,10 +4144,13 @@ class TaskValidateMuscleActivity(osp.StudyTask):
                 ax = fig.add_subplot(gs[iemg, isubj])
                 ax.axhline(color='k', linewidth=0.5, zorder=0)
                 y_emg_mean = df_emg_mean[emg_name]
-                y_emg_zeroed = y_emg_mean - min(y_emg_mean)
                 emg_zeros = np.zeros(400)
 
-                ax.fill_between(pgc_emg, emg_zeros, y_emg_zeroed,
+                emg_peak_idx = np.argmax(y_emg_mean.values)
+                emg_peak_times[iemg, isubj] = y_emg_mean.index[emg_peak_idx]
+                emg_peak_values[iemg, isubj] = y_emg_mean.values[emg_peak_idx]
+
+                ax.fill_between(pgc_emg, emg_zeros, y_emg_mean,
                         color='gray', alpha=0.7)
                 if emg_map.get(emg_name):
                     # y_exc_mean = df_exc_mean[emg_map[emg_name]]
@@ -4157,7 +4167,16 @@ class TaskValidateMuscleActivity(osp.StudyTask):
                     #     y_act_mean+y_act_std, color='red', alpha=0.25)
                     # handles = [act_plot]
                     # labels = ['%s act.' % nice_muscle_names_dict[emg_map[emg_name]]]
-                    # ax.legend(handles, labels
+                    # ax.legend(handles, labels)
+                    
+                    # Set the activation of the gastroc at the beginning of the
+                    # gait cycle to zero so we compare peaks during stance
+                    if 'gasmed' in emg_name:
+                        y_act_mean.values[0] = 0
+
+                    sim_peak_idx = np.argmax(y_act_mean.values)
+                    sim_peak_times[iemg, isubj] = y_act_mean.index[sim_peak_idx]
+                    sim_peak_values[iemg, isubj] = y_act_mean.values[sim_peak_idx]
 
                 # ax.legend(frameon=False, fontsize=6)
                 ax.set_xlim(0, 100)
@@ -4193,6 +4212,36 @@ class TaskValidateMuscleActivity(osp.StudyTask):
         fig.savefig(target[1])
         fig.savefig(target[1].replace('.pdf','.png'), dpi=400)
         pl.close(fig)
+
+        sim_peak_times_mean = np.mean(sim_peak_times, axis=1)
+        sim_peak_times_std = np.std(sim_peak_times, axis=1)
+        sim_peak_values_mean = np.mean(sim_peak_values, axis=1)
+        sim_peak_values_std = np.std(sim_peak_values, axis=1)
+        emg_peak_times_mean = np.mean(emg_peak_times, axis=1)
+        emg_peak_times_std = np.std(emg_peak_times, axis=1)
+        emg_peak_values_mean = np.mean(emg_peak_values, axis=1)
+        emg_peak_values_std = np.std(emg_peak_values, axis=1)
+        diff_peak_times = sim_peak_times - emg_peak_times
+        diff_peak_values = sim_peak_values - emg_peak_values
+        diff_peak_times_mean = np.mean(diff_peak_times, axis=1)
+        diff_peak_values_mean = np.mean(diff_peak_values, axis=1)
+
+        with open(target[0]+'.txt', 'w') as f:
+            f.write('EMG versus simulation peak values: \n')
+            for iemg, emg_name in enumerate(emg_muscles):
+                f.write(emg_name + ': ' + str(emg_peak_values_mean[iemg]) + ', ' +
+                        emg_map.get(emg_name) + ': ' + str(sim_peak_values_mean[iemg]) + ', '
+                        'diff: ' + str(diff_peak_values_mean[iemg]) + '\n')
+            f.write('\n')
+            f.write('EMG versus simulation peak times: \n')
+            for iemg, emg_name in enumerate(emg_muscles):
+                f.write(emg_name + ': ' + str(emg_peak_times_mean[iemg]) + ', ' +
+                        emg_map.get(emg_name) + ': ' + str(sim_peak_times_mean[iemg]) + ', ' 
+                        'diff: ' + str(diff_peak_times_mean[iemg])  + ' \n')
+            f.write('\n')
+            f.write('NOTE: Early gait cycle activity of the gastrocnemius was '
+                    'ignored to compare peaks during late stance.')
+
 
 class TaskPlotMuscleActivity(osp.StudyTask):
     REGISTRY = []

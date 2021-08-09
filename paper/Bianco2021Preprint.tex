@@ -251,7 +251,7 @@ All 15 ideal assistance devices--single joint, multi-joint coupled, and multi-jo
 \begin{figure}[!h]
 \begin{adjustwidth}{-1in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
     \centering
-    %\includegraphics{../../figures/figure1/figure1.png}
+    \includegraphics{../../figures/figure1/figure1.png}
     \caption{{\bf Reduction in metabolic rate for single and multi-joint assistance devices.}
         The percent change in gross whole-body metabolic rate, averaged over the gait cycle, for the single joint (gray), multi-joint coupled (orange), and multi-joint independent (blue) assistance devices. Negative values indicate decreases in metabolic cost. Each bar value and corresponding error bar provides the mean reduction and standard deviation across subjects.}
 \label{Fig1}
@@ -264,7 +264,7 @@ The change in average muscle metabolic rates for a given multi-joint device were
 \begin{figure}[!h]
 \begin{adjustwidth}{-1in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
     \centering
-    %\includegraphics[scale=1.45]{../../figures/figure2/figure2.png}
+    \includegraphics[scale=1.45]{../../figures/figure2/figure2.png}
     \caption{{\bf Summary of multi-joint hip-extension knee-extension assistance.}
         Top: the device torques for multi-joint hip-extension knee-extension assistance with coupled (orange) and independent (blue) control compared to net joint moments (gray). Bottom: changes in average muscle metabolic rates as a percent of unassisted gross average whole-body metabolic rate for the multi-joint assistive devices. Negative values indicate decreases in metabolic cost. Summing the individual muscle percent changes yields the whole-body percent changes for the hip-extension knee-extension multi-joint devices reported in Fig~\ref{Fig1}.}
 \label{Fig2}
@@ -274,7 +274,7 @@ The change in average muscle metabolic rates for a given multi-joint device were
 \begin{figure}[!h]
 \begin{adjustwidth}{-1in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
     \centering
-    %\includegraphics[scale=1.45]{../../figures/figure3/figure3.png}
+    \includegraphics[scale=1.45]{../../figures/figure3/figure3.png}
     \caption{{\bf Summary of multi-joint hip-flexion knee-flexion assistance.}
         Top: the device torques for multi-joint hip-flexion knee-flexion assistance with coupled (orange) and independent (blue) control compared to net joint moments (gray). Bottom: changes in average muscle metabolic rates as a percent of unassisted gross average whole-body metabolic rate for the multi-joint assistive devices. Negative values indicate decreases in metabolic cost. Summing the individual muscle percent changes yields the whole-body percent changes for the hip-flexion knee-flexion multi-joint devices reported in Fig~\ref{Fig1}.}
 \label{Fig3}
@@ -284,7 +284,7 @@ The change in average muscle metabolic rates for a given multi-joint device were
 \begin{figure}[!h]
 \begin{adjustwidth}{-1in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
     \centering
-    %\includegraphics[scale=1.45]{../../figures/figure4/figure4.png}
+    \includegraphics[scale=1.45]{../../figures/figure4/figure4.png}
     \caption{{\bf Summary of multi-joint knee-flexion ankle-plantarflexion assistance.}
         Top: the device torques for multi-joint knee-flexion ankle-plantarflexion assistance with coupled (orange) and independent (blue) control compared to net joint moments (gray). Bottom: changes in average muscle metabolic rates as a percent of unassisted gross average whole-body metabolic rate for the multi-joint assistive devices. Negative values indicate decreases in metabolic cost. Summing the individual muscle percent changes yields the whole-body percent changes for the knee-flexion ankle-plantarflexion multi-joint devices reported in Fig~\ref{Fig1}.}
 \label{Fig4}
@@ -294,7 +294,7 @@ The change in average muscle metabolic rates for a given multi-joint device were
 \begin{figure}[!h]
 \begin{adjustwidth}{-1in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
     \centering
-    %\includegraphics[scale=1.45]{../../figures/figure5/figure5.png}
+    \includegraphics[scale=1.45]{../../figures/figure5/figure5.png}
     \caption{{\bf Summary of multi-joint hip-flexion ankle-plantarflexion assistance.}
         Top: the device torques for multi-joint hip-flexion ankle-plantarflexion assistance with coupled (orange) and independent (blue) control compared to net joint moments (gray). Bottom: changes in average muscle metabolic rates as a percent of unassisted gross average whole-body metabolic rate for the multi-joint assistive devices. Negative values indicate decreases in metabolic cost. Summing the individual muscle percent changes yields the whole-body percent changes for the hip-flexion ankle-plantarflexion multi-joint devices reported in Fig~\ref{Fig1}.}
 \label{Fig5}
@@ -304,7 +304,7 @@ The change in average muscle metabolic rates for a given multi-joint device were
 \begin{figure}[!h]
 \begin{adjustwidth}{-1in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
     \centering
-    %\includegraphics[scale=1.40]{../../figures/figure6/figure6.png}
+    \includegraphics[scale=1.40]{../../figures/figure6/figure6.png}
     \caption{{\bf Summary of multi-joint hip-flexion knee-flexion ankle-plantarflexion assistance.}
         Top: the device torques for multi-joint hip-flexion knee-flexion ankle-plantarflexion assistance with coupled (orange) and independent (blue) control compared to net joint moments (gray). Bottom: changes in average muscle metabolic rates as a percent of unassisted gross average whole-body metabolic rate for the multi-joint assistive devices. Negative values indicate decreases in metabolic cost. Summing the individual muscle percent changes yields the whole-body percent changes for the hip-flexion knee-flexion ankle-plantarflexion multi-joint devices reported in Fig~\ref{Fig1}.}
 \label{Fig6}
@@ -330,47 +330,94 @@ Future work should include experimental testing of assistance strategies designe
 \section*{Conclusion}
 We used musculoskeletal modeling and optimal control methods to simulate 15 single-joint and multi-joint ideal assistance devices. This work helps provide an understanding of the musculoskeletal factors driving the metabolic benefits of multi-joint assistance. Our results, showing that a single actuator assisting multiple joints could achieve a 50\% greater reduction in metabolic cost compared to assisting a single joint, suggest that exoskeleton designers should consider coupled assistance when designing multi-joint devices. Coupled assistance approaches could simplify wearable devices, increase metabolic reductions when actuation is limited, and help keep experiment times tractable. Designers can use these results as a guide for generating new hypotheses to test in exoskeleton experiments or when prototyping new exoskeleton designs. We invite researchers to use our freely available data (https://simtk.org/projects/coupled-exo-sim) and code (https://github.com/stanfordnmbl/coupled-exo-sim) to build upon our work.
 
-\section*{Supporting information}
-
-% Include only the SI item label in the paragraph heading. Use the \nameref{label} command to cite SI items in the text.
-\paragraph*{S1 Fig.}
-\label{S1_Fig}
-{\bf Net joint moments.} Left: net joint moments from inverse dynamics for individual subjects. Right: joint moment means (black) and standard deviations (gray bands) across subjects.
-
-\paragraph*{S2 Fig.}
-\label{S2_Fig}
-{\bf Joint angles.} Left: joint angles from inverse kinematics for individual subjects. Right: joint angle means (black) and standard deviations (gray bands) across subjects.
-
-\paragraph*{S3 Fig.}
-\label{S3_Fig}
-{\bf Experimental electromyography data compared to unassisted simulation activations.} This figure shows electromyography data (gray bands) recorded from walking experiments compared to optimized activations generated from unassisted simulations (black). Both electromyography data and simulated activations are averaged across gait cycles not included in the muscle parameter calibration procedure.
-
-\paragraph*{S4 Table.}
-\label{S4_Table}
-{\bf Simulation-predicted unassisted metabolic rates.} This table shows the predicted gross average whole-body metabolic rates for each subject. The columns represent the gait cycles used when testing single and multi-joint devices. These values underestimate experimental values typical of normal unassisted walking (4.0-4.3 W/kg,~\cite{Waters:1999}).
-
-\paragraph*{S5 Fig.}
-\label{S5_Fig}
-{\bf Sensitivity of objective value to convergence tolerance.} The mean (bars) and standard deviation (whiskers) of normalized objective values for unassisted walking solutions across subjects and gait cycles. Objective values at each convergence tolerance are normalized by objective values using a convergence tolerance of $10^{-4}$. We used a convergence tolerance of $10^{-3}$ to generate our results, since tightening the tolerance to $10^{-4}$ had little effect on the objective (i.e., the normalized objective values were close to one for the $10^{-3}$ tolerance).
-
-\paragraph*{S6 Table.}
-\label{S6_Table}
-{\bf Total metabolic reductions and device powers.} This table shows (a) relative and (b) absolute reductions in gross average whole-body metabolic rate and the (c) peak positive, (d) average positive, and (e) average negative power for each single and multi-joint device. Quantities in columns (b)-(e) are normalized by subject mass. All columns are reported as mean $\pm$ standard deviation across 5 subjects.
-
-\paragraph*{S7 Table.}
-\label{S7_Table}
-{\bf Peak device moments and powers at each degree-of-freedom.} This table shows the peak device moments and powers for individual degrees-of-freedom for each single and multi-joint device. All quantities are normalized by subject mass and are reported as mean $\pm$ standard deviation across 5 subjects. Peak moment values are peak magnitudes of device moments applied at each degree-of-freedom.
-
-\paragraph*{S8 Fig.}
-\label{S8_Fig}
-{\bf Muscle activations for unassisted and assisted simulations.} This figure shows muscle activations averaged across subjects for unassisted walking (black), single-joint assisted walking (gray), and multi-joint coupled (orange) and independent (blue) assisted walking.
-
 \section*{Acknowledgments}
 We thank Brendan Quinlivan, Ye Ding, and Conor Walsh of the Harvard Biodesign Lab and Gwen Bryan and Steve Collins of the Stanford Biomechatronics Lab for discussing experimental multi-joint exoskeleton designs which helped inspire this study. 
+\clearpage
+
+\section*{Supporting information}
+\begin{figure}[!h]
+\begin{adjustwidth}{-1in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
+    \centering
+    \includegraphics[scale=0.8]{../../figures/figureS1/figureS1.png}
+    \caption*{{\bf S1 Fig. Net joint moments.}
+        Left: net joint moments from inverse dynamics for individual subjects. Right: joint moment means (black) and standard deviations (gray bands) across subjects.}
+\label{S1_Fig}
+\end{adjustwidth}
+\end{figure}
+
+\begin{figure}[!h]
+\begin{adjustwidth}{-1in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
+    \centering
+    \includegraphics[scale=0.8]{../../figures/figureS2/figureS2.png}
+    \caption*{{\bf S2 Fig. Joint angles.}
+        Left: joint angles from inverse kinematics for individual subjects. Right: joint angle means (black) and standard deviations (gray bands) across subjects.}
+\label{S2_Fig}
+\end{adjustwidth}
+\end{figure} 
+
+\begin{figure}[!h]
+\begin{adjustwidth}{-1in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
+    \centering
+    \includegraphics[scale=0.6]{../../figures/figureS3/figureS3.png}
+    \caption*{{\bf S3 Fig. Experimental electromyography data compared to unassisted simulation activations.}
+        This figure shows electromyography data (gray bands) recorded from walking experiments compared to optimized activations generated from unassisted simulations (black). Both electromyography data and simulated activations are averaged across gait cycles not included in the muscle parameter calibration procedure.}
+\label{S3_Fig}
+\end{adjustwidth}
+\end{figure}
+
+\begin{figure}[!h]
+\begin{adjustwidth}{-1in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
+    \centering
+    \includegraphics[scale=0.75]{../../figures/tableS4/tableS4.png}
+    \caption*{{\bf S4 Table. Simulation-predicted unassisted metabolic rates.}
+        This table shows the predicted gross average whole-body metabolic rates for each subject. The columns represent the gait cycles used when testing single and multi-joint devices. These values underestimate experimental values typical of normal unassisted walking (4.0-4.3 W/kg,~\cite{Waters:1999}).}
+\label{S4_Table}
+\end{adjustwidth}
+\end{figure}  
+
+\begin{figure}[!h]
+\begin{adjustwidth}{-1in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
+    \centering
+    \includegraphics[scale=1.75]{../../figures/figureS5/figureS5.png}
+    \caption*{{\bf S5 Fig. Sensitivity of objective value to convergence tolerance.}
+        The mean (bars) and standard deviation (whiskers) of normalized objective values for unassisted walking solutions across subjects and gait cycles. Objective values at each convergence tolerance are normalized by objective values using a convergence tolerance of $10^{-4}$. We used a convergence tolerance of $10^{-3}$ to generate our results, since tightening the tolerance to $10^{-4}$ had little effect on the objective (i.e., the normalized objective values were close to one for the $10^{-3}$ tolerance).}
+\label{S5_Fig}
+\end{adjustwidth}
+\end{figure}
+
+\begin{figure}[!h]
+\begin{adjustwidth}{-1in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
+    \centering
+    \includegraphics[scale=0.8]{../../figures/tableS6/tableS6.png}
+    \caption*{{\bf S6 Table. Total metabolic reductions and device powers.}
+        This table shows (a) relative and (b) absolute reductions in gross average whole-body metabolic rate and the (c) peak positive, (d) average positive, and (e) average negative power for each single and multi-joint device. Quantities in columns (b)-(e) are normalized by subject mass. All columns are reported as mean $\pm$ standard deviation across 5 subjects.}
+\label{S6_Table}
+\end{adjustwidth}
+\end{figure}
+
+\begin{figure}[!h]
+\begin{adjustwidth}{-1in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
+    \centering
+    \includegraphics[scale=0.7]{../../figures/tableS7/tableS7.png}
+    \caption*{{\bf S7 Table. Peak device moments and powers at each degree-of-freedom.}
+        This table shows the peak device moments and powers for individual degrees-of-freedom for each single and multi-joint device. All quantities are normalized by subject mass and are reported as mean $\pm$ standard deviation across 5 subjects. Peak moment values are peak magnitudes of device moments applied at each degree-of-freedom.}
+\label{S7_Table}
+\end{adjustwidth}
+\end{figure}
+
+\begin{figure}[!h]
+\begin{adjustwidth}{-1in}{0in} % Comment out/remove adjustwidth environment if table fits in text column.
+    \centering
+    \includegraphics[scale=0.75]{../../figures/figureS8/figureS8.png}
+    \caption*{{\bf S8 Fig. Muscle activations for unassisted and assisted simulations.}
+        This figure shows muscle activations averaged across subjects for unassisted walking (black), single-joint assisted walking (gray), and multi-joint coupled (orange) and independent (blue) assisted walking.}
+\label{S8_Fig}
+\end{adjustwidth}
+\end{figure}
+\clearpage
 
 \nolinenumbers
 
 \bibliography{Bianco2021.bib}
 
 \end{document}
-
