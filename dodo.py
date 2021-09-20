@@ -489,6 +489,7 @@ study.add_task(TaskAggregateMetabolicRate, device_list, suffix=suffix,
     conditions=['walk2'])
 study.add_task(TaskPlotDeviceShowcase, suffix, plot_lists, 'walk2', subjects,
     ['psoas_r', 'semimem_r', 'vas_int_r', 'med_gas_r'], 'figure3',
+    met_ylim=[-25, 5], met_yticks=[-25, -20, -15, -10, -5, 0, 5],
     moment_ylim=[-1, 1], moment_yticks=[-1, 0, 1])
 
 plot_lists = dict()
@@ -503,7 +504,8 @@ study.add_task(TaskAggregateDevicePower, device_list, suffix=suffix,
 study.add_task(TaskAggregateMetabolicRate, device_list, suffix=suffix,
     conditions=['walk2'])
 study.add_task(TaskPlotDeviceShowcase, suffix, plot_lists, 'walk2', subjects,
-    ['vas_int_r', 'semimem_r', 'med_gas_r', 'soleus_r'], 'figure4')
+    ['vas_int_r', 'semimem_r', 'med_gas_r', 'soleus_r'], 'figure4',
+    met_ylim=[-20, 10], met_yticks=[-20, -15, -10, -5, 0, 5, 10])
 
 plot_lists = dict()
 device_list = ['mrsmod_deviceHfAp_coupled', 'mrsmod_deviceHfAp_independent']
@@ -517,7 +519,8 @@ study.add_task(TaskAggregateDevicePower, device_list, suffix=suffix,
 study.add_task(TaskAggregateMetabolicRate, device_list, suffix=suffix,
     conditions=['walk2'])
 study.add_task(TaskPlotDeviceShowcase, suffix, plot_lists, 'walk2', subjects,
-    ['psoas_r', 'semimem_r', 'med_gas_r', 'soleus_r'], 'figure5')
+    ['psoas_r', 'semimem_r', 'med_gas_r', 'soleus_r'], 'figure5',
+    met_ylim=[-25, 5], met_yticks=[-25, -20, -15, -10, -5, 0, 5])
 
 plot_lists = dict()
 device_list = ['mrsmod_deviceHfKfAp_coupled', 'mrsmod_deviceHfKfAp_independent']
@@ -532,6 +535,7 @@ study.add_task(TaskAggregateMetabolicRate, device_list, suffix=suffix,
     conditions=['walk2'])
 study.add_task(TaskPlotDeviceShowcase, suffix, plot_lists, 'walk2', subjects,
     ['psoas_r', 'bifemsh_r', 'med_gas_r', 'soleus_r'], 'figure6',
+    met_ylim=[-25, 5], met_yticks=[-25, -20, -15, -10, -5, 0, 5],
     legend_loc=(0.10, 0.7))
 
 # BiLLEE simulations

@@ -1,0 +1,56 @@
+This is BibTeX, Version 0.99d
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: Bianco2021Rev1.aux
+Reallocating 'name_of_file' (item size: 1) to 9 items.
+The style file: plos2015.bst
+Reallocating 'name_of_file' (item size: 1) to 19 items.
+Database file #1: Bianco2021Rev1.bib
+Reallocating 'glb_str_end' (item size: 4) to 20 items.
+Reallocating 'glb_str_ptr' (item size: 4) to 20 items.
+Reallocating 'global_strs' (item size: 1) to 4000000 items.
+Reallocating 'wiz_functions' (item size: 4) to 6000 items.
+Warning--there's a month but no year in vanDijk:2011
+Warning--empty pages in vanDijk:2011
+Warning--empty pages in Franks:2020
+You've used 58 entries,
+            3058 wiz_defined-function locations,
+            1047 strings with 17664 characters,
+and the built_in function-call counts, 108363 in all, are:
+= -- 14219
+> -- 927
+< -- 4
++ -- 848
+- -- 231
+* -- 8976
+:= -- 11703
+add.period$ -- 278
+call.type$ -- 58
+change.case$ -- 8
+chr.to.int$ -- 9
+cite$ -- 61
+duplicate$ -- 9943
+empty$ -- 10009
+format.name$ -- 283
+if$ -- 25402
+int.to.chr$ -- 0
+int.to.str$ -- 58
+missing$ -- 554
+newline$ -- 341
+num.names$ -- 58
+pop$ -- 885
+preamble$ -- 1
+purify$ -- 0
+quote$ -- 0
+skip$ -- 925
+stack$ -- 0
+substring$ -- 19881
+swap$ -- 1330
+text.length$ -- 1
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 0
+warning$ -- 3
+while$ -- 572
+width$ -- 60
+write$ -- 735
+(There were 3 warnings)

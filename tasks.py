@@ -4084,8 +4084,11 @@ class TaskValidateMuscleActivity(osp.StudyTask):
         sim_peak_values = np.zeros(shape)
         emg_peak_times = np.zeros(shape)
         emg_peak_values = np.zeros(shape)
+        onset_percent_errors = np.zeros(shape)
 
         for isubj, (emg_fpath, exc_fpath, act_fpath, subject) in enumerate(fpaths):
+
+            from collections import deque
 
             emg = util.storage2numpy(emg_fpath)
             time = emg['time']
@@ -4100,10 +4103,17 @@ class TaskValidateMuscleActivity(osp.StudyTask):
             cycle_array = list()
             muscle_array = list()
             emg_data = list()
+            cycle_ids = list()
+            elecmech_percent_delays = list()
             for cycle_num in self.study.test_cycles_num:
                 cycle = trial.get_cycle(cycle_num)
+                cycle_ids.append(cycle.id)
                 start_idx = min_index(abs(time-cycle.start))
                 end_idx = min_index(abs(time-cycle.end))
+                duration = cycle.end - cycle.start
+                elecmech_delay = 0.075 # ms
+                elecmech_percent_delay = elecmech_delay / duration
+                elecmech_percent_delays.append(elecmech_percent_delay)
 
                 for emg_name in emg_muscles:
                     emg_interp = np.interp(pgc_emg, 
@@ -4178,6 +4188,28 @@ class TaskValidateMuscleActivity(osp.StudyTask):
                     sim_peak_times[iemg, isubj] = y_act_mean.index[sim_peak_idx]
                     sim_peak_values[iemg, isubj] = y_act_mean.values[sim_peak_idx]
 
+                    id_delay_zip = zip(cycle_ids, elecmech_percent_delays)
+                    act_threshold = 0.05
+                    percent_errors = list()
+                    for cycle_id, per_delay in id_delay_zip:
+                        this_emg = np.array(df_emg[cycle_id][emg_name])
+                        this_act = np.array(df_act[cycle_id][emg_map[emg_name]])
+                        # emg_threshold = max(this_emg) * 0.20
+                        emg_bool = this_emg > act_threshold
+                        act_bool = this_act > act_threshold
+
+                        shift_nodes = int(per_delay * len(emg_bool))
+                        emg_deque = deque(emg_bool)
+                        emg_deque.rotate(shift_nodes)
+                        emg_bool = np.array(emg_deque)
+                        
+                        onset_diff = emg_bool.astype(int) - act_bool.astype(int)
+                        percent_errors.append(
+                            np.abs(onset_diff).sum() / float(len(onset_diff)))
+
+                    percent_errors = np.array(percent_errors)
+                    onset_percent_errors[iemg, isubj] = percent_errors.mean()
+                    
                 # ax.legend(frameon=False, fontsize=6)
                 ax.set_xlim(0, 100)
                 ax.set_ylim(0, ylim)
@@ -4225,6 +4257,7 @@ class TaskValidateMuscleActivity(osp.StudyTask):
         diff_peak_values = sim_peak_values - emg_peak_values
         diff_peak_times_mean = np.mean(diff_peak_times, axis=1)
         diff_peak_values_mean = np.mean(diff_peak_values, axis=1)
+        onset_percent_errors_mean = np.mean(onset_percent_errors, axis=1)
 
         with open(target[0]+'.txt', 'w') as f:
             f.write('EMG versus simulation peak values: \n')
@@ -4241,7 +4274,12 @@ class TaskValidateMuscleActivity(osp.StudyTask):
             f.write('\n')
             f.write('NOTE: Early gait cycle activity of the gastrocnemius was '
                     'ignored to compare peaks during late stance.')
-
+            f.write('\n')
+            f.write('\n')
+            f.write('Mean onset-offset percent errors: \n')
+            for iemg, emg_name in enumerate(emg_muscles):
+                f.write(emg_name + ': ' + str(onset_percent_errors_mean[iemg]) + ' \n')
+            f.write('\n')
 
 class TaskPlotMuscleActivity(osp.StudyTask):
     REGISTRY = []
@@ -4250,7 +4288,7 @@ class TaskPlotMuscleActivity(osp.StudyTask):
         super(TaskPlotMuscleActivity, self).__init__(study)
         self.name = 'plot_muscle_activity_%s' % condition
         self.doc = 'Plot muscle activity across all assistance cases.'
-        self.output_path = os.path.join(study.config['figures_path'], 'figureS7')
+        self.output_path = os.path.join(study.config['figures_path'], 'figureS9')
         if not os.path.exists(self.output_path): os.mkdir(self.output_path)
         self.figure_width = figure_width
         self.figure_height = figure_height
@@ -5691,7 +5729,7 @@ class TaskPlotMetabolicReductions(osp.StudyTask):
         else:
             ax.set_xticklabels(self.label_list)
             ax.set_ylabel(
-                r'change in gross average whole-body metabolic rate (%)', 
+                r'change in gross average total metabolic rate (%)', 
                 fontsize=8)
             ax.legend(handles, labels, loc=(0.12, 0.12), prop={'size': 8})
             ax.set_xlim(-0.1-(self.bar_width/2), 
@@ -5798,6 +5836,8 @@ class TaskPlotDeviceShowcase(osp.StudyTask):
         # Plot action.
         self.add_action(deps,
             [os.path.join(self.output_path, '%s_%s_showcase.pdf' 
+                 % (self.device_list[-1], cond_name)),
+             os.path.join(self.output_path, '%s_%s_muscle_metabolics.csv'
                  % (self.device_list[-1], cond_name))],
             self.plot_device_showcase)
 
@@ -5970,22 +6010,61 @@ class TaskPlotDeviceShowcase(osp.StudyTask):
                         'tib_ant_r']
         met_mean = 100 * met_mean.reindex(muscle_index)
         met_std = 100 * met_std.reindex(muscle_index)
+        met_mean_coupled = met_mean[met_mean.columns[0]]
+        met_mean_independent = met_mean[met_mean.columns[1]]
+        met_std_coupled = met_std[met_std.columns[0]]
+        met_std_independent = met_std[met_std.columns[1]]
 
-        met_mean_copy = met_mean.copy(deep=True)
-        met_mean_copy.plot.bar(ax=ax, color=self.color_list, legend=False)
-        ax.axes.get_xaxis().get_label().set_visible(False)
-        ax.tick_params(axis='y', which='major', labelsize=6)
+        # https://matplotlib.org/stable/gallery/lines_bars_and_markers/barchart.html
+        width = 0.30
+        x = np.arange(len(muscle_index))
+        hbarc = ax.bar(x - width/2, met_mean_coupled, 
+            color=self.color_list[0], width=width)
+        # https://matplotlib.org/stable/gallery/statistics/errorbar_limits.html
+        lolimsc = met_mean_coupled > 0
+        uplimsc = met_mean_coupled < 0
+        plc, clc, blc = ax.errorbar(x - width/2, 
+            met_mean_coupled, 
+            yerr=met_std_coupled, 
+            color='black', 
+            capsize=0,
+            elinewidth=0.5, 
+            markeredgewidth=0.5,
+            # solid_capstyle='projecting', 
+            ls='none',
+            lolims=lolimsc, 
+            uplims=uplimsc)
+        for cl in clc:
+            cl.set_marker('_')
+            cl.set_markersize(4)
+ 
+        hbari = ax.bar(x + width/2, met_mean_independent, 
+            color=self.color_list[1], width=width)
+        lolimsi = met_mean_independent > 0
+        uplimsi = met_mean_independent < 0
+        pli, cli, bli = ax.errorbar(x + width/2, 
+            met_mean_independent, 
+            yerr=met_std_independent, 
+            color='black', 
+            capsize=0,
+            elinewidth=0.5,
+            markeredgewidth=0.5, 
+            # solid_capstyle='projecting', 
+            ls='none', 
+            lolims=lolimsi,
+            uplims=uplimsi)
+        for cl in cli:
+            cl.set_marker('_')
+            cl.set_markersize(4)
 
-        # for index, musc in enumerate(muscle_index):
-        #     # met_mean_musc = met_mean[musc]
-        #     import pdb
-        #     pdb.set_trace()
+        # Old plot format without error bars
+        # met_mean_copy = met_mean.copy(deep=True)
+        # met_mean_copy.plot.bar(ax=ax, color=self.color_list, legend=False,
+        #     yerr=met_std, capsize=0, lw=0.25, elinewidth=1)
+        # ax.axes.get_xaxis().get_label().set_visible(False)
+        # ax.tick_params(axis='y', which='major', labelsize=6)
 
-        #     plotline, caplines, barlinecols = ax.errorbar(
-        #             index, met_mean[device], yerr=yerr, color='black',
-        #             capsize=0, solid_capstyle='projecting', lw=1, uplims=True)
-        #     caplines[0].set_marker('_')
-        #     caplines[0].set_markersize(8)
+        met_mean.to_csv(target[1])
 
         nice_muscle_names_dict = self.study.nice_muscle_names_dict
         nice_muscle_names = \
@@ -6002,6 +6081,7 @@ class TaskPlotDeviceShowcase(osp.StudyTask):
         ax.spines['bottom'].set_visible(False)
         ax.xaxis.set_ticks_position('top')
         ax.tick_params(direction='in', length=2)
+        ax.tick_params(axis='y', which='major', labelsize=5)
         pl.axhline(zorder=0, color='darkgray', linewidth=0.25, linestyle='--')
         shift_xticks(ax, -1)
         shift_yticks(ax, 1)
