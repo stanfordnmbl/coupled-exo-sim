@@ -1,3 +1,8 @@
+# Alias cp65001 to UTF-8 to avoid error
+# https://stackoverflow.com/questions/878972/windows-cmd-encoding-change-causes-python-crash
+import codecs
+codecs.register(lambda name: codecs.lookup('utf-8') if name == 'cp65001' else None)
+
 # Allow using the osimpipeline git submodule.
 import sys
 sys.path.insert(1, 'osimpipeline')

@@ -5709,12 +5709,18 @@ class TaskPlotMetabolicReductions(osp.StudyTask):
                     labels.append('single-joint') 
                     singleFlag = False
                 
+            y = met_mean[device]
             yerr = met_std[device]
             plotline, caplines, barlinecols = ax.errorbar(
-                index, met_mean[device], yerr=yerr, color='black',
+                index, y, yerr=yerr, color='black',
                 capsize=0, solid_capstyle='projecting', lw=1, uplims=True)
             caplines[0].set_marker('_')
             caplines[0].set_markersize(8)
+
+            # Plot significance markers
+            if 'independent' in device or 'coupled' in device:
+                if (not 'HeKe' in device) and (not 'HfKf_coupled' in device):
+                    ax.plot(index, y - yerr - 3, marker='*', c='black', ms=4)
 
         ax.margins(0.2, None)
         if self.multijoint_only:
