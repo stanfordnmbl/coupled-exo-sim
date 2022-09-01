@@ -1,0 +1,110 @@
+This is BibTeX, Version 0.99d
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: Bianco2021Rev2WithBib.aux
+Reallocating 'name_of_file' (item size: 1) to 9 items.
+The style file: plos2015.bst
+I found no \bibdata command---while reading file Bianco2021Rev2WithBib.aux
+Warning--I didn't find a database entry for "Sawicki:2008"
+Warning--I didn't find a database entry for "Malcolm:2013"
+Warning--I didn't find a database entry for "Mooney:2014"
+Warning--I didn't find a database entry for "Sawicki:2020"
+Warning--I didn't find a database entry for "Collins:2015"
+Warning--I didn't find a database entry for "vanDijk:2011"
+Warning--I didn't find a database entry for "Cornwall:2015"
+Warning--I didn't find a database entry for "Zhang:2017"
+Warning--I didn't find a database entry for "Ding:2016"
+Warning--I didn't find a database entry for "Ding:2018"
+Warning--I didn't find a database entry for "Galle:2017"
+Warning--I didn't find a database entry for "Quinlivan:2017"
+Warning--I didn't find a database entry for "Uchida:2016"
+Warning--I didn't find a database entry for "Malcolm:2018"
+Warning--I didn't find a database entry for "Bryan:2020"
+Warning--I didn't find a database entry for "Winter:1991"
+Warning--I didn't find a database entry for "Novacheck:1998"
+Warning--I didn't find a database entry for "Farris:2012"
+Warning--I didn't find a database entry for "Ding:2017"
+Warning--I didn't find a database entry for "Panizzolo:2016"
+Warning--I didn't find a database entry for "Lee:2018"
+Warning--I didn't find a database entry for "Grabke:2019"
+Warning--I didn't find a database entry for "Manns:2017"
+Warning--I didn't find a database entry for "Fournier:2018"
+Warning--I didn't find a database entry for "Jackson:2017"
+Warning--I didn't find a database entry for "Dembia:2017"
+Warning--I didn't find a database entry for "Lee:2017"
+Warning--I didn't find a database entry for "Franks:2020"
+Warning--I didn't find a database entry for "Arnold:2013"
+Warning--I didn't find a database entry for "Rajagopal:2016"
+Warning--I didn't find a database entry for "Ong:2019"
+Warning--I didn't find a database entry for "Delp:2007"
+Warning--I didn't find a database entry for "DeGroote:2016"
+Warning--I didn't find a database entry for "Patterson:2014"
+Warning--I didn't find a database entry for "Wachter:2006"
+Warning--I didn't find a database entry for "Handsfield:2014"
+Warning--I didn't find a database entry for "Silder:2007"
+Warning--I didn't find a database entry for "Umberger:2003"
+Warning--I didn't find a database entry for "Koelewijn:2018"
+Warning--I didn't find a database entry for "Hicks:2015"
+Warning--I didn't find a database entry for "SethPandy:2007"
+Warning--I didn't find a database entry for "Bretz:2011"
+Warning--I didn't find a database entry for "Samuels:1999"
+Warning--I didn't find a database entry for "CoreTeamR:2021"
+Warning--I didn't find a database entry for "Bates:2015"
+Warning--I didn't find a database entry for "Hothorn:2008"
+Warning--I didn't find a database entry for "Silder:2013"
+Warning--I didn't find a database entry for "Waters:1999"
+Warning--I didn't find a database entry for "Gordon:2007"
+Warning--I didn't find a database entry for "Kim:2019"
+Warning--I didn't find a database entry for "Lim:2019"
+Warning--I didn't find a database entry for "Browning:2007"
+Warning--I didn't find a database entry for "Gordon:2018"
+Warning--I didn't find a database entry for "Jackson:2015"
+Warning--I didn't find a database entry for "Koller:2015"
+Warning--I didn't find a database entry for "Meyer:2016"
+Warning--I didn't find a database entry for "Arones:2020"
+Warning--I didn't find a database entry for "Nuckols:2020"
+Reallocating 'glb_str_end' (item size: 4) to 20 items.
+Reallocating 'glb_str_ptr' (item size: 4) to 20 items.
+Reallocating 'global_strs' (item size: 1) to 4000000 items.
+Reallocating 'wiz_functions' (item size: 4) to 6000 items.
+You've used 0 entries,
+            3058 wiz_defined-function locations,
+            740 strings with 5654 characters,
+and the built_in function-call counts, 27 in all, are:
+= -- 0
+> -- 0
+< -- 0
++ -- 0
+- -- 0
+* -- 2
+:= -- 16
+add.period$ -- 0
+call.type$ -- 0
+change.case$ -- 0
+chr.to.int$ -- 0
+cite$ -- 0
+duplicate$ -- 0
+empty$ -- 1
+format.name$ -- 0
+if$ -- 1
+int.to.chr$ -- 0
+int.to.str$ -- 0
+missing$ -- 0
+newline$ -- 3
+num.names$ -- 0
+pop$ -- 0
+preamble$ -- 1
+purify$ -- 0
+quote$ -- 0
+skip$ -- 1
+stack$ -- 0
+substring$ -- 0
+swap$ -- 0
+text.length$ -- 0
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 0
+warning$ -- 0
+while$ -- 0
+width$ -- 0
+write$ -- 2
+(There was 1 error message)
