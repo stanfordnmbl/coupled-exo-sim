@@ -1,0 +1,634 @@
+[1] ""
+[1] ""
+[1] "=========================== filename: ============================"
+[1] "metabolics_for_stats_percent_savings.csv"
+[1] "=================================================================="
+'data.frame':	150 obs. of  3 variables:
+ $ subject: chr  "subject01" "subject01" "subject02" "subject02" ...
+ $ mod    : chr  "mrsmod_deviceAp" "mrsmod_deviceAp" "mrsmod_deviceAp" "mrsmod_deviceAp" ...
+ $ savings: num  -8.66 -10.39 -13.16 -15.01 -4.01 ...
+'data.frame':	150 obs. of  3 variables:
+ $ subject: Factor w/ 5 levels "subject01","subject02",..: 1 1 2 2 3 3 4 4 5 5 ...
+ $ mod    : Factor w/ 15 levels "mrsmod_deviceAp",..: 1 1 1 1 1 1 1 1 1 1 ...
+ $ savings: num  8.66 10.39 13.16 15.01 4.01 ...
+[1] ""
+[1] ""
+[1] "=========================== formula: ============================="
+savings ~ mod + (1 | subject)
+[1] "=================================================================="
+Linear mixed model fit by REML ['lmerMod']
+Formula: savings ~ mod + (1 | subject)
+   Data: exp.data
+
+REML criterion at convergence: 791.9
+
+Scaled residuals: 
+     Min       1Q   Median       3Q      Max 
+-3.04684 -0.51614  0.00312  0.63831  2.05540 
+
+Random effects:
+ Groups   Name        Variance Std.Dev.
+ subject  (Intercept)  4.554   2.134   
+ Residual             14.930   3.864   
+Number of obs: 150, groups:  subject, 5
+
+Fixed effects:
+                                   Estimate Std. Error t value
+(Intercept)                        11.90357    1.55043   7.678
+modmrsmod_deviceHe                 -4.11705    1.72798  -2.383
+modmrsmod_deviceHeKe_coupled       -0.03813    1.72798  -0.022
+modmrsmod_deviceHeKe_independent    1.70043    1.72798   0.984
+modmrsmod_deviceHf                  9.59375    1.72798   5.552
+modmrsmod_deviceHfAp_coupled       17.26294    1.72798   9.990
+modmrsmod_deviceHfAp_independent   21.65930    1.72798  12.534
+modmrsmod_deviceHfKf_coupled       13.43663    1.72798   7.776
+modmrsmod_deviceHfKf_independent   17.61772    1.72798  10.196
+modmrsmod_deviceHfKfAp_coupled     22.28170    1.72798  12.895
+modmrsmod_deviceHfKfAp_independent 27.49103    1.72798  15.909
+modmrsmod_deviceKe                 -4.84297    1.72798  -2.803
+modmrsmod_deviceKf                  8.87476    1.72798   5.136
+modmrsmod_deviceKfAp_coupled       17.78279    1.72798  10.291
+modmrsmod_deviceKfAp_independent   19.76441    1.72798  11.438
+                                       2.5 %     97.5 %
+.sig01                              0.995457  4.3288352
+.sigma                              3.287279  4.1395438
+(Intercept)                         8.966676 14.8404758
+modmrsmod_deviceHe                 -7.357611 -0.8764824
+modmrsmod_deviceHeKe_coupled       -3.278694  3.2024348
+modmrsmod_deviceHeKe_independent   -1.540139  4.9409897
+modmrsmod_deviceHf                  6.353182 12.8343103
+modmrsmod_deviceHfAp_coupled       14.022380 20.5035083
+modmrsmod_deviceHfAp_independent   18.418736 24.8998650
+modmrsmod_deviceHfKf_coupled       10.196066 16.6771947
+modmrsmod_deviceHfKf_independent   14.377152 20.8582807
+modmrsmod_deviceHfKfAp_coupled     19.041133 25.5222612
+modmrsmod_deviceHfKfAp_independent 24.250467 30.7315956
+modmrsmod_deviceKe                 -8.083533 -1.6024048
+modmrsmod_deviceKf                  5.634199 12.1153272
+modmrsmod_deviceKfAp_coupled       14.542223 21.0233519
+modmrsmod_deviceKfAp_independent   16.523844 23.0049722
+Classes 'anova' and 'data.frame':	1 obs. of  4 variables:
+ $ npar   : int 14
+ $ Sum Sq : num 15392
+ $ Mean Sq: num 1099
+ $ F value: num 73.6
+ - attr(*, "heading")= chr "Analysis of Variance Table"
+
+	 Simultaneous Tests for General Linear Hypotheses
+
+Multiple Comparisons of Means: Tukey Contrasts
+
+
+Fit: lme4::lmer(formula = savings ~ mod + (1 | subject), data = exp.data)
+
+Linear Hypotheses:
+                                                                      Estimate
+mrsmod_deviceHe - mrsmod_deviceAp == 0                                -4.11705
+mrsmod_deviceHeKe_coupled - mrsmod_deviceAp == 0                      -0.03813
+mrsmod_deviceHeKe_independent - mrsmod_deviceAp == 0                   1.70043
+mrsmod_deviceHf - mrsmod_deviceAp == 0                                 9.59375
+mrsmod_deviceHfAp_coupled - mrsmod_deviceAp == 0                      17.26294
+mrsmod_deviceHfAp_independent - mrsmod_deviceAp == 0                  21.65930
+mrsmod_deviceHfKf_coupled - mrsmod_deviceAp == 0                      13.43663
+mrsmod_deviceHfKf_independent - mrsmod_deviceAp == 0                  17.61772
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceAp == 0                    22.28170
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceAp == 0                27.49103
+mrsmod_deviceKe - mrsmod_deviceAp == 0                                -4.84297
+mrsmod_deviceKf - mrsmod_deviceAp == 0                                 8.87476
+mrsmod_deviceKfAp_coupled - mrsmod_deviceAp == 0                      17.78279
+mrsmod_deviceKfAp_independent - mrsmod_deviceAp == 0                  19.76441
+mrsmod_deviceHeKe_coupled - mrsmod_deviceHe == 0                       4.07892
+mrsmod_deviceHeKe_independent - mrsmod_deviceHe == 0                   5.81747
+mrsmod_deviceHf - mrsmod_deviceHe == 0                                13.71079
+mrsmod_deviceHfAp_coupled - mrsmod_deviceHe == 0                      21.37999
+mrsmod_deviceHfAp_independent - mrsmod_deviceHe == 0                  25.77635
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHe == 0                      17.55368
+mrsmod_deviceHfKf_independent - mrsmod_deviceHe == 0                  21.73476
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHe == 0                    26.39874
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHe == 0                31.60808
+mrsmod_deviceKe - mrsmod_deviceHe == 0                                -0.72592
+mrsmod_deviceKf - mrsmod_deviceHe == 0                                12.99181
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHe == 0                      21.89983
+mrsmod_deviceKfAp_independent - mrsmod_deviceHe == 0                  23.88145
+mrsmod_deviceHeKe_independent - mrsmod_deviceHeKe_coupled == 0         1.73855
+mrsmod_deviceHf - mrsmod_deviceHeKe_coupled == 0                       9.63188
+mrsmod_deviceHfAp_coupled - mrsmod_deviceHeKe_coupled == 0            17.30107
+mrsmod_deviceHfAp_independent - mrsmod_deviceHeKe_coupled == 0        21.69743
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHeKe_coupled == 0            13.47476
+mrsmod_deviceHfKf_independent - mrsmod_deviceHeKe_coupled == 0        17.65585
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHeKe_coupled == 0          22.31983
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHeKe_coupled == 0      27.52916
+mrsmod_deviceKe - mrsmod_deviceHeKe_coupled == 0                      -4.80484
+mrsmod_deviceKf - mrsmod_deviceHeKe_coupled == 0                       8.91289
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHeKe_coupled == 0            17.82092
+mrsmod_deviceKfAp_independent - mrsmod_deviceHeKe_coupled == 0        19.80254
+mrsmod_deviceHf - mrsmod_deviceHeKe_independent == 0                   7.89332
+mrsmod_deviceHfAp_coupled - mrsmod_deviceHeKe_independent == 0        15.56252
+mrsmod_deviceHfAp_independent - mrsmod_deviceHeKe_independent == 0    19.95888
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHeKe_independent == 0        11.73620
+mrsmod_deviceHfKf_independent - mrsmod_deviceHeKe_independent == 0    15.91729
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHeKe_independent == 0      20.58127
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHeKe_independent == 0  25.79061
+mrsmod_deviceKe - mrsmod_deviceHeKe_independent == 0                  -6.54339
+mrsmod_deviceKf - mrsmod_deviceHeKe_independent == 0                   7.17434
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHeKe_independent == 0        16.08236
+mrsmod_deviceKfAp_independent - mrsmod_deviceHeKe_independent == 0    18.06398
+mrsmod_deviceHfAp_coupled - mrsmod_deviceHf == 0                       7.66920
+mrsmod_deviceHfAp_independent - mrsmod_deviceHf == 0                  12.06555
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHf == 0                       3.84288
+mrsmod_deviceHfKf_independent - mrsmod_deviceHf == 0                   8.02397
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHf == 0                    12.68795
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHf == 0                17.89729
+mrsmod_deviceKe - mrsmod_deviceHf == 0                               -14.43672
+mrsmod_deviceKf - mrsmod_deviceHf == 0                                -0.71898
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHf == 0                       8.18904
+mrsmod_deviceKfAp_independent - mrsmod_deviceHf == 0                  10.17066
+mrsmod_deviceHfAp_independent - mrsmod_deviceHfAp_coupled == 0         4.39636
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHfAp_coupled == 0            -3.82631
+mrsmod_deviceHfKf_independent - mrsmod_deviceHfAp_coupled == 0         0.35477
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHfAp_coupled == 0           5.01875
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHfAp_coupled == 0      10.22809
+mrsmod_deviceKe - mrsmod_deviceHfAp_coupled == 0                     -22.10591
+mrsmod_deviceKf - mrsmod_deviceHfAp_coupled == 0                      -8.38818
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfAp_coupled == 0             0.51984
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfAp_coupled == 0         2.50146
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHfAp_independent == 0        -8.22267
+mrsmod_deviceHfKf_independent - mrsmod_deviceHfAp_independent == 0    -4.04158
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHfAp_independent == 0       0.62240
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHfAp_independent == 0   5.83173
+mrsmod_deviceKe - mrsmod_deviceHfAp_independent == 0                 -26.50227
+mrsmod_deviceKf - mrsmod_deviceHfAp_independent == 0                 -12.78454
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfAp_independent == 0        -3.87651
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfAp_independent == 0    -1.89489
+mrsmod_deviceHfKf_independent - mrsmod_deviceHfKf_coupled == 0         4.18109
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHfKf_coupled == 0           8.84507
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHfKf_coupled == 0      14.05440
+mrsmod_deviceKe - mrsmod_deviceHfKf_coupled == 0                     -18.27960
+mrsmod_deviceKf - mrsmod_deviceHfKf_coupled == 0                      -4.56187
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfKf_coupled == 0             4.34616
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfKf_coupled == 0         6.32778
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHfKf_independent == 0       4.66398
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHfKf_independent == 0   9.87331
+mrsmod_deviceKe - mrsmod_deviceHfKf_independent == 0                 -22.46069
+mrsmod_deviceKf - mrsmod_deviceHfKf_independent == 0                  -8.74295
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfKf_independent == 0         0.16507
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfKf_independent == 0     2.14669
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHfKfAp_coupled == 0     5.20933
+mrsmod_deviceKe - mrsmod_deviceHfKfAp_coupled == 0                   -27.12467
+mrsmod_deviceKf - mrsmod_deviceHfKfAp_coupled == 0                   -13.40693
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfKfAp_coupled == 0          -4.49891
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfKfAp_coupled == 0      -2.51729
+mrsmod_deviceKe - mrsmod_deviceHfKfAp_independent == 0               -32.33400
+mrsmod_deviceKf - mrsmod_deviceHfKfAp_independent == 0               -18.61627
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfKfAp_independent == 0      -9.70824
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfKfAp_independent == 0  -7.72662
+mrsmod_deviceKf - mrsmod_deviceKe == 0                                13.71773
+mrsmod_deviceKfAp_coupled - mrsmod_deviceKe == 0                      22.62576
+mrsmod_deviceKfAp_independent - mrsmod_deviceKe == 0                  24.60738
+mrsmod_deviceKfAp_coupled - mrsmod_deviceKf == 0                       8.90802
+mrsmod_deviceKfAp_independent - mrsmod_deviceKf == 0                  10.88965
+mrsmod_deviceKfAp_independent - mrsmod_deviceKfAp_coupled == 0         1.98162
+                                                                     Std. Error
+mrsmod_deviceHe - mrsmod_deviceAp == 0                                  1.72798
+mrsmod_deviceHeKe_coupled - mrsmod_deviceAp == 0                        1.72798
+mrsmod_deviceHeKe_independent - mrsmod_deviceAp == 0                    1.72798
+mrsmod_deviceHf - mrsmod_deviceAp == 0                                  1.72798
+mrsmod_deviceHfAp_coupled - mrsmod_deviceAp == 0                        1.72798
+mrsmod_deviceHfAp_independent - mrsmod_deviceAp == 0                    1.72798
+mrsmod_deviceHfKf_coupled - mrsmod_deviceAp == 0                        1.72798
+mrsmod_deviceHfKf_independent - mrsmod_deviceAp == 0                    1.72798
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceAp == 0                      1.72798
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceAp == 0                  1.72798
+mrsmod_deviceKe - mrsmod_deviceAp == 0                                  1.72798
+mrsmod_deviceKf - mrsmod_deviceAp == 0                                  1.72798
+mrsmod_deviceKfAp_coupled - mrsmod_deviceAp == 0                        1.72798
+mrsmod_deviceKfAp_independent - mrsmod_deviceAp == 0                    1.72798
+mrsmod_deviceHeKe_coupled - mrsmod_deviceHe == 0                        1.72798
+mrsmod_deviceHeKe_independent - mrsmod_deviceHe == 0                    1.72798
+mrsmod_deviceHf - mrsmod_deviceHe == 0                                  1.72798
+mrsmod_deviceHfAp_coupled - mrsmod_deviceHe == 0                        1.72798
+mrsmod_deviceHfAp_independent - mrsmod_deviceHe == 0                    1.72798
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHe == 0                        1.72798
+mrsmod_deviceHfKf_independent - mrsmod_deviceHe == 0                    1.72798
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHe == 0                      1.72798
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHe == 0                  1.72798
+mrsmod_deviceKe - mrsmod_deviceHe == 0                                  1.72798
+mrsmod_deviceKf - mrsmod_deviceHe == 0                                  1.72798
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHe == 0                        1.72798
+mrsmod_deviceKfAp_independent - mrsmod_deviceHe == 0                    1.72798
+mrsmod_deviceHeKe_independent - mrsmod_deviceHeKe_coupled == 0          1.72798
+mrsmod_deviceHf - mrsmod_deviceHeKe_coupled == 0                        1.72798
+mrsmod_deviceHfAp_coupled - mrsmod_deviceHeKe_coupled == 0              1.72798
+mrsmod_deviceHfAp_independent - mrsmod_deviceHeKe_coupled == 0          1.72798
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHeKe_coupled == 0              1.72798
+mrsmod_deviceHfKf_independent - mrsmod_deviceHeKe_coupled == 0          1.72798
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHeKe_coupled == 0            1.72798
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHeKe_coupled == 0        1.72798
+mrsmod_deviceKe - mrsmod_deviceHeKe_coupled == 0                        1.72798
+mrsmod_deviceKf - mrsmod_deviceHeKe_coupled == 0                        1.72798
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHeKe_coupled == 0              1.72798
+mrsmod_deviceKfAp_independent - mrsmod_deviceHeKe_coupled == 0          1.72798
+mrsmod_deviceHf - mrsmod_deviceHeKe_independent == 0                    1.72798
+mrsmod_deviceHfAp_coupled - mrsmod_deviceHeKe_independent == 0          1.72798
+mrsmod_deviceHfAp_independent - mrsmod_deviceHeKe_independent == 0      1.72798
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHeKe_independent == 0          1.72798
+mrsmod_deviceHfKf_independent - mrsmod_deviceHeKe_independent == 0      1.72798
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHeKe_independent == 0        1.72798
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHeKe_independent == 0    1.72798
+mrsmod_deviceKe - mrsmod_deviceHeKe_independent == 0                    1.72798
+mrsmod_deviceKf - mrsmod_deviceHeKe_independent == 0                    1.72798
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHeKe_independent == 0          1.72798
+mrsmod_deviceKfAp_independent - mrsmod_deviceHeKe_independent == 0      1.72798
+mrsmod_deviceHfAp_coupled - mrsmod_deviceHf == 0                        1.72798
+mrsmod_deviceHfAp_independent - mrsmod_deviceHf == 0                    1.72798
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHf == 0                        1.72798
+mrsmod_deviceHfKf_independent - mrsmod_deviceHf == 0                    1.72798
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHf == 0                      1.72798
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHf == 0                  1.72798
+mrsmod_deviceKe - mrsmod_deviceHf == 0                                  1.72798
+mrsmod_deviceKf - mrsmod_deviceHf == 0                                  1.72798
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHf == 0                        1.72798
+mrsmod_deviceKfAp_independent - mrsmod_deviceHf == 0                    1.72798
+mrsmod_deviceHfAp_independent - mrsmod_deviceHfAp_coupled == 0          1.72798
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHfAp_coupled == 0              1.72798
+mrsmod_deviceHfKf_independent - mrsmod_deviceHfAp_coupled == 0          1.72798
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHfAp_coupled == 0            1.72798
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHfAp_coupled == 0        1.72798
+mrsmod_deviceKe - mrsmod_deviceHfAp_coupled == 0                        1.72798
+mrsmod_deviceKf - mrsmod_deviceHfAp_coupled == 0                        1.72798
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfAp_coupled == 0              1.72798
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfAp_coupled == 0          1.72798
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHfAp_independent == 0          1.72798
+mrsmod_deviceHfKf_independent - mrsmod_deviceHfAp_independent == 0      1.72798
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHfAp_independent == 0        1.72798
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHfAp_independent == 0    1.72798
+mrsmod_deviceKe - mrsmod_deviceHfAp_independent == 0                    1.72798
+mrsmod_deviceKf - mrsmod_deviceHfAp_independent == 0                    1.72798
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfAp_independent == 0          1.72798
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfAp_independent == 0      1.72798
+mrsmod_deviceHfKf_independent - mrsmod_deviceHfKf_coupled == 0          1.72798
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHfKf_coupled == 0            1.72798
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHfKf_coupled == 0        1.72798
+mrsmod_deviceKe - mrsmod_deviceHfKf_coupled == 0                        1.72798
+mrsmod_deviceKf - mrsmod_deviceHfKf_coupled == 0                        1.72798
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfKf_coupled == 0              1.72798
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfKf_coupled == 0          1.72798
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHfKf_independent == 0        1.72798
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHfKf_independent == 0    1.72798
+mrsmod_deviceKe - mrsmod_deviceHfKf_independent == 0                    1.72798
+mrsmod_deviceKf - mrsmod_deviceHfKf_independent == 0                    1.72798
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfKf_independent == 0          1.72798
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfKf_independent == 0      1.72798
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHfKfAp_coupled == 0      1.72798
+mrsmod_deviceKe - mrsmod_deviceHfKfAp_coupled == 0                      1.72798
+mrsmod_deviceKf - mrsmod_deviceHfKfAp_coupled == 0                      1.72798
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfKfAp_coupled == 0            1.72798
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfKfAp_coupled == 0        1.72798
+mrsmod_deviceKe - mrsmod_deviceHfKfAp_independent == 0                  1.72798
+mrsmod_deviceKf - mrsmod_deviceHfKfAp_independent == 0                  1.72798
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfKfAp_independent == 0        1.72798
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfKfAp_independent == 0    1.72798
+mrsmod_deviceKf - mrsmod_deviceKe == 0                                  1.72798
+mrsmod_deviceKfAp_coupled - mrsmod_deviceKe == 0                        1.72798
+mrsmod_deviceKfAp_independent - mrsmod_deviceKe == 0                    1.72798
+mrsmod_deviceKfAp_coupled - mrsmod_deviceKf == 0                        1.72798
+mrsmod_deviceKfAp_independent - mrsmod_deviceKf == 0                    1.72798
+mrsmod_deviceKfAp_independent - mrsmod_deviceKfAp_coupled == 0          1.72798
+                                                                     z value
+mrsmod_deviceHe - mrsmod_deviceAp == 0                                -2.383
+mrsmod_deviceHeKe_coupled - mrsmod_deviceAp == 0                      -0.022
+mrsmod_deviceHeKe_independent - mrsmod_deviceAp == 0                   0.984
+mrsmod_deviceHf - mrsmod_deviceAp == 0                                 5.552
+mrsmod_deviceHfAp_coupled - mrsmod_deviceAp == 0                       9.990
+mrsmod_deviceHfAp_independent - mrsmod_deviceAp == 0                  12.534
+mrsmod_deviceHfKf_coupled - mrsmod_deviceAp == 0                       7.776
+mrsmod_deviceHfKf_independent - mrsmod_deviceAp == 0                  10.196
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceAp == 0                    12.895
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceAp == 0                15.909
+mrsmod_deviceKe - mrsmod_deviceAp == 0                                -2.803
+mrsmod_deviceKf - mrsmod_deviceAp == 0                                 5.136
+mrsmod_deviceKfAp_coupled - mrsmod_deviceAp == 0                      10.291
+mrsmod_deviceKfAp_independent - mrsmod_deviceAp == 0                  11.438
+mrsmod_deviceHeKe_coupled - mrsmod_deviceHe == 0                       2.361
+mrsmod_deviceHeKe_independent - mrsmod_deviceHe == 0                   3.367
+mrsmod_deviceHf - mrsmod_deviceHe == 0                                 7.935
+mrsmod_deviceHfAp_coupled - mrsmod_deviceHe == 0                      12.373
+mrsmod_deviceHfAp_independent - mrsmod_deviceHe == 0                  14.917
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHe == 0                      10.159
+mrsmod_deviceHfKf_independent - mrsmod_deviceHe == 0                  12.578
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHe == 0                    15.277
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHe == 0                18.292
+mrsmod_deviceKe - mrsmod_deviceHe == 0                                -0.420
+mrsmod_deviceKf - mrsmod_deviceHe == 0                                 7.519
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHe == 0                      12.674
+mrsmod_deviceKfAp_independent - mrsmod_deviceHe == 0                  13.820
+mrsmod_deviceHeKe_independent - mrsmod_deviceHeKe_coupled == 0         1.006
+mrsmod_deviceHf - mrsmod_deviceHeKe_coupled == 0                       5.574
+mrsmod_deviceHfAp_coupled - mrsmod_deviceHeKe_coupled == 0            10.012
+mrsmod_deviceHfAp_independent - mrsmod_deviceHeKe_coupled == 0        12.557
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHeKe_coupled == 0             7.798
+mrsmod_deviceHfKf_independent - mrsmod_deviceHeKe_coupled == 0        10.218
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHeKe_coupled == 0          12.917
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHeKe_coupled == 0      15.931
+mrsmod_deviceKe - mrsmod_deviceHeKe_coupled == 0                      -2.781
+mrsmod_deviceKf - mrsmod_deviceHeKe_coupled == 0                       5.158
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHeKe_coupled == 0            10.313
+mrsmod_deviceKfAp_independent - mrsmod_deviceHeKe_coupled == 0        11.460
+mrsmod_deviceHf - mrsmod_deviceHeKe_independent == 0                   4.568
+mrsmod_deviceHfAp_coupled - mrsmod_deviceHeKe_independent == 0         9.006
+mrsmod_deviceHfAp_independent - mrsmod_deviceHeKe_independent == 0    11.550
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHeKe_independent == 0         6.792
+mrsmod_deviceHfKf_independent - mrsmod_deviceHeKe_independent == 0     9.212
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHeKe_independent == 0      11.911
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHeKe_independent == 0  14.925
+mrsmod_deviceKe - mrsmod_deviceHeKe_independent == 0                  -3.787
+mrsmod_deviceKf - mrsmod_deviceHeKe_independent == 0                   4.152
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHeKe_independent == 0         9.307
+mrsmod_deviceKfAp_independent - mrsmod_deviceHeKe_independent == 0    10.454
+mrsmod_deviceHfAp_coupled - mrsmod_deviceHf == 0                       4.438
+mrsmod_deviceHfAp_independent - mrsmod_deviceHf == 0                   6.982
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHf == 0                       2.224
+mrsmod_deviceHfKf_independent - mrsmod_deviceHf == 0                   4.644
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHf == 0                     7.343
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHf == 0                10.357
+mrsmod_deviceKe - mrsmod_deviceHf == 0                                -8.355
+mrsmod_deviceKf - mrsmod_deviceHf == 0                                -0.416
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHf == 0                       4.739
+mrsmod_deviceKfAp_independent - mrsmod_deviceHf == 0                   5.886
+mrsmod_deviceHfAp_independent - mrsmod_deviceHfAp_coupled == 0         2.544
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHfAp_coupled == 0            -2.214
+mrsmod_deviceHfKf_independent - mrsmod_deviceHfAp_coupled == 0         0.205
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHfAp_coupled == 0           2.904
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHfAp_coupled == 0       5.919
+mrsmod_deviceKe - mrsmod_deviceHfAp_coupled == 0                     -12.793
+mrsmod_deviceKf - mrsmod_deviceHfAp_coupled == 0                      -4.854
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfAp_coupled == 0             0.301
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfAp_coupled == 0         1.448
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHfAp_independent == 0        -4.759
+mrsmod_deviceHfKf_independent - mrsmod_deviceHfAp_independent == 0    -2.339
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHfAp_independent == 0       0.360
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHfAp_independent == 0   3.375
+mrsmod_deviceKe - mrsmod_deviceHfAp_independent == 0                 -15.337
+mrsmod_deviceKf - mrsmod_deviceHfAp_independent == 0                  -7.399
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfAp_independent == 0        -2.243
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfAp_independent == 0    -1.097
+mrsmod_deviceHfKf_independent - mrsmod_deviceHfKf_coupled == 0         2.420
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHfKf_coupled == 0           5.119
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHfKf_coupled == 0       8.133
+mrsmod_deviceKe - mrsmod_deviceHfKf_coupled == 0                     -10.579
+mrsmod_deviceKf - mrsmod_deviceHfKf_coupled == 0                      -2.640
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfKf_coupled == 0             2.515
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfKf_coupled == 0         3.662
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHfKf_independent == 0       2.699
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHfKf_independent == 0   5.714
+mrsmod_deviceKe - mrsmod_deviceHfKf_independent == 0                 -12.998
+mrsmod_deviceKf - mrsmod_deviceHfKf_independent == 0                  -5.060
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfKf_independent == 0         0.096
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfKf_independent == 0     1.242
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHfKfAp_coupled == 0     3.015
+mrsmod_deviceKe - mrsmod_deviceHfKfAp_coupled == 0                   -15.697
+mrsmod_deviceKf - mrsmod_deviceHfKfAp_coupled == 0                    -7.759
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfKfAp_coupled == 0          -2.604
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfKfAp_coupled == 0      -1.457
+mrsmod_deviceKe - mrsmod_deviceHfKfAp_independent == 0               -18.712
+mrsmod_deviceKf - mrsmod_deviceHfKfAp_independent == 0               -10.773
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfKfAp_independent == 0      -5.618
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfKfAp_independent == 0  -4.471
+mrsmod_deviceKf - mrsmod_deviceKe == 0                                 7.939
+mrsmod_deviceKfAp_coupled - mrsmod_deviceKe == 0                      13.094
+mrsmod_deviceKfAp_independent - mrsmod_deviceKe == 0                  14.241
+mrsmod_deviceKfAp_coupled - mrsmod_deviceKf == 0                       5.155
+mrsmod_deviceKfAp_independent - mrsmod_deviceKf == 0                   6.302
+mrsmod_deviceKfAp_independent - mrsmod_deviceKfAp_coupled == 0         1.147
+                                                                     Pr(>|z|)
+mrsmod_deviceHe - mrsmod_deviceAp == 0                                 0.5267
+mrsmod_deviceHeKe_coupled - mrsmod_deviceAp == 0                       1.0000
+mrsmod_deviceHeKe_independent - mrsmod_deviceAp == 0                   0.9997
+mrsmod_deviceHf - mrsmod_deviceAp == 0                                  <0.01
+mrsmod_deviceHfAp_coupled - mrsmod_deviceAp == 0                        <0.01
+mrsmod_deviceHfAp_independent - mrsmod_deviceAp == 0                    <0.01
+mrsmod_deviceHfKf_coupled - mrsmod_deviceAp == 0                        <0.01
+mrsmod_deviceHfKf_independent - mrsmod_deviceAp == 0                    <0.01
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceAp == 0                      <0.01
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceAp == 0                  <0.01
+mrsmod_deviceKe - mrsmod_deviceAp == 0                                 0.2455
+mrsmod_deviceKf - mrsmod_deviceAp == 0                                  <0.01
+mrsmod_deviceKfAp_coupled - mrsmod_deviceAp == 0                        <0.01
+mrsmod_deviceKfAp_independent - mrsmod_deviceAp == 0                    <0.01
+mrsmod_deviceHeKe_coupled - mrsmod_deviceHe == 0                       0.5451
+mrsmod_deviceHeKe_independent - mrsmod_deviceHe == 0                   0.0539
+mrsmod_deviceHf - mrsmod_deviceHe == 0                                  <0.01
+mrsmod_deviceHfAp_coupled - mrsmod_deviceHe == 0                        <0.01
+mrsmod_deviceHfAp_independent - mrsmod_deviceHe == 0                    <0.01
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHe == 0                        <0.01
+mrsmod_deviceHfKf_independent - mrsmod_deviceHe == 0                    <0.01
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHe == 0                      <0.01
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHe == 0                  <0.01
+mrsmod_deviceKe - mrsmod_deviceHe == 0                                 1.0000
+mrsmod_deviceKf - mrsmod_deviceHe == 0                                  <0.01
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHe == 0                        <0.01
+mrsmod_deviceKfAp_independent - mrsmod_deviceHe == 0                    <0.01
+mrsmod_deviceHeKe_independent - mrsmod_deviceHeKe_coupled == 0         0.9996
+mrsmod_deviceHf - mrsmod_deviceHeKe_coupled == 0                        <0.01
+mrsmod_deviceHfAp_coupled - mrsmod_deviceHeKe_coupled == 0              <0.01
+mrsmod_deviceHfAp_independent - mrsmod_deviceHeKe_coupled == 0          <0.01
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHeKe_coupled == 0              <0.01
+mrsmod_deviceHfKf_independent - mrsmod_deviceHeKe_coupled == 0          <0.01
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHeKe_coupled == 0            <0.01
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHeKe_coupled == 0        <0.01
+mrsmod_deviceKe - mrsmod_deviceHeKe_coupled == 0                       0.2580
+mrsmod_deviceKf - mrsmod_deviceHeKe_coupled == 0                        <0.01
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHeKe_coupled == 0              <0.01
+mrsmod_deviceKfAp_independent - mrsmod_deviceHeKe_coupled == 0          <0.01
+mrsmod_deviceHf - mrsmod_deviceHeKe_independent == 0                    <0.01
+mrsmod_deviceHfAp_coupled - mrsmod_deviceHeKe_independent == 0          <0.01
+mrsmod_deviceHfAp_independent - mrsmod_deviceHeKe_independent == 0      <0.01
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHeKe_independent == 0          <0.01
+mrsmod_deviceHfKf_independent - mrsmod_deviceHeKe_independent == 0      <0.01
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHeKe_independent == 0        <0.01
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHeKe_independent == 0    <0.01
+mrsmod_deviceKe - mrsmod_deviceHeKe_independent == 0                   0.0125
+mrsmod_deviceKf - mrsmod_deviceHeKe_independent == 0                    <0.01
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHeKe_independent == 0          <0.01
+mrsmod_deviceKfAp_independent - mrsmod_deviceHeKe_independent == 0      <0.01
+mrsmod_deviceHfAp_coupled - mrsmod_deviceHf == 0                        <0.01
+mrsmod_deviceHfAp_independent - mrsmod_deviceHf == 0                    <0.01
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHf == 0                       0.6470
+mrsmod_deviceHfKf_independent - mrsmod_deviceHf == 0                    <0.01
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHf == 0                      <0.01
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHf == 0                  <0.01
+mrsmod_deviceKe - mrsmod_deviceHf == 0                                  <0.01
+mrsmod_deviceKf - mrsmod_deviceHf == 0                                 1.0000
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHf == 0                        <0.01
+mrsmod_deviceKfAp_independent - mrsmod_deviceHf == 0                    <0.01
+mrsmod_deviceHfAp_independent - mrsmod_deviceHfAp_coupled == 0         0.4086
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHfAp_coupled == 0             0.6544
+mrsmod_deviceHfKf_independent - mrsmod_deviceHfAp_coupled == 0         1.0000
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHfAp_coupled == 0           0.1935
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHfAp_coupled == 0        <0.01
+mrsmod_deviceKe - mrsmod_deviceHfAp_coupled == 0                        <0.01
+mrsmod_deviceKf - mrsmod_deviceHfAp_coupled == 0                        <0.01
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfAp_coupled == 0             1.0000
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfAp_coupled == 0         0.9831
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHfAp_independent == 0          <0.01
+mrsmod_deviceHfKf_independent - mrsmod_deviceHfAp_independent == 0     0.5612
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHfAp_independent == 0       1.0000
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHfAp_independent == 0   0.0528
+mrsmod_deviceKe - mrsmod_deviceHfAp_independent == 0                    <0.01
+mrsmod_deviceKf - mrsmod_deviceHfAp_independent == 0                    <0.01
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfAp_independent == 0         0.6326
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfAp_independent == 0     0.9990
+mrsmod_deviceHfKf_independent - mrsmod_deviceHfKf_coupled == 0         0.4994
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHfKf_coupled == 0            <0.01
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHfKf_coupled == 0        <0.01
+mrsmod_deviceKe - mrsmod_deviceHfKf_coupled == 0                        <0.01
+mrsmod_deviceKf - mrsmod_deviceHfKf_coupled == 0                       0.3424
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfKf_coupled == 0             0.4291
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfKf_coupled == 0         0.0191
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHfKf_independent == 0       0.3043
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHfKf_independent == 0    <0.01
+mrsmod_deviceKe - mrsmod_deviceHfKf_independent == 0                    <0.01
+mrsmod_deviceKf - mrsmod_deviceHfKf_independent == 0                    <0.01
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfKf_independent == 0         1.0000
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfKf_independent == 0     0.9962
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHfKfAp_coupled == 0     0.1485
+mrsmod_deviceKe - mrsmod_deviceHfKfAp_coupled == 0                      <0.01
+mrsmod_deviceKf - mrsmod_deviceHfKfAp_coupled == 0                      <0.01
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfKfAp_coupled == 0           0.3670
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfKfAp_coupled == 0       0.9819
+mrsmod_deviceKe - mrsmod_deviceHfKfAp_independent == 0                  <0.01
+mrsmod_deviceKf - mrsmod_deviceHfKfAp_independent == 0                  <0.01
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfKfAp_independent == 0        <0.01
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfKfAp_independent == 0    <0.01
+mrsmod_deviceKf - mrsmod_deviceKe == 0                                  <0.01
+mrsmod_deviceKfAp_coupled - mrsmod_deviceKe == 0                        <0.01
+mrsmod_deviceKfAp_independent - mrsmod_deviceKe == 0                    <0.01
+mrsmod_deviceKfAp_coupled - mrsmod_deviceKf == 0                        <0.01
+mrsmod_deviceKfAp_independent - mrsmod_deviceKf == 0                    <0.01
+mrsmod_deviceKfAp_independent - mrsmod_deviceKfAp_coupled == 0         0.9983
+                                                                        
+mrsmod_deviceHe - mrsmod_deviceAp == 0                                  
+mrsmod_deviceHeKe_coupled - mrsmod_deviceAp == 0                        
+mrsmod_deviceHeKe_independent - mrsmod_deviceAp == 0                    
+mrsmod_deviceHf - mrsmod_deviceAp == 0                               ***
+mrsmod_deviceHfAp_coupled - mrsmod_deviceAp == 0                     ***
+mrsmod_deviceHfAp_independent - mrsmod_deviceAp == 0                 ***
+mrsmod_deviceHfKf_coupled - mrsmod_deviceAp == 0                     ***
+mrsmod_deviceHfKf_independent - mrsmod_deviceAp == 0                 ***
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceAp == 0                   ***
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceAp == 0               ***
+mrsmod_deviceKe - mrsmod_deviceAp == 0                                  
+mrsmod_deviceKf - mrsmod_deviceAp == 0                               ***
+mrsmod_deviceKfAp_coupled - mrsmod_deviceAp == 0                     ***
+mrsmod_deviceKfAp_independent - mrsmod_deviceAp == 0                 ***
+mrsmod_deviceHeKe_coupled - mrsmod_deviceHe == 0                        
+mrsmod_deviceHeKe_independent - mrsmod_deviceHe == 0                 .  
+mrsmod_deviceHf - mrsmod_deviceHe == 0                               ***
+mrsmod_deviceHfAp_coupled - mrsmod_deviceHe == 0                     ***
+mrsmod_deviceHfAp_independent - mrsmod_deviceHe == 0                 ***
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHe == 0                     ***
+mrsmod_deviceHfKf_independent - mrsmod_deviceHe == 0                 ***
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHe == 0                   ***
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHe == 0               ***
+mrsmod_deviceKe - mrsmod_deviceHe == 0                                  
+mrsmod_deviceKf - mrsmod_deviceHe == 0                               ***
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHe == 0                     ***
+mrsmod_deviceKfAp_independent - mrsmod_deviceHe == 0                 ***
+mrsmod_deviceHeKe_independent - mrsmod_deviceHeKe_coupled == 0          
+mrsmod_deviceHf - mrsmod_deviceHeKe_coupled == 0                     ***
+mrsmod_deviceHfAp_coupled - mrsmod_deviceHeKe_coupled == 0           ***
+mrsmod_deviceHfAp_independent - mrsmod_deviceHeKe_coupled == 0       ***
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHeKe_coupled == 0           ***
+mrsmod_deviceHfKf_independent - mrsmod_deviceHeKe_coupled == 0       ***
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHeKe_coupled == 0         ***
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHeKe_coupled == 0     ***
+mrsmod_deviceKe - mrsmod_deviceHeKe_coupled == 0                        
+mrsmod_deviceKf - mrsmod_deviceHeKe_coupled == 0                     ***
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHeKe_coupled == 0           ***
+mrsmod_deviceKfAp_independent - mrsmod_deviceHeKe_coupled == 0       ***
+mrsmod_deviceHf - mrsmod_deviceHeKe_independent == 0                 ***
+mrsmod_deviceHfAp_coupled - mrsmod_deviceHeKe_independent == 0       ***
+mrsmod_deviceHfAp_independent - mrsmod_deviceHeKe_independent == 0   ***
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHeKe_independent == 0       ***
+mrsmod_deviceHfKf_independent - mrsmod_deviceHeKe_independent == 0   ***
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHeKe_independent == 0     ***
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHeKe_independent == 0 ***
+mrsmod_deviceKe - mrsmod_deviceHeKe_independent == 0                 *  
+mrsmod_deviceKf - mrsmod_deviceHeKe_independent == 0                 ** 
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHeKe_independent == 0       ***
+mrsmod_deviceKfAp_independent - mrsmod_deviceHeKe_independent == 0   ***
+mrsmod_deviceHfAp_coupled - mrsmod_deviceHf == 0                     ***
+mrsmod_deviceHfAp_independent - mrsmod_deviceHf == 0                 ***
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHf == 0                        
+mrsmod_deviceHfKf_independent - mrsmod_deviceHf == 0                 ***
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHf == 0                   ***
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHf == 0               ***
+mrsmod_deviceKe - mrsmod_deviceHf == 0                               ***
+mrsmod_deviceKf - mrsmod_deviceHf == 0                                  
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHf == 0                     ***
+mrsmod_deviceKfAp_independent - mrsmod_deviceHf == 0                 ***
+mrsmod_deviceHfAp_independent - mrsmod_deviceHfAp_coupled == 0          
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHfAp_coupled == 0              
+mrsmod_deviceHfKf_independent - mrsmod_deviceHfAp_coupled == 0          
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHfAp_coupled == 0            
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHfAp_coupled == 0     ***
+mrsmod_deviceKe - mrsmod_deviceHfAp_coupled == 0                     ***
+mrsmod_deviceKf - mrsmod_deviceHfAp_coupled == 0                     ***
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfAp_coupled == 0              
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfAp_coupled == 0          
+mrsmod_deviceHfKf_coupled - mrsmod_deviceHfAp_independent == 0       ***
+mrsmod_deviceHfKf_independent - mrsmod_deviceHfAp_independent == 0      
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHfAp_independent == 0        
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHfAp_independent == 0 .  
+mrsmod_deviceKe - mrsmod_deviceHfAp_independent == 0                 ***
+mrsmod_deviceKf - mrsmod_deviceHfAp_independent == 0                 ***
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfAp_independent == 0          
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfAp_independent == 0      
+mrsmod_deviceHfKf_independent - mrsmod_deviceHfKf_coupled == 0          
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHfKf_coupled == 0         ***
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHfKf_coupled == 0     ***
+mrsmod_deviceKe - mrsmod_deviceHfKf_coupled == 0                     ***
+mrsmod_deviceKf - mrsmod_deviceHfKf_coupled == 0                        
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfKf_coupled == 0              
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfKf_coupled == 0       *  
+mrsmod_deviceHfKfAp_coupled - mrsmod_deviceHfKf_independent == 0        
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHfKf_independent == 0 ***
+mrsmod_deviceKe - mrsmod_deviceHfKf_independent == 0                 ***
+mrsmod_deviceKf - mrsmod_deviceHfKf_independent == 0                 ***
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfKf_independent == 0          
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfKf_independent == 0      
+mrsmod_deviceHfKfAp_independent - mrsmod_deviceHfKfAp_coupled == 0      
+mrsmod_deviceKe - mrsmod_deviceHfKfAp_coupled == 0                   ***
+mrsmod_deviceKf - mrsmod_deviceHfKfAp_coupled == 0                   ***
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfKfAp_coupled == 0            
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfKfAp_coupled == 0        
+mrsmod_deviceKe - mrsmod_deviceHfKfAp_independent == 0               ***
+mrsmod_deviceKf - mrsmod_deviceHfKfAp_independent == 0               ***
+mrsmod_deviceKfAp_coupled - mrsmod_deviceHfKfAp_independent == 0     ***
+mrsmod_deviceKfAp_independent - mrsmod_deviceHfKfAp_independent == 0 ***
+mrsmod_deviceKf - mrsmod_deviceKe == 0                               ***
+mrsmod_deviceKfAp_coupled - mrsmod_deviceKe == 0                     ***
+mrsmod_deviceKfAp_independent - mrsmod_deviceKe == 0                 ***
+mrsmod_deviceKfAp_coupled - mrsmod_deviceKf == 0                     ***
+mrsmod_deviceKfAp_independent - mrsmod_deviceKf == 0                 ***
+mrsmod_deviceKfAp_independent - mrsmod_deviceKfAp_coupled == 0          
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+(Adjusted p values reported -- single-step method)
+
+                mrsmod_deviceAp                 mrsmod_deviceHe 
+                           "ef"                            "ef" 
+      mrsmod_deviceHeKe_coupled   mrsmod_deviceHeKe_independent 
+                           "ef"                             "e" 
+                mrsmod_deviceHf       mrsmod_deviceHfAp_coupled 
+                            "d"                            "bc" 
+  mrsmod_deviceHfAp_independent       mrsmod_deviceHfKf_coupled 
+                           "ab"                            "cd" 
+  mrsmod_deviceHfKf_independent     mrsmod_deviceHfKfAp_coupled 
+                           "bc"                            "ab" 
+mrsmod_deviceHfKfAp_independent                 mrsmod_deviceKe 
+                            "a"                             "f" 
+                mrsmod_deviceKf       mrsmod_deviceKfAp_coupled 
+                            "d"                            "bc" 
+  mrsmod_deviceKfAp_independent 
+                            "b" 
